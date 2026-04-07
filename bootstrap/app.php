@@ -21,6 +21,11 @@ return Application::configure(basePath: dirname(__DIR__))
             HandleInertiaRequests::class,
             AddLinkHeadersForPreloadedAssets::class,
         ]);
+
+        $middleware->alias([
+            'security' => \App\Http\Middleware\CheckSecurityLevel::class,
+        ]);
+        
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         //

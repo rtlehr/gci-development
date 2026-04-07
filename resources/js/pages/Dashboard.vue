@@ -4,7 +4,7 @@ import PlaceholderPattern from '@/components/PlaceholderPattern.vue';
 import { useAuth } from '@/composables/useAuth'
 import { dashboard } from '@/routes';
 
-const { username, securityLevel } = useAuth()
+const { username, securityLevel, hasLevel } = useAuth()
 
 defineOptions({
     layout: {
@@ -28,8 +28,17 @@ defineOptions({
             <div
                 class="relative aspect-video overflow-hidden rounded-xl border border-sidebar-border/70 dark:border-sidebar-border"
             >
-                <p>User: {{ username }}</p>
-                <p>Security Level: {{ securityLevel }}</p>
+                <template v-if="hasLevel(4)">
+                    
+                    <p>User: {{ username }}</p>
+                    <p>Security Level: {{ securityLevel }}</p>
+
+                    <PlaceholderPattern />
+                </template>
+
+                <template v-else>
+                        <p>Requires Level 4 Access</p>
+                </template>
 
             </div>
             <div
