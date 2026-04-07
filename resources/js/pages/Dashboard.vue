@@ -1,7 +1,10 @@
 <script setup lang="ts">
 import { Head } from '@inertiajs/vue3';
 import PlaceholderPattern from '@/components/PlaceholderPattern.vue';
+import { useAuth } from '@/composables/useAuth'
 import { dashboard } from '@/routes';
+
+const { username, securityLevel } = useAuth()
 
 defineOptions({
     layout: {
@@ -25,7 +28,9 @@ defineOptions({
             <div
                 class="relative aspect-video overflow-hidden rounded-xl border border-sidebar-border/70 dark:border-sidebar-border"
             >
-                <PlaceholderPattern />
+                <p>User: {{ username }}</p>
+                <p>Security Level: {{ securityLevel }}</p>
+
             </div>
             <div
                 class="relative aspect-video overflow-hidden rounded-xl border border-sidebar-border/70 dark:border-sidebar-border"
