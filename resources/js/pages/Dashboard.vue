@@ -1,10 +1,11 @@
 <script setup lang="ts">
 import { Head } from '@inertiajs/vue3';
+import PermissionBlock from '@/components/PermissionBlock.vue';
 import PlaceholderPattern from '@/components/PlaceholderPattern.vue';
-import { useAuth } from '@/composables/useAuth'
+import { useAuth } from '@/composables/useAuth';
 import { dashboard } from '@/routes';
 
-const { username, can } = useAuth()
+const { username} = useAuth()
 
 defineOptions({
     layout: {
@@ -25,22 +26,26 @@ defineOptions({
         class="flex h-full flex-1 flex-col gap-4 overflow-x-auto rounded-xl p-4"
     >
         <div class="grid auto-rows-min gap-4 md:grid-cols-3">
-            <div
-                class="relative aspect-video overflow-hidden rounded-xl border border-sidebar-border/70 dark:border-sidebar-border"
-            >
-                <template v-if="can('view_reports')">
-                    
-                    <p>User: {{ username }}</p>
-                    <p>Can view reports</p>
+            <div class="grid auto-rows-min gap-4 md:grid-cols-3">
 
-                    <PlaceholderPattern />
-                </template>
+        <!-- Always visible -->
+        <div class="relative aspect-video rounded-xl border p-4">
+            <p>User: {{ username }}</p>
+        </div>
 
-                <template v-else>
-                        <p>Requires Level 4 Access</p>
-                </template>
-
+        <!-- 🔒 Protected -->
+        <PermissionBlock permission="view_admin" fallback="Admin only">
+            <div class="relative aspect-video rounded-xl border">
+                <PlaceholderPattern />
             </div>
+        </PermissionBlock>
+
+        <!-- Always visible -->
+        <div class="relative aspect-video rounded-xl border">
+            <PlaceholderPattern />
+        </div>
+
+    </div>
             <div
                 class="relative aspect-video overflow-hidden rounded-xl border border-sidebar-border/70 dark:border-sidebar-border"
             >

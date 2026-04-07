@@ -8,7 +8,7 @@ return [
         'view_dashboard',
         'view_reports',
         'edit_reports',
-        //'view_admin',     // 🔥 this controls admin page
+        'view_admin',     // 🔥 this controls admin page
         // 'delete_users', // example not enabled
     ],
 ];
