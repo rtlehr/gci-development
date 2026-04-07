@@ -8,15 +8,13 @@ class CurrentUser
 {
     public static function get(Request $request): ?array
     {
-        // Development mode: use the hardcoded config user
         if (config('devuser.enabled')) {
             return [
                 'username' => config('devuser.username'),
-                'security_level' => config('devuser.security_level'),
+                'permissions' => config('devuser.permissions'),
             ];
         }
 
-        // Real login mode: use Laravel's authenticated user
         $user = $request->user();
 
         if (! $user) {
@@ -25,12 +23,16 @@ class CurrentUser
 
         return [
             'username' => $user->name,
-            'security_level' => $user->security_level ?? 0,
+            'permissions' => $user->permissions ?? [],
         ];
     }
 
-    public static function securityLevel(Request $request): int
+    public static function hasPermission(Request $request, string $permission): bool
     {
-        return static::get($request)['security_level'] ?? 0;
+        $user = static::get($request);
+
+        if (! $user) return false;
+
+        return in_array($permission, $user['permissions'] ?? []);
     }
 }

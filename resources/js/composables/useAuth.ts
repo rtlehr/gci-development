@@ -3,10 +3,9 @@ import { computed } from 'vue'
 
 type AuthUser = {
     username: string
-    security_level: number
-}
+    permissions: string[]
+} | null
 
-// 👇 Define the shape of your page props
 type PageProps = {
     auth?: {
         user?: AuthUser
@@ -16,21 +15,19 @@ type PageProps = {
 export function useAuth() {
     const page = usePage<PageProps>()
 
-    console.log("page.props: ", page.props)
-
     const user = computed(() => page.props.auth?.user ?? null)
 
     const username = computed(() => user.value?.username ?? '')
-    const securityLevel = computed(() => user.value?.security_level ?? 0)
+    const permissions = computed(() => user.value?.permissions ?? [])
 
-    function hasLevel(level: number): boolean {
-        return securityLevel.value >= level
+    function can(permission: string): boolean {
+        return permissions.value.includes(permission)
     }
 
     return {
         user,
         username,
-        securityLevel,
-        hasLevel,
+        permissions,
+        can,
     }
 }

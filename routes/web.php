@@ -18,6 +18,6 @@ Route::get('/reports', function () {
 
 Route::get('/admin', function () {
     return Inertia::render('Admin/Index');
-})->middleware('security:3');
+})->middleware('permission:view_admin');
 
 require __DIR__.'/settings.php';
