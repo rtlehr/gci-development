@@ -5,7 +5,7 @@ import PlaceholderPattern from '@/components/PlaceholderPattern.vue';
 import { useAuth } from '@/composables/useAuth';
 import { dashboard } from '@/routes';
 
-const { username} = useAuth()
+const { username, role, permissions } = useAuth();
 
 defineOptions({
     layout: {
@@ -22,43 +22,40 @@ defineOptions({
 <template>
     <Head title="Dashboard" />
 
-    <div
-        class="flex h-full flex-1 flex-col gap-4 overflow-x-auto rounded-xl p-4"
-    >
+    <div class="flex h-full flex-1 flex-col gap-4 overflow-x-auto rounded-xl p-4">
         <div class="grid auto-rows-min gap-4 md:grid-cols-3">
-            <div class="grid auto-rows-min gap-4 md:grid-cols-3">
-
-        <!-- Always visible -->
-        <div class="relative aspect-video rounded-xl border p-4">
-            <p>User: {{ username }}</p>
-        </div>
-
-        <!-- 🔒 Protected -->
-        <PermissionBlock permission="view_admin" fallback="Admin only">
-            <div class="relative aspect-video rounded-xl border">
-                <PlaceholderPattern />
-            </div>
-        </PermissionBlock>
-
-        <!-- Always visible -->
-        <div class="relative aspect-video rounded-xl border">
-            <PlaceholderPattern />
-        </div>
-
-    </div>
             <div
-                class="relative aspect-video overflow-hidden rounded-xl border border-sidebar-border/70 dark:border-sidebar-border"
+                class="relative aspect-video overflow-hidden rounded-xl border border-sidebar-border/70 p-4 dark:border-sidebar-border"
             >
-                <PlaceholderPattern />
+                <p>User: {{ username }}</p>
+                <p>Role: {{ role }}</p>
+                <p>Permissions: {{ permissions.join(', ') }}</p>
             </div>
-            <div
-                class="relative aspect-video overflow-hidden rounded-xl border border-sidebar-border/70 dark:border-sidebar-border"
+
+            <PermissionBlock role="admin" fallback="This section is only for admins.">
+                <div
+                    class="relative aspect-video overflow-hidden rounded-xl border border-sidebar-border/70 p-4 dark:border-sidebar-border"
+                >
+                    <p class="mb-2">This section is only for admins.</p>
+                    <PlaceholderPattern />
+                </div>
+            </PermissionBlock>
+
+            <PermissionBlock
+                permission="view_admin"
+                fallback="This section is for users with the view_admin permission."
             >
-                <PlaceholderPattern />
-            </div>
+                <div
+                    class="relative aspect-video overflow-hidden rounded-xl border border-sidebar-border/70 p-4 dark:border-sidebar-border"
+                >
+                    <p class="mb-2">This section is for anyone with the view_admin permission.</p>
+                    <PlaceholderPattern />
+                </div>
+            </PermissionBlock>
         </div>
+
         <div
-            class="relative min-h-[100vh] flex-1 rounded-xl border border-sidebar-border/70 md:min-h-min dark:border-sidebar-border"
+            class="relative min-h-[100vh] flex-1 rounded-xl border border-sidebar-border/70 dark:border-sidebar-border md:min-h-min"
         >
             <PlaceholderPattern />
         </div>
