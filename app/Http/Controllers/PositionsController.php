@@ -7,14 +7,12 @@ use Illuminate\Http\Request;
 
 class PositionsController extends Controller
 {
-
     public function index(Request $request)
     {
-        $sort = $request->input('sort', 'created_at');
-        $direction = $request->input('direction', 'desc');
-
         $search = $request->input('search');
         $status = $request->input('status');
+        $sort = $request->input('sort', 'created_at');
+        $direction = $request->input('direction', 'desc');
 
         $allowedSorts = [
             'position_code',
@@ -22,11 +20,15 @@ class PositionsController extends Controller
             'status',
             'labor_category',
             'project_team_name',
-            'created_at'
+            'created_at',
         ];
 
         if (!in_array($sort, $allowedSorts)) {
             $sort = 'created_at';
+        }
+
+        if (!in_array($direction, ['asc', 'desc'])) {
+            $direction = 'desc';
         }
 
         $positions = Position::query()
@@ -43,7 +45,6 @@ class PositionsController extends Controller
             ->when($status, function ($query, $status) {
                 $query->where('status', $status);
             })
-            ->orderBy('created_at', 'desc')
             ->orderBy($sort, $direction)
             ->paginate(10)
             ->withQueryString();
@@ -62,6 +63,42 @@ class PositionsController extends Controller
     public function create()
     {
         return inertia('Positions/Create');
+    }
+
+    public function store(Request $request)
+    {
+        $validated = $request->validate([
+            'position_code' => ['nullable', 'string', 'max:255'],
+            'status' => ['nullable', 'in:Open,In Process,Closed'],
+            'labor_category' => ['nullable', 'string', 'max:255'],
+            'job_title' => ['nullable', 'string', 'max:255'],
+            'level' => ['nullable', 'integer'],
+            'project_team_name' => ['nullable', 'string', 'max:255'],
+            'organization_name' => ['nullable', 'string', 'max:255'],
+            'customer_lead_name' => ['nullable', 'string', 'max:255'],
+            'customer_created_at' => ['nullable', 'date'],
+            'closed_at' => ['nullable', 'date'],
+            'closed_reason' => ['nullable', 'string'],
+            'notes' => ['nullable', 'string'],
+        ]);
+
+        $position = Position::create($validated);
+
+        return redirect()
+            ->route('positions.show', $position->id)
+            ->with('success', 'Position created successfully.');
+    }
+
+    public function show($id)
+    {
+        $position = Position::with([
+            'currentAssignment.person',
+            'assignments.person',
+        ])->findOrFail($id);
+
+        return inertia('Positions/Show', [
+            'position' => $position,
+        ]);
     }
 
     public function edit($id)
@@ -94,18 +131,25 @@ class PositionsController extends Controller
 
         $position->update($validated);
 
-        return redirect()->route('positions.index');
+        return redirect()
+            ->route('positions.index')
+            ->with('success', 'Position updated successfully.');
     }
 
-    public function show($id)
+    public function destroy($id)
     {
-        $position = Position::with(['currentAssignment.person', 'assignments.person'])
-            ->findOrFail($id);
+        $position = Position::with('assignments')->findOrFail($id);
 
-        return inertia('Positions/Show', [
-            'position' => $position,
-        ]);
+        if ($position->assignments()->exists()) {
+            return redirect()
+                ->route('positions.index')
+                ->with('error', 'This position cannot be deleted because it has assignments.');
+        }
+
+        $position->delete();
+
+        return redirect()
+            ->route('positions.index')
+            ->with('success', 'Position deleted successfully.');
     }
-
-    
 }

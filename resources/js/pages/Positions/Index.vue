@@ -1,27 +1,28 @@
 <template>
-    <div class="p-6">
+    <div class="p-6 space-y-6">
         <!-- Header -->
-        <div class="flex items-center justify-between mb-6">
+        <div class="flex items-center justify-between">
             <h1 class="text-2xl font-semibold">Positions</h1>
         </div>
 
         <!-- Filters -->
-        <div class="border rounded-xl p-4 mb-6 bg-background">
+        <div class="border rounded-xl p-4 bg-background">
             <form @submit.prevent="applyFilters" class="flex flex-col md:flex-row gap-4 md:items-end">
                 <div class="flex-1 space-y-2">
                     <Label for="search">Search</Label>
                     <Input
                         id="search"
                         v-model="filterForm.search"
-                        placeholder="Search positions..."
+                        placeholder="Search by code, title, labor category, team..."
                     />
                 </div>
 
                 <div class="w-full md:w-[220px] space-y-2">
-                    <Label>Status</Label>
+                    <Label for="status-filter">Status</Label>
                     <select
+                        id="status-filter"
                         v-model="filterForm.status"
-                        class="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                        class="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background"
                     >
                         <option value="">All Statuses</option>
                         <option value="Open">Open</option>
@@ -40,7 +41,7 @@
         </div>
 
         <!-- Table -->
-        <div class="border rounded-xl bg-background">
+        <div class="border rounded-xl bg-background overflow-hidden">
             <Table>
                 <TableHeader>
                     <TableRow>
@@ -49,44 +50,64 @@
                         <TableHead @click="sortBy('position_code')" class="cursor-pointer select-none">
                             <div class="flex items-center gap-2">
                                 <span>Code</span>
-                                <component :is="getSortIcon('position_code')" class="h-4 w-4" />
+                                <component
+                                    :is="getSortIcon('position_code')"
+                                    class="h-4 w-4"
+                                    :class="sort === 'position_code' ? 'text-foreground' : 'text-muted-foreground'"
+                                />
                             </div>
                         </TableHead>
 
                         <TableHead @click="sortBy('job_title')" class="cursor-pointer select-none">
                             <div class="flex items-center gap-2">
                                 <span>Job Title</span>
-                                <component :is="getSortIcon('job_title')" class="h-4 w-4" />
+                                <component
+                                    :is="getSortIcon('job_title')"
+                                    class="h-4 w-4"
+                                    :class="sort === 'job_title' ? 'text-foreground' : 'text-muted-foreground'"
+                                />
                             </div>
                         </TableHead>
 
                         <TableHead @click="sortBy('status')" class="cursor-pointer select-none">
                             <div class="flex items-center gap-2">
                                 <span>Status</span>
-                                <component :is="getSortIcon('status')" class="h-4 w-4" />
+                                <component
+                                    :is="getSortIcon('status')"
+                                    class="h-4 w-4"
+                                    :class="sort === 'status' ? 'text-foreground' : 'text-muted-foreground'"
+                                />
                             </div>
                         </TableHead>
 
                         <TableHead @click="sortBy('labor_category')" class="cursor-pointer select-none">
                             <div class="flex items-center gap-2">
                                 <span>Labor Category</span>
-                                <component :is="getSortIcon('labor_category')" class="h-4 w-4" />
+                                <component
+                                    :is="getSortIcon('labor_category')"
+                                    class="h-4 w-4"
+                                    :class="sort === 'labor_category' ? 'text-foreground' : 'text-muted-foreground'"
+                                />
                             </div>
                         </TableHead>
 
                         <TableHead @click="sortBy('project_team_name')" class="cursor-pointer select-none">
                             <div class="flex items-center gap-2">
                                 <span>Team</span>
-                                <component :is="getSortIcon('project_team_name')" class="h-4 w-4" />
+                                <component
+                                    :is="getSortIcon('project_team_name')"
+                                    class="h-4 w-4"
+                                    :class="sort === 'project_team_name' ? 'text-foreground' : 'text-muted-foreground'"
+                                />
                             </div>
                         </TableHead>
 
-                        <TableHead>Actions</TableHead>
+                        <TableHead class="text-right">Actions</TableHead>
                     </TableRow>
                 </TableHeader>
 
                 <TableBody>
-                    <TableRow v-if="positions.data.length === 0">
+                    <TableRow v-if="!positions?.data?.length">
                         <TableCell colspan="7" class="text-center py-8 text-muted-foreground">
                             No positions found.
                         </TableCell>
@@ -115,7 +136,7 @@
 
                         <TableCell>{{ position.project_team_name || '—' }}</TableCell>
 
-                        <TableCell>
+                        <TableCell class="text-right">
                             <DropdownMenu>
                                 <DropdownMenuTrigger as-child>
                                     <Button variant="ghost" size="icon">
@@ -127,40 +148,42 @@
                                     <DropdownMenuLabel>Actions</DropdownMenuLabel>
                                     <DropdownMenuSeparator />
 
-                                    <DropdownMenuItem v-if="can('view_admin')" as-child>
-                                        <Link :href="`/positions/${position.id}/edit`">
-                                            Edit
-                                        </Link>
-                                    </DropdownMenuItem>
-
                                     <DropdownMenuItem as-child>
                                         <Link :href="`/positions/${position.id}`">
                                             View
                                         </Link>
                                     </DropdownMenuItem>
 
+                                    <DropdownMenuItem v-if="can('view_admin')" as-child>
+                                        <Link :href="`/positions/${position.id}/edit`">
+                                            Edit
+                                        </Link>
+                                    </DropdownMenuItem>
+
                                     <DropdownMenuSeparator />
 
-                                    <DropdownMenuItem v-if="can('view_admin')" disabled>
+                                    <DropdownMenuItem
+                                        v-if="can('view_admin')"
+                                        @click="openDeleteDialog(position.id)"
+                                        class="text-red-600 focus:text-red-600"
+                                    >
                                         Delete
                                     </DropdownMenuItem>
                                 </DropdownMenuContent>
                             </DropdownMenu>
                         </TableCell>
-
                     </TableRow>
                 </TableBody>
             </Table>
         </div>
 
         <!-- Pagination -->
-        <div class="flex items-center justify-between mt-6">
+        <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
             <div class="text-sm text-muted-foreground">
-                Showing {{ positions.from ?? 0 }} to {{ positions.to ?? 0 }} of {{ positions.total }}
+                Showing {{ positions.from ?? 0 }} to {{ positions.to ?? 0 }} of {{ positions.total ?? 0 }} positions
             </div>
 
-            <div class="flex items-center gap-2">
-                <!-- Previous -->
+            <div class="flex items-center gap-2 flex-wrap">
                 <Button
                     size="sm"
                     variant="outline"
@@ -170,7 +193,6 @@
                     Previous
                 </Button>
 
-                <!-- Pages -->
                 <Button
                     v-for="page in pagesToShow"
                     :key="page"
@@ -181,7 +203,6 @@
                     {{ page }}
                 </Button>
 
-                <!-- Next -->
                 <Button
                     size="sm"
                     variant="outline"
@@ -192,20 +213,61 @@
                 </Button>
             </div>
         </div>
+
+        <!-- Delete Dialog -->
+        <AlertDialog :open="deleteDialogOpen" @update:open="deleteDialogOpen = $event">
+            <AlertDialogContent>
+                <AlertDialogHeader>
+                    <AlertDialogTitle>Delete Position?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                        This action cannot be undone. This will permanently delete the position
+                        if it does not have related assignments.
+                    </AlertDialogDescription>
+                </AlertDialogHeader>
+
+                <AlertDialogFooter>
+                    <AlertDialogCancel @click="deleteDialogOpen = false">
+                        Cancel
+                    </AlertDialogCancel>
+
+                    <AlertDialogAction
+                        @click="confirmDelete"
+                        class="bg-red-600 text-white hover:bg-red-700"
+                    >
+                        Delete
+                    </AlertDialogAction>
+                </AlertDialogFooter>
+            </AlertDialogContent>
+        </AlertDialog>
     </div>
 </template>
 
 <script setup>
-import { reactive, computed } from 'vue'
-import { router, Link } from '@inertiajs/vue3'
-import { MoreHorizontal, ArrowUp, ArrowDown, ArrowUpDown } from 'lucide-vue-next'
-import PermissionBlock from '@/components/PermissionBlock.vue'
+import { computed, reactive, ref } from 'vue'
+import { Link, router } from '@inertiajs/vue3'
 import { useAuth } from '@/composables/useAuth'
+import {
+    ArrowDown,
+    ArrowUp,
+    ArrowUpDown,
+    MoreHorizontal,
+} from 'lucide-vue-next'
 
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Badge } from '@/components/ui/badge'
+
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from '@/components/ui/alert-dialog'
 
 import {
     DropdownMenu,
@@ -228,16 +290,34 @@ import {
 const { can } = useAuth()
 
 const props = defineProps({
-    positions: Object,
-    filters: Object,
-    sort: String,
-    direction: String,
+    positions: {
+        type: Object,
+        required: true,
+    },
+    filters: {
+        type: Object,
+        default: () => ({
+            search: '',
+            status: '',
+        }),
+    },
+    sort: {
+        type: String,
+        default: 'created_at',
+    },
+    direction: {
+        type: String,
+        default: 'desc',
+    },
 })
 
 const filterForm = reactive({
     search: props.filters?.search ?? '',
     status: props.filters?.status ?? '',
 })
+
+const deleteDialogOpen = ref(false)
+const positionToDelete = ref(null)
 
 function applyFilters() {
     router.get('/positions', {
@@ -256,17 +336,40 @@ function resetFilters() {
     filterForm.status = ''
 
     router.get('/positions', {
-        sort: 'created_at',
-        direction: 'desc',
+        sort: props.sort,
+        direction: props.direction,
     }, {
         preserveState: true,
         replace: true,
     })
 }
 
+function sortBy(column) {
+    let nextDirection = 'asc'
+
+    if (props.sort === column && props.direction === 'asc') {
+        nextDirection = 'desc'
+    }
+
+    router.get('/positions', {
+        search: filterForm.search,
+        status: filterForm.status,
+        sort: column,
+        direction: nextDirection,
+    }, {
+        preserveState: true,
+        replace: true,
+    })
+}
+
+function getSortIcon(column) {
+    if (props.sort !== column) return ArrowUpDown
+    return props.direction === 'asc' ? ArrowUp : ArrowDown
+}
+
 function goToPage(page) {
     router.get('/positions', {
-        page: page,
+        page,
         search: filterForm.search,
         status: filterForm.status,
         sort: props.sort,
@@ -277,13 +380,12 @@ function goToPage(page) {
     })
 }
 
-/* Smart pagination (limits number of buttons) */
 const pagesToShow = computed(() => {
-    const current = props.positions.current_page
-    const last = props.positions.last_page
+    const current = props.positions.current_page ?? 1
+    const last = props.positions.last_page ?? 1
 
-    let start = Math.max(current - 2, 1)
-    let end = Math.min(current + 2, last)
+    const start = Math.max(current - 2, 1)
+    const end = Math.min(current + 2, last)
 
     const pages = []
     for (let i = start; i <= end; i++) {
@@ -293,41 +395,32 @@ const pagesToShow = computed(() => {
     return pages
 })
 
-/* Status styling */
-function getStatusClass(status) {
-    if (!status) return 'bg-gray-200 text-gray-800'
-
-    const value = status.toLowerCase()
-
-    if (value === 'open') return 'bg-blue-500 text-white'
-    if (value === 'in process') return 'bg-yellow-500 text-black'
-    if (value === 'closed') return 'bg-green-600 text-white'
-
-    return 'bg-gray-200 text-gray-800'
+function openDeleteDialog(id) {
+    positionToDelete.value = id
+    deleteDialogOpen.value = true
 }
 
-function sortBy(column) {
-    let direction = 'asc'
+function confirmDelete() {
+    if (!positionToDelete.value) return
 
-    if (props.sort === column && props.direction === 'asc') {
-        direction = 'desc'
-    }
-
-    router.get('/positions', {
-        sort: column,
-        direction,
-        search: filterForm.search,
-        status: filterForm.status,
-    }, {
-        preserveState: true,
-        replace: true,
+    router.delete(`/positions/${positionToDelete.value}`, {
+        preserveScroll: true,
+        onFinish: () => {
+            deleteDialogOpen.value = false
+            positionToDelete.value = null
+        },
     })
 }
 
-function getSortIcon(column) {
-    if (props.sort !== column) return ArrowUpDown
+function getStatusClass(status) {
+    if (!status) return 'bg-gray-200 text-gray-800 hover:bg-gray-200'
 
-    return props.direction === 'asc' ? ArrowUp : ArrowDown
+    const value = String(status).toLowerCase()
+
+    if (value === 'open') return 'bg-blue-500 text-white hover:bg-blue-500'
+    if (value === 'in process') return 'bg-yellow-500 text-black hover:bg-yellow-500'
+    if (value === 'closed') return 'bg-green-600 text-white hover:bg-green-600'
+
+    return 'bg-gray-200 text-gray-800 hover:bg-gray-200'
 }
-
 </script>

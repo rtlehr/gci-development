@@ -1,15 +1,15 @@
 <?php
 use App\Http\Controllers\PositionsController;
 
-use Illuminate\Support\Facades\Route;
+Route::get('/positions', [PositionsController::class, 'index'])
+    ->name('positions.index');
 
-Route::get('/positions', 
-    [PositionsController::class, 'index'])->name('positions.index');
+Route::get('/positions/create', [PositionsController::class, 'create'])
+    ->name('positions.create')
+    ->middleware('permission:view_admin');
 
-Route::get('/positions/create', 
-    [PositionsController::class, 'create'])
-        ->name('positions.create')
-        ->middleware('permission:view_admin');
+Route::get('/positions/{id}', [PositionsController::class, 'show'])
+    ->name('positions.show');
 
 Route::get('/positions/{id}/edit', [PositionsController::class, 'edit'])
     ->name('positions.edit')
@@ -19,5 +19,7 @@ Route::put('/positions/{id}', [PositionsController::class, 'update'])
     ->name('positions.update')
     ->middleware('permission:view_admin');
 
-Route::get('/positions/{id}', [PositionsController::class, 'show'])
-    ->name('positions.show');
+Route::delete('/positions/{id}', [PositionsController::class, 'destroy'])
+    ->name('positions.destroy')
+    ->middleware('permission:view_admin');
+

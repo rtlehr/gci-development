@@ -6,6 +6,5 @@ return [
     'role' => 'editor',
     'permissions' => [
         'special_export_access',
-        'view_admin',
     ],
 ];
