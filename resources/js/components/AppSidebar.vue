@@ -1,27 +1,43 @@
 <script setup lang="ts">
 import { Link } from '@inertiajs/vue3';
-import { BookOpen, FolderGit2, LayoutGrid } from 'lucide-vue-next';
+import { BookOpen, FolderGit2, LayoutGrid, CircleUserRound, ClipboardMinus, ArrowLeftRight } from 'lucide-vue-next';
 import AppLogo from '@/components/AppLogo.vue';
 import NavFooter from '@/components/NavFooter.vue';
 import NavMain from '@/components/NavMain.vue';
 import NavUser from '@/components/NavUser.vue';
 import {
     Sidebar,
-    SidebarContent,
+    SidebarContent,  
     SidebarFooter,
     SidebarHeader,
     SidebarMenu,
     SidebarMenuButton,
     SidebarMenuItem,
 } from '@/components/ui/sidebar';
-import { dashboard } from '@/routes';
+import { dashboard} from '@/routes';
 import type { NavItem } from '@/types';
+
 
 const mainNavItems: NavItem[] = [
     {
         title: 'Dashboard',
         href: dashboard(),
         icon: LayoutGrid,
+    },
+    {
+        title: 'People',
+        href: '/people',
+        icon: CircleUserRound,
+    },
+    {
+        title: 'Positions',
+        href: '/positions',
+        icon: ClipboardMinus,
+    },
+    {
+        title: 'Position Assignments',  
+        href: '/position-assignments',
+        icon: ArrowLeftRight,
     },
 ];
 

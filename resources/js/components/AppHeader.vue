@@ -59,6 +59,21 @@ const mainNavItems: NavItem[] = [
         href: dashboard(),
         icon: LayoutGrid,
     },
+    {
+        title: 'People',
+        href: dashboard(),
+        icon: LayoutGrid,
+    },
+    {
+        title: 'Positions',
+        href: dashboard(),
+        icon: LayoutGrid,
+    },
+    {
+        title: 'Position Assignments',  
+        href: dashboard(),
+        icon: LayoutGrid,
+    },
 ];
 
 const rightNavItems: NavItem[] = [
