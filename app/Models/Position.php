@@ -42,4 +42,13 @@ class Position extends Model
     {
         return $this->hasOne(PositionAssignment::class)->whereNull('end_date');
     }
+
+    public function index()
+{
+    $positions = Position::orderBy('created_at', 'desc')->get();
+
+    return inertia('Positions/Index', [
+        'positions' => $positions,
+    ]);
+}
 }
