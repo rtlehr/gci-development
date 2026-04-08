@@ -45,12 +45,43 @@
                 <TableHeader>
                     <TableRow>
                         <TableHead>ID</TableHead>
-                        <TableHead>Code</TableHead>
-                        <TableHead>Job Title</TableHead>
-                        <TableHead>Status</TableHead>
-                        <TableHead>Labor Category</TableHead>
-                        <TableHead>Team</TableHead>
-                        <TableHead class="text-right">Actions</TableHead>
+
+                        <TableHead @click="sortBy('position_code')" class="cursor-pointer select-none">
+                            <div class="flex items-center gap-2">
+                                <span>Code</span>
+                                <component :is="getSortIcon('position_code')" class="h-4 w-4" />
+                            </div>
+                        </TableHead>
+
+                        <TableHead @click="sortBy('job_title')" class="cursor-pointer select-none">
+                            <div class="flex items-center gap-2">
+                                <span>Job Title</span>
+                                <component :is="getSortIcon('job_title')" class="h-4 w-4" />
+                            </div>
+                        </TableHead>
+
+                        <TableHead @click="sortBy('status')" class="cursor-pointer select-none">
+                            <div class="flex items-center gap-2">
+                                <span>Status</span>
+                                <component :is="getSortIcon('status')" class="h-4 w-4" />
+                            </div>
+                        </TableHead>
+
+                        <TableHead @click="sortBy('labor_category')" class="cursor-pointer select-none">
+                            <div class="flex items-center gap-2">
+                                <span>Labor Category</span>
+                                <component :is="getSortIcon('labor_category')" class="h-4 w-4" />
+                            </div>
+                        </TableHead>
+
+                        <TableHead @click="sortBy('project_team_name')" class="cursor-pointer select-none">
+                            <div class="flex items-center gap-2">
+                                <span>Team</span>
+                                <component :is="getSortIcon('project_team_name')" class="h-4 w-4" />
+                            </div>
+                        </TableHead>
+
+                        <TableHead>Actions</TableHead>
                     </TableRow>
                 </TableHeader>
 
@@ -84,7 +115,7 @@
 
                         <TableCell>{{ position.project_team_name || '—' }}</TableCell>
 
-                        <TableCell class="text-right">
+                        <TableCell>
                             <DropdownMenu>
                                 <DropdownMenuTrigger as-child>
                                     <Button variant="ghost" size="icon">
@@ -96,19 +127,21 @@
                                     <DropdownMenuLabel>Actions</DropdownMenuLabel>
                                     <DropdownMenuSeparator />
 
-                                    <DropdownMenuItem as-child>
+                                    <DropdownMenuItem v-if="can('view_admin')" as-child>
                                         <Link :href="`/positions/${position.id}/edit`">
                                             Edit
                                         </Link>
                                     </DropdownMenuItem>
 
-                                    <DropdownMenuItem disabled>
-                                        View
+                                    <DropdownMenuItem as-child>
+                                        <Link :href="`/positions/${position.id}`">
+                                            View
+                                        </Link>
                                     </DropdownMenuItem>
 
                                     <DropdownMenuSeparator />
 
-                                    <DropdownMenuItem disabled>
+                                    <DropdownMenuItem v-if="can('view_admin')" disabled>
                                         Delete
                                     </DropdownMenuItem>
                                 </DropdownMenuContent>
@@ -165,7 +198,9 @@
 <script setup>
 import { reactive, computed } from 'vue'
 import { router, Link } from '@inertiajs/vue3'
-import { MoreHorizontal } from 'lucide-vue-next'
+import { MoreHorizontal, ArrowUp, ArrowDown, ArrowUpDown } from 'lucide-vue-next'
+import PermissionBlock from '@/components/PermissionBlock.vue'
+import { useAuth } from '@/composables/useAuth'
 
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -190,9 +225,13 @@ import {
     TableRow,
 } from '@/components/ui/table'
 
+const { can } = useAuth()
+
 const props = defineProps({
     positions: Object,
     filters: Object,
+    sort: String,
+    direction: String,
 })
 
 const filterForm = reactive({
@@ -204,6 +243,8 @@ function applyFilters() {
     router.get('/positions', {
         search: filterForm.search,
         status: filterForm.status,
+        sort: props.sort,
+        direction: props.direction,
     }, {
         preserveState: true,
         replace: true,
@@ -214,7 +255,10 @@ function resetFilters() {
     filterForm.search = ''
     filterForm.status = ''
 
-    router.get('/positions', {}, {
+    router.get('/positions', {
+        sort: 'created_at',
+        direction: 'desc',
+    }, {
         preserveState: true,
         replace: true,
     })
@@ -222,9 +266,11 @@ function resetFilters() {
 
 function goToPage(page) {
     router.get('/positions', {
-        page,
+        page: page,
         search: filterForm.search,
         status: filterForm.status,
+        sort: props.sort,
+        direction: props.direction,
     }, {
         preserveState: true,
         replace: true,
@@ -259,4 +305,29 @@ function getStatusClass(status) {
 
     return 'bg-gray-200 text-gray-800'
 }
+
+function sortBy(column) {
+    let direction = 'asc'
+
+    if (props.sort === column && props.direction === 'asc') {
+        direction = 'desc'
+    }
+
+    router.get('/positions', {
+        sort: column,
+        direction,
+        search: filterForm.search,
+        status: filterForm.status,
+    }, {
+        preserveState: true,
+        replace: true,
+    })
+}
+
+function getSortIcon(column) {
+    if (props.sort !== column) return ArrowUpDown
+
+    return props.direction === 'asc' ? ArrowUp : ArrowDown
+}
+
 </script>

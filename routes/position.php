@@ -12,7 +12,12 @@ Route::get('/positions/create',
         ->middleware('permission:view_admin');
 
 Route::get('/positions/{id}/edit', [PositionsController::class, 'edit'])
-    ->name('positions.edit');
+    ->name('positions.edit')
+    ->middleware('permission:view_admin');
 
 Route::put('/positions/{id}', [PositionsController::class, 'update'])
-    ->name('positions.update');
+    ->name('positions.update')
+    ->middleware('permission:view_admin');
+
+Route::get('/positions/{id}', [PositionsController::class, 'show'])
+    ->name('positions.show');

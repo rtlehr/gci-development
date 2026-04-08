@@ -7,10 +7,27 @@ use Illuminate\Http\Request;
 
 class PositionsController extends Controller
 {
+
     public function index(Request $request)
     {
+        $sort = $request->input('sort', 'created_at');
+        $direction = $request->input('direction', 'desc');
+
         $search = $request->input('search');
         $status = $request->input('status');
+
+        $allowedSorts = [
+            'position_code',
+            'job_title',
+            'status',
+            'labor_category',
+            'project_team_name',
+            'created_at'
+        ];
+
+        if (!in_array($sort, $allowedSorts)) {
+            $sort = 'created_at';
+        }
 
         $positions = Position::query()
             ->when($search, function ($query, $search) {
@@ -27,6 +44,7 @@ class PositionsController extends Controller
                 $query->where('status', $status);
             })
             ->orderBy('created_at', 'desc')
+            ->orderBy($sort, $direction)
             ->paginate(10)
             ->withQueryString();
 
@@ -36,6 +54,8 @@ class PositionsController extends Controller
                 'search' => $search,
                 'status' => $status,
             ],
+            'sort' => $sort,
+            'direction' => $direction,
         ]);
     }
 
@@ -76,4 +96,16 @@ class PositionsController extends Controller
 
         return redirect()->route('positions.index');
     }
+
+    public function show($id)
+    {
+        $position = Position::with(['currentAssignment.person', 'assignments.person'])
+            ->findOrFail($id);
+
+        return inertia('Positions/Show', [
+            'position' => $position,
+        ]);
+    }
+
+    
 }
