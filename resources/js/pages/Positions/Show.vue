@@ -15,10 +15,13 @@
                     <Button variant="outline">Back to List</Button>
                 </Link>
 
-                <Link v-if="can('view_admin')" :href="`/positions/${position.id}/edit`">
+                <Link :href="`/positions/${position.id}/edit`">
                     <Button>Edit Position</Button>
                 </Link>
 
+                <Link :href="`/position-assignments/create?position_id=${position.id}`">
+                    <Button variant="outline">Add Assignment</Button>
+                </Link>
             </div>
         </div>
 
@@ -44,34 +47,67 @@
 
             <Card>
                 <CardHeader>
-                    <CardTitle>Current Assignment</CardTitle>
+                    <CardTitle>Current Assignments</CardTitle>
                 </CardHeader>
                 <CardContent>
-                    <div v-if="position.current_assignment?.person" class="space-y-3">
-                        <DetailItem
-                            label="Assigned Person"
-                            :value="fullName(position.current_assignment.person)"
-                        />
-                        <DetailItem
-                            label="Assignment Status"
-                            :value="position.current_assignment.assignment_status"
-                        />
-                        <DetailItem
-                            label="Assignment Type"
-                            :value="position.current_assignment.assignment_type"
-                        />
-                        <DetailItem
-                            label="Start Date"
-                            :value="formatDate(position.current_assignment.start_date)"
-                        />
-                        <DetailItem
-                            label="End Date"
-                            :value="formatDate(position.current_assignment.end_date)"
-                        />
+                    <div v-if="activeAssignments.length" class="space-y-3">
+                        <div
+                            v-for="assignment in activeAssignments"
+                            :key="assignment.id"
+                            class="border rounded-lg p-4"
+                        >
+                            <div class="flex items-start justify-between gap-4">
+                                <div class="min-w-0">
+                                    <div class="font-medium">
+                                        {{ fullName(assignment.person) }}
+                                    </div>
+                                    <div class="text-sm text-muted-foreground mt-1">
+                                        Person Code: {{ assignment.person?.person_code || '—' }}
+                                    </div>
+                                    <div class="text-sm text-muted-foreground">
+                                        Status: {{ assignment.assignment_status || '—' }}
+                                    </div>
+                                    <div class="text-sm text-muted-foreground">
+                                        Type: {{ assignment.assignment_type || '—' }}
+                                    </div>
+                                    <div class="text-sm text-muted-foreground">
+                                        Start Date: {{ formatDate(assignment.start_date) }}
+                                    </div>
+                                </div>
+
+                                <DropdownMenu>
+                                    <DropdownMenuTrigger as-child>
+                                        <Button variant="ghost" size="icon">
+                                            <MoreHorizontal class="h-4 w-4" />
+                                        </Button>
+                                    </DropdownMenuTrigger>
+
+                                    <DropdownMenuContent align="end">
+                                        <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                                        <DropdownMenuSeparator />
+
+                                        <DropdownMenuItem as-child>
+                                            <Link :href="`/position-assignments/${assignment.id}/edit?return_to=/positions/${position.id}`">
+                                                Edit
+                                            </Link>
+                                        </DropdownMenuItem>
+
+                                        <DropdownMenuSeparator />
+
+                                        <DropdownMenuItem
+                                            @click="openDeleteDialog(assignment.id)"
+                                            class="text-red-600 focus:text-red-600"
+                                        >
+                                            Delete
+                                        </DropdownMenuItem>
+                                    </DropdownMenuContent>
+                                </DropdownMenu>
+                            </div>
+                        </div>
                     </div>
 
                     <div v-else class="text-sm text-muted-foreground">
-                        No current assignment found.
+                        No active assignments found.
                     </div>
                 </CardContent>
             </Card>
@@ -98,10 +134,12 @@
                         <TableHeader>
                             <TableRow>
                                 <TableHead>Person</TableHead>
+                                <TableHead>Person Code</TableHead>
                                 <TableHead>Status</TableHead>
                                 <TableHead>Type</TableHead>
                                 <TableHead>Start Date</TableHead>
                                 <TableHead>End Date</TableHead>
+                                <TableHead class="text-right">Actions</TableHead>
                             </TableRow>
                         </TableHeader>
 
@@ -111,12 +149,52 @@
                                 :key="assignment.id"
                             >
                                 <TableCell>
-                                    {{ assignment.person ? fullName(assignment.person) : '—' }}
+                                    {{ fullName(assignment.person) }}
                                 </TableCell>
-                                <TableCell>{{ assignment.assignment_status || '—' }}</TableCell>
-                                <TableCell>{{ assignment.assignment_type || '—' }}</TableCell>
-                                <TableCell>{{ formatDate(assignment.start_date) }}</TableCell>
-                                <TableCell>{{ formatDate(assignment.end_date) }}</TableCell>
+                                <TableCell>
+                                    {{ assignment.person?.person_code || '—' }}
+                                </TableCell>
+                                <TableCell>
+                                    {{ assignment.assignment_status || '—' }}
+                                </TableCell>
+                                <TableCell>
+                                    {{ assignment.assignment_type || '—' }}
+                                </TableCell>
+                                <TableCell>
+                                    {{ formatDate(assignment.start_date) }}
+                                </TableCell>
+                                <TableCell>
+                                    {{ formatDate(assignment.end_date) }}
+                                </TableCell>
+                                <TableCell class="text-right">
+                                    <DropdownMenu>
+                                        <DropdownMenuTrigger as-child>
+                                            <Button variant="ghost" size="icon">
+                                                <MoreHorizontal class="h-4 w-4" />
+                                            </Button>
+                                        </DropdownMenuTrigger>
+
+                                        <DropdownMenuContent align="end">
+                                            <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                                            <DropdownMenuSeparator />
+
+                                            <DropdownMenuItem as-child>
+                                                <Link :href="`/position-assignments/${assignment.id}/edit?return_to=/positions/${position.id}`">
+                                                    Edit
+                                                </Link>
+                                            </DropdownMenuItem>
+
+                                            <DropdownMenuSeparator />
+
+                                            <DropdownMenuItem
+                                                @click="openDeleteDialog(assignment.id)"
+                                                class="text-red-600 focus:text-red-600"
+                                            >
+                                                Delete
+                                            </DropdownMenuItem>
+                                        </DropdownMenuContent>
+                                    </DropdownMenu>
+                                </TableCell>
                             </TableRow>
                         </TableBody>
                     </Table>
@@ -127,15 +205,58 @@
                 </div>
             </CardContent>
         </Card>
+
+        <AlertDialog :open="deleteDialogOpen" @update:open="deleteDialogOpen = $event">
+            <AlertDialogContent>
+                <AlertDialogHeader>
+                    <AlertDialogTitle>Delete Assignment?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                        This action cannot be undone. This will permanently delete the assignment.
+                    </AlertDialogDescription>
+                </AlertDialogHeader>
+
+                <AlertDialogFooter>
+                    <AlertDialogCancel @click="deleteDialogOpen = false">
+                        Cancel
+                    </AlertDialogCancel>
+
+                    <AlertDialogAction
+                        @click="confirmDelete"
+                        class="bg-red-600 text-white hover:bg-red-700"
+                    >
+                        Delete
+                    </AlertDialogAction>
+                </AlertDialogFooter>
+            </AlertDialogContent>
+        </AlertDialog>
     </div>
 </template>
 
 <script setup>
-import { Link } from '@inertiajs/vue3'
+import { computed, ref } from 'vue'
+import { Link, router } from '@inertiajs/vue3'
+import { MoreHorizontal } from 'lucide-vue-next'
 import DetailItem from '@/components/DetailItem.vue'
 import { Button } from '@/components/ui/button'
-import { useAuth } from '@/composables/useAuth'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from '@/components/ui/alert-dialog'
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuLabel,
+    DropdownMenuSeparator,
+    DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
 import {
     Table,
     TableBody,
@@ -145,13 +266,23 @@ import {
     TableRow,
 } from '@/components/ui/table'
 
-const { can } = useAuth()
-
 const props = defineProps({
     position: {
         type: Object,
         required: true,
     },
+})
+
+const deleteDialogOpen = ref(false)
+const assignmentToDelete = ref(null)
+
+const activeAssignments = computed(() => {
+    if (!props.position.assignments) return []
+
+    return props.position.assignments.filter((assignment) => {
+        const status = String(assignment.assignment_status || '').toLowerCase()
+        return status === 'active' || !assignment.end_date
+    })
 })
 
 function formatDate(value) {
@@ -170,6 +301,26 @@ function fullName(person) {
     const first = person.first_name ?? ''
     const last = person.last_name ?? ''
 
-    return `${first} ${last}`.trim() || person.name || '—'
+    return `${first} ${last}`.trim() || '—'
+}
+
+function openDeleteDialog(id) {
+    assignmentToDelete.value = id
+    deleteDialogOpen.value = true
+}
+
+function confirmDelete() {
+    if (!assignmentToDelete.value) return
+
+    router.delete(`/position-assignments/${assignmentToDelete.value}`, {
+        data: {
+            return_to: `/positions/${props.position.id}`,
+        },
+        preserveScroll: true,
+        onFinish: () => {
+            deleteDialogOpen.value = false
+            assignmentToDelete.value = null
+        },
+    })
 }
 </script>

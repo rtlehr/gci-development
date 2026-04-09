@@ -18,6 +18,10 @@
                 <Link :href="`/people/${person.id}/edit`">
                     <Button>Edit Person</Button>
                 </Link>
+
+                <Link :href="`/position-assignments/create?person_id=${person.id}`">
+                    <Button variant="outline">Add Assignment</Button>
+                </Link>
             </div>
         </div>
 
@@ -51,20 +55,52 @@
                             :key="assignment.id"
                             class="border rounded-lg p-4"
                         >
-                            <div class="font-medium">
-                                {{ assignment.position?.job_title || 'Unnamed Position' }}
-                            </div>
-                            <div class="text-sm text-muted-foreground mt-1">
-                                Code: {{ assignment.position?.position_code || '—' }}
-                            </div>
-                            <div class="text-sm text-muted-foreground">
-                                Status: {{ assignment.assignment_status || '—' }}
-                            </div>
-                            <div class="text-sm text-muted-foreground">
-                                Type: {{ assignment.assignment_type || '—' }}
-                            </div>
-                            <div class="text-sm text-muted-foreground">
-                                Start Date: {{ formatDate(assignment.start_date) }}
+                            <div class="flex items-start justify-between gap-4">
+                                <div class="min-w-0">
+                                    <div class="font-medium">
+                                        {{ assignment.position?.job_title || 'Unnamed Position' }}
+                                    </div>
+                                    <div class="text-sm text-muted-foreground mt-1">
+                                        Code: {{ assignment.position?.position_code || '—' }}
+                                    </div>
+                                    <div class="text-sm text-muted-foreground">
+                                        Status: {{ assignment.assignment_status || '—' }}
+                                    </div>
+                                    <div class="text-sm text-muted-foreground">
+                                        Type: {{ assignment.assignment_type || '—' }}
+                                    </div>
+                                    <div class="text-sm text-muted-foreground">
+                                        Start Date: {{ formatDate(assignment.start_date) }}
+                                    </div>
+                                </div>
+
+                                <DropdownMenu>
+                                    <DropdownMenuTrigger as-child>
+                                        <Button variant="ghost" size="icon">
+                                            <MoreHorizontal class="h-4 w-4" />
+                                        </Button>
+                                    </DropdownMenuTrigger>
+
+                                    <DropdownMenuContent align="end">
+                                        <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                                        <DropdownMenuSeparator />
+
+                                        <DropdownMenuItem as-child>
+                                            <Link :href="`/position-assignments/${assignment.id}/edit?return_to=/people/${person.id}`">
+                                                Edit
+                                            </Link>
+                                        </DropdownMenuItem>
+
+                                        <DropdownMenuSeparator />
+
+                                        <DropdownMenuItem
+                                            @click="openDeleteDialog(assignment.id)"
+                                            class="text-red-600 focus:text-red-600"
+                                        >
+                                            Delete
+                                        </DropdownMenuItem>
+                                    </DropdownMenuContent>
+                                </DropdownMenu>
                             </div>
                         </div>
                     </div>
@@ -102,6 +138,7 @@
                                 <TableHead>Type</TableHead>
                                 <TableHead>Start Date</TableHead>
                                 <TableHead>End Date</TableHead>
+                                <TableHead class="text-right">Actions</TableHead>
                             </TableRow>
                         </TableHeader>
 
@@ -128,6 +165,35 @@
                                 <TableCell>
                                     {{ formatDate(assignment.end_date) }}
                                 </TableCell>
+                                <TableCell class="text-right">
+                                    <DropdownMenu>
+                                        <DropdownMenuTrigger as-child>
+                                            <Button variant="ghost" size="icon">
+                                                <MoreHorizontal class="h-4 w-4" />
+                                            </Button>
+                                        </DropdownMenuTrigger>
+
+                                        <DropdownMenuContent align="end">
+                                            <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                                            <DropdownMenuSeparator />
+
+                                            <DropdownMenuItem as-child>
+                                                <Link :href="`/position-assignments/${assignment.id}/edit?return_to=/people/${person.id}`">
+                                                    Edit
+                                                </Link>
+                                            </DropdownMenuItem>
+
+                                            <DropdownMenuSeparator />
+
+                                            <DropdownMenuItem
+                                                @click="openDeleteDialog(assignment.id)"
+                                                class="text-red-600 focus:text-red-600"
+                                            >
+                                                Delete
+                                            </DropdownMenuItem>
+                                        </DropdownMenuContent>
+                                    </DropdownMenu>
+                                </TableCell>
                             </TableRow>
                         </TableBody>
                     </Table>
@@ -138,15 +204,58 @@
                 </div>
             </CardContent>
         </Card>
+
+        <AlertDialog :open="deleteDialogOpen" @update:open="deleteDialogOpen = $event">
+            <AlertDialogContent>
+                <AlertDialogHeader>
+                    <AlertDialogTitle>Delete Assignment?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                        This action cannot be undone. This will permanently delete the assignment.
+                    </AlertDialogDescription>
+                </AlertDialogHeader>
+
+                <AlertDialogFooter>
+                    <AlertDialogCancel @click="deleteDialogOpen = false">
+                        Cancel
+                    </AlertDialogCancel>
+
+                    <AlertDialogAction
+                        @click="confirmDelete"
+                        class="bg-red-600 text-white hover:bg-red-700"
+                    >
+                        Delete
+                    </AlertDialogAction>
+                </AlertDialogFooter>
+            </AlertDialogContent>
+        </AlertDialog>
     </div>
 </template>
 
 <script setup>
-import { computed } from 'vue'
-import { Link } from '@inertiajs/vue3'
+import { computed, ref } from 'vue'
+import { Link, router } from '@inertiajs/vue3'
+import { MoreHorizontal } from 'lucide-vue-next'
 import DetailItem from '@/components/DetailItem.vue'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from '@/components/ui/alert-dialog'
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuLabel,
+    DropdownMenuSeparator,
+    DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
 import {
     Table,
     TableBody,
@@ -162,6 +271,9 @@ const props = defineProps({
         required: true,
     },
 })
+
+const deleteDialogOpen = ref(false)
+const assignmentToDelete = ref(null)
 
 const activeAssignments = computed(() => {
     if (!props.person.assignments) return []
@@ -186,5 +298,25 @@ function formatDate(value) {
     if (Number.isNaN(date.getTime())) return value
 
     return date.toLocaleDateString()
+}
+
+function openDeleteDialog(id) {
+    assignmentToDelete.value = id
+    deleteDialogOpen.value = true
+}
+
+function confirmDelete() {
+    if (!assignmentToDelete.value) return
+
+    router.delete(`/position-assignments/${assignmentToDelete.value}`, {
+        data: {
+            return_to: `/people/${props.person.id}`,
+        },
+        preserveScroll: true,
+        onFinish: () => {
+            deleteDialogOpen.value = false
+            assignmentToDelete.value = null
+        },
+    })
 }
 </script>
