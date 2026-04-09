@@ -3,6 +3,10 @@
         <!-- Header -->
         <div class="flex items-center justify-between">
             <h1 class="text-2xl font-semibold">Positions</h1>
+
+            <Link href="/positions/create" v-if="can('view_admin')">
+                <Button>Create Position</Button>
+            </Link>
         </div>
 
         <!-- Filters -->

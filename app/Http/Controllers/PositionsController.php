@@ -77,8 +77,8 @@ class PositionsController extends Controller
             'organization_name' => ['nullable', 'string', 'max:255'],
             'customer_lead_name' => ['nullable', 'string', 'max:255'],
             'customer_created_at' => ['nullable', 'date'],
-            'closed_at' => ['nullable', 'date'],
-            'closed_reason' => ['nullable', 'string'],
+            'closed_at' => ['nullable', 'date', 'required_if:status,Closed'],
+            'closed_reason' => ['nullable', 'string', 'required_if:status,Closed'],
             'notes' => ['nullable', 'string'],
         ]);
 
@@ -116,16 +116,16 @@ class PositionsController extends Controller
 
         $validated = $request->validate([
             'position_code' => ['nullable', 'string', 'max:255'],
-            'status' => ['nullable', 'in:Open,In Process,Closed'],
+            'status' => ['required', 'in:Open,In Process,Closed'],
             'labor_category' => ['nullable', 'string', 'max:255'],
-            'job_title' => ['nullable', 'string', 'max:255'],
+            'job_title' => ['required', 'string', 'max:255'],
             'level' => ['nullable', 'integer'],
             'project_team_name' => ['nullable', 'string', 'max:255'],
             'organization_name' => ['nullable', 'string', 'max:255'],
             'customer_lead_name' => ['nullable', 'string', 'max:255'],
             'customer_created_at' => ['nullable', 'date'],
-            'closed_at' => ['nullable', 'date'],
-            'closed_reason' => ['nullable', 'string'],
+            'closed_at' => ['nullable', 'date', 'required_if:status,Closed'],
+            'closed_reason' => ['nullable', 'string', 'required_if:status,Closed'],
             'notes' => ['nullable', 'string'],
         ]);
 
