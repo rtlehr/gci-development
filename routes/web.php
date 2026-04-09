@@ -13,4 +13,5 @@ Route::get('/dashboard', function () {
 
 require __DIR__.'/people.php';
 require __DIR__.'/position.php';
+require __DIR__.'/assignment.php';
 require __DIR__.'/settings.php';

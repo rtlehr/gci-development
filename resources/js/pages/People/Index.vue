@@ -3,7 +3,7 @@
         <div class="flex items-center justify-between">
             <h1 class="text-2xl font-semibold">People</h1>
 
-            <Link href="/people/create">
+            <Link href="/people/create" v-if="can('view_admin')">
                 <Button>Add Person</Button>
             </Link>
         </div>
@@ -151,7 +151,7 @@
                                         </Link>
                                     </DropdownMenuItem>
 
-                                    <DropdownMenuItem as-child>
+                                    <DropdownMenuItem as-child v-if="can('view_admin')">
                                         <Link :href="`/people/${person.id}/edit`">
                                             Edit
                                         </Link>
@@ -160,6 +160,7 @@
                                     <DropdownMenuSeparator />
 
                                     <DropdownMenuItem
+                                         v-if="can('view_admin')"
                                         @click="openDeleteDialog(person.id)"
                                         class="text-red-600 focus:text-red-600"
                                     >
@@ -239,6 +240,8 @@
 <script setup>
 import { computed, reactive, ref } from 'vue'
 import { Link, router } from '@inertiajs/vue3'
+import { useAuth } from '@/composables/useAuth'
+
 import {
     ArrowDown,
     ArrowUp,
@@ -278,6 +281,8 @@ import {
     TableHeader,
     TableRow,
 } from '@/components/ui/table'
+
+const { can } = useAuth()
 
 const props = defineProps({
     people: {

@@ -34,7 +34,13 @@ class Position extends Model
     public function people()
     {
         return $this->belongsToMany(Person::class, 'position_assignments')
-            ->withPivot(['start_date', 'end_date', 'assignment_status', 'assignment_type', 'notes'])
+            ->withPivot([
+                'start_date',
+                'end_date',
+                'assignment_status',
+                'assignment_type',
+                'notes',
+            ])
             ->withTimestamps();
     }
 
@@ -42,13 +48,4 @@ class Position extends Model
     {
         return $this->hasOne(PositionAssignment::class)->whereNull('end_date');
     }
-
-    public function index()
-{
-    $positions = Position::orderBy('created_at', 'desc')->get();
-
-    return inertia('Positions/Index', [
-        'positions' => $positions,
-    ]);
-}
 }

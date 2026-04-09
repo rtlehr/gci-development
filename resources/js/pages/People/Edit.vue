@@ -2,9 +2,9 @@
     <div class="p-6 max-w-4xl space-y-6">
         <div class="flex items-center justify-between">
             <div>
-                <h1 class="text-2xl font-semibold">Create Person</h1>
+                <h1 class="text-2xl font-semibold">Edit Person</h1>
                 <p class="text-sm text-muted-foreground mt-1">
-                    Add a new person record.
+                    Update this person record.
                 </p>
             </div>
 
@@ -121,7 +121,7 @@
 
                 <div class="flex gap-3">
                     <Button type="submit" :disabled="form.processing">
-                        {{ form.processing ? 'Saving...' : 'Create Person' }}
+                        {{ form.processing ? 'Saving...' : 'Save Changes' }}
                     </Button>
 
                     <Link href="/people">
@@ -140,15 +140,22 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 
+const props = defineProps({
+    person: {
+        type: Object,
+        required: true,
+    },
+})
+
 const form = useForm({
-    person_code: '',
-    first_name: '',
-    last_name: '',
-    company_name: '',
-    cell_phone: '',
-    email: '',
-    employment_status: '',
-    notes: '',
+    person_code: props.person.person_code ?? '',
+    first_name: props.person.first_name ?? '',
+    last_name: props.person.last_name ?? '',
+    company_name: props.person.company_name ?? '',
+    cell_phone: props.person.cell_phone ?? '',
+    email: props.person.email ?? '',
+    employment_status: props.person.employment_status ?? '',
+    notes: props.person.notes ?? '',
 })
 
 function submit() {
@@ -168,6 +175,6 @@ function submit() {
 
     if (hasError) return
 
-    form.post('/people')
+    form.put(`/people/${props.person.id}`)
 }
 </script>
