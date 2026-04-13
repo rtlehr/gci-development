@@ -15,11 +15,11 @@
                     <Button variant="outline">Back to List</Button>
                 </Link>
 
-                <Link :href="`/people/${person.id}/edit`">
+                <Link :href="`/people/${person.id}/edit`" v-if="can('view_admin')">
                     <Button>Edit Person</Button>
                 </Link>
 
-                <Link :href="`/position-assignments/create?person_id=${person.id}`">
+                <Link :href="`/position-assignments/create?person_id=${person.id}`" v-if="can('view_admin')">
                     <Button variant="outline">Add Assignment</Button>
                 </Link>
             </div>
@@ -105,7 +105,7 @@
                         </div>
                     </div>
 
-                    <div v-else class="text-sm text-muted-foreground">
+                    <div v-else class="text-sm text-muted-foreground">  
                         No active assignments found.
                     </div>
                 </CardContent>
@@ -232,12 +232,11 @@
 </template>
 
 <script setup>
-import { computed, ref } from 'vue'
 import { Link, router } from '@inertiajs/vue3'
 import { MoreHorizontal } from 'lucide-vue-next'
+import { computed, ref } from 'vue'
+import { useAuth } from '@/composables/useAuth'
 import DetailItem from '@/components/DetailItem.vue'
-import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import {
     AlertDialog,
     AlertDialogAction,
@@ -248,6 +247,8 @@ import {
     AlertDialogHeader,
     AlertDialogTitle,
 } from '@/components/ui/alert-dialog'
+import { Button } from '@/components/ui/button'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -264,6 +265,8 @@ import {
     TableHeader,
     TableRow,
 } from '@/components/ui/table'
+
+const { can } = useAuth()
 
 const props = defineProps({
     person: {

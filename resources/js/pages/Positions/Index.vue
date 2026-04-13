@@ -49,11 +49,11 @@
             <Table>
                 <TableHeader>
                     <TableRow>
-                        <TableHead>ID</TableHead>
+                        <!--<TableHead>ID</TableHead>-->
 
                         <TableHead @click="sortBy('position_code')" class="cursor-pointer select-none">
                             <div class="flex items-center gap-2">
-                                <span>Code</span>
+                                <span>PID</span>
                                 <component
                                     :is="getSortIcon('position_code')"
                                     class="h-4 w-4"
@@ -122,7 +122,7 @@
                         :key="position.id"
                         class="hover:bg-muted/50"
                     >
-                        <TableCell>{{ position.id }}</TableCell>
+                        <!--<TableCell>{{ position.id }}</TableCell>-->
 
                         <TableCell>{{ position.position_code || '—' }}</TableCell>
 

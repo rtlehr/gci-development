@@ -15,11 +15,11 @@
                     <Button variant="outline">Back to List</Button>
                 </Link>
 
-                <Link :href="`/positions/${position.id}/edit`">
+                <Link :href="`/positions/${position.id}/edit`" v-if="can('view_admin')">
                     <Button>Edit Position</Button>
                 </Link>
 
-                <Link :href="`/position-assignments/create?position_id=${position.id}`">
+                <Link :href="`/position-assignments/create?position_id=${position.id}`" v-if="can('view_admin')">
                     <Button variant="outline">Add Assignment</Button>
                 </Link>
             </div>
@@ -236,6 +236,7 @@
 import { computed, ref } from 'vue'
 import { Link, router } from '@inertiajs/vue3'
 import { MoreHorizontal } from 'lucide-vue-next'
+import { useAuth } from '@/composables/useAuth'
 import DetailItem from '@/components/DetailItem.vue'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -265,6 +266,8 @@ import {
     TableHeader,
     TableRow,
 } from '@/components/ui/table'
+
+const { can } = useAuth()
 
 const props = defineProps({
     position: {

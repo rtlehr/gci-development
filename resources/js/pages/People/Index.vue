@@ -32,6 +32,7 @@
             <Table>
                 <TableHeader>
                     <TableRow>
+                        <!--
                         <TableHead @click="sortBy('id')" class="cursor-pointer select-none">
                             <div class="flex items-center gap-2">
                                 <span>ID</span>
@@ -42,7 +43,7 @@
                                 />
                             </div>
                         </TableHead>
-
+                        -->
                         <TableHead @click="sortBy('person_code')" class="cursor-pointer select-none">
                             <div class="flex items-center gap-2">
                                 <span>Code</span>
@@ -125,7 +126,7 @@
                         :key="person.id"
                         class="hover:bg-muted/50"
                     >
-                        <TableCell>{{ person.id }}</TableCell>
+                        <!--<TableCell>{{ person.id }}</TableCell>-->
                         <TableCell>{{ person.person_code || '—' }}</TableCell>
                         <TableCell>{{ person.first_name || '—' }}</TableCell>
                         <TableCell class="font-medium">{{ person.last_name || '—' }}</TableCell>
