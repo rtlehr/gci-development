@@ -6,6 +6,15 @@ use App\Http\Controllers\PeopleController;
 Route::get('/people', [PeopleController::class, 'index'])
     ->name('people.index');
 
+Route::post('/people/preferences', [PeopleController::class, 'savePreferences'])
+    ->name('people.preferences.save');
+
+Route::delete('/people/preferences', [PeopleController::class, 'resetPreferences'])
+    ->name('people.preferences.reset');
+
+Route::get('/people/export/csv', [PeopleController::class, 'exportCsv'])
+    ->name('people.export.csv');
+
 Route::get('/people/create', [PeopleController::class, 'create'])
     ->name('people.create')
     ->middleware('permission:view_admin');

@@ -3,11 +3,105 @@
         <div class="flex items-center justify-between">
             <h1 class="text-2xl font-semibold">People</h1>
 
-            <Link href="/people/create" v-if="can('view_admin')">
-                <Button>Add Person</Button>
-            </Link>
+            <div class="flex gap-2">
+                <Button variant="outline" @click="showColumnSettings = !showColumnSettings">
+                    {{ showColumnSettings ? 'Hide Column Settings' : 'Column Settings' }}
+                </Button>
+
+                <Button variant="outline" @click="exportCsv">
+                    Export CSV
+                </Button>
+
+                <Link href="/people/create" v-if="can('view_admin')">
+                    <Button>Add Person</Button>
+                </Link>
+            </div>
         </div>
 
+        <!-- Column Settings Panel -->
+        <div v-if="showColumnSettings" class="border rounded-xl p-4 bg-background space-y-4">
+            <div>
+                <h2 class="text-lg font-semibold">Column Settings</h2>
+                <p class="text-sm text-muted-foreground">
+                    Choose which columns are shown and change their order.
+                </p>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <div class="space-y-3">
+                    <h3 class="font-medium">Visible Columns</h3>
+
+                    <div
+                        v-for="col in orderedColumnDefinitions"
+                        :key="col.key"
+                        class="flex items-center justify-between rounded-lg border p-3"
+                    >
+                        <div class="flex items-center gap-3">
+                            <input
+                                :id="`visible-${col.key}`"
+                                v-model="settingsForm.visibleColumns"
+                                :value="col.key"
+                                type="checkbox"
+                                class="h-4 w-4"
+                            />
+                            <Label :for="`visible-${col.key}`">{{ col.label }}</Label>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="space-y-3">
+                    <h3 class="font-medium">Column Order</h3>
+
+                    <div
+                        v-for="(colKey, index) in settingsForm.columnOrder"
+                        :key="colKey"
+                        class="flex items-center justify-between rounded-lg border p-3"
+                    >
+                        <div class="font-medium">
+                            {{ getColumnLabel(colKey) }}
+                        </div>
+
+                        <div class="flex gap-2">
+                            <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                :disabled="index === 0"
+                                @click="moveColumnLeft(index)"
+                            >
+                                Left
+                            </Button>
+
+                            <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                :disabled="index === settingsForm.columnOrder.length - 1"
+                                @click="moveColumnRight(index)"
+                            >
+                                Right
+                            </Button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="flex gap-2">
+                <Button @click="saveColumnPreferences">
+                    Save Preferences
+                </Button>
+
+                <Button variant="outline" @click="resetColumnSettingsLocally">
+                    Reset Unsaved Changes
+                </Button>
+
+                <Button variant="outline" @click="resetPreferencesOnServer">
+                    Reset to Defaults
+                </Button>
+            </div>
+        </div>
+
+        <!-- Filters -->
         <div class="border rounded-xl p-4 bg-background">
             <form @submit.prevent="applyFilters" class="flex flex-col md:flex-row gap-4 md:items-end">
                 <div class="flex-1 space-y-2">
@@ -15,7 +109,7 @@
                     <Input
                         id="search"
                         v-model="filterForm.search"
-                        placeholder="Search by code, name, company, phone, email..."
+                        placeholder="Search visible columns..."
                     />
                 </div>
 
@@ -28,84 +122,25 @@
             </form>
         </div>
 
+        <!-- Table -->
         <div class="border rounded-xl bg-background overflow-hidden">
             <Table>
                 <TableHeader>
                     <TableRow>
-                        <!--
-                        <TableHead @click="sortBy('id')" class="cursor-pointer select-none">
+                        <TableHead
+                            v-for="col in activeColumns"
+                            :key="col.key"
+                            @click="col.sortable ? sortBy(col.key) : null"
+                            :class="col.sortable ? 'cursor-pointer select-none' : ''"
+                        >
                             <div class="flex items-center gap-2">
-                                <span>ID</span>
-                                <component
-                                    :is="getSortIcon('id')"
-                                    class="h-4 w-4"
-                                    :class="sort === 'id' ? 'text-foreground' : 'text-muted-foreground'"
-                                />
-                            </div>
-                        </TableHead>
-                        -->
-                        <TableHead @click="sortBy('person_code')" class="cursor-pointer select-none">
-                            <div class="flex items-center gap-2">
-                                <span>Code</span>
-                                <component
-                                    :is="getSortIcon('person_code')"
-                                    class="h-4 w-4"
-                                    :class="sort === 'person_code' ? 'text-foreground' : 'text-muted-foreground'"
-                                />
-                            </div>
-                        </TableHead>
+                                <span>{{ col.label }}</span>
 
-                        <TableHead @click="sortBy('first_name')" class="cursor-pointer select-none">
-                            <div class="flex items-center gap-2">
-                                <span>First Name</span>
                                 <component
-                                    :is="getSortIcon('first_name')"
+                                    v-if="col.sortable"
+                                    :is="getSortIcon(col.key)"
                                     class="h-4 w-4"
-                                    :class="sort === 'first_name' ? 'text-foreground' : 'text-muted-foreground'"
-                                />
-                            </div>
-                        </TableHead>
-
-                        <TableHead @click="sortBy('last_name')" class="cursor-pointer select-none">
-                            <div class="flex items-center gap-2">
-                                <span>Last Name</span>
-                                <component
-                                    :is="getSortIcon('last_name')"
-                                    class="h-4 w-4"
-                                    :class="sort === 'last_name' ? 'text-foreground' : 'text-muted-foreground'"
-                                />
-                            </div>
-                        </TableHead>
-
-                        <TableHead @click="sortBy('company_name')" class="cursor-pointer select-none">
-                            <div class="flex items-center gap-2">
-                                <span>Company</span>
-                                <component
-                                    :is="getSortIcon('company_name')"
-                                    class="h-4 w-4"
-                                    :class="sort === 'company_name' ? 'text-foreground' : 'text-muted-foreground'"
-                                />
-                            </div>
-                        </TableHead>
-
-                        <TableHead @click="sortBy('email')" class="cursor-pointer select-none">
-                            <div class="flex items-center gap-2">
-                                <span>Email</span>
-                                <component
-                                    :is="getSortIcon('email')"
-                                    class="h-4 w-4"
-                                    :class="sort === 'email' ? 'text-foreground' : 'text-muted-foreground'"
-                                />
-                            </div>
-                        </TableHead>
-
-                        <TableHead @click="sortBy('employment_status')" class="cursor-pointer select-none">
-                            <div class="flex items-center gap-2">
-                                <span>Status</span>
-                                <component
-                                    :is="getSortIcon('employment_status')"
-                                    class="h-4 w-4"
-                                    :class="sort === 'employment_status' ? 'text-foreground' : 'text-muted-foreground'"
+                                    :class="sort === col.key ? 'text-foreground' : 'text-muted-foreground'"
                                 />
                             </div>
                         </TableHead>
@@ -116,7 +151,7 @@
 
                 <TableBody>
                     <TableRow v-if="!people?.data?.length">
-                        <TableCell colspan="8" class="text-center py-8 text-muted-foreground">
+                        <TableCell :colspan="activeColumns.length + 1" class="text-center py-8 text-muted-foreground">
                             No people found.
                         </TableCell>
                     </TableRow>
@@ -126,13 +161,12 @@
                         :key="person.id"
                         class="hover:bg-muted/50"
                     >
-                        <!--<TableCell>{{ person.id }}</TableCell>-->
-                        <TableCell>{{ person.person_code || '—' }}</TableCell>
-                        <TableCell>{{ person.first_name || '—' }}</TableCell>
-                        <TableCell class="font-medium">{{ person.last_name || '—' }}</TableCell>
-                        <TableCell>{{ person.company_name || '—' }}</TableCell>
-                        <TableCell>{{ person.email || '—' }}</TableCell>
-                        <TableCell>{{ person.employment_status || '—' }}</TableCell>
+                        <TableCell
+                            v-for="col in activeColumns"
+                            :key="col.key"
+                        >
+                            {{ formatCell(person, col.key) }}
+                        </TableCell>
 
                         <TableCell class="text-right">
                             <DropdownMenu>
@@ -158,7 +192,7 @@
                                         </Link>
                                     </DropdownMenuItem>
 
-                                    <DropdownMenuSeparator />
+                                    <DropdownMenuSeparator v-if="can('view_admin')" />
 
                                     <DropdownMenuItem
                                         v-if="can('view_admin')"
@@ -175,6 +209,7 @@
             </Table>
         </div>
 
+        <!-- Pagination -->
         <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
             <div class="text-sm text-muted-foreground">
                 Showing {{ people.from ?? 0 }} to {{ people.to ?? 0 }} of {{ people.total ?? 0 }} people
@@ -211,6 +246,7 @@
             </div>
         </div>
 
+        <!-- Delete Dialog -->
         <AlertDialog :open="deleteDialogOpen" @update:open="deleteDialogOpen = $event">
             <AlertDialogContent>
                 <AlertDialogHeader>
@@ -290,6 +326,18 @@ const props = defineProps({
         type: Object,
         required: true,
     },
+    columns: {
+        type: Array,
+        default: () => [],
+    },
+    visibleColumns: {
+        type: Array,
+        default: () => [],
+    },
+    columnOrder: {
+        type: Array,
+        default: () => [],
+    },
     filters: {
         type: Object,
         default: () => ({
@@ -306,12 +354,47 @@ const props = defineProps({
     },
 })
 
+const showColumnSettings = ref(false)
+
 const filterForm = reactive({
     search: props.filters?.search ?? '',
 })
 
+const settingsForm = reactive({
+    visibleColumns: [...(props.visibleColumns ?? [])],
+    columnOrder: [...(props.columnOrder ?? [])],
+})
+
 const deleteDialogOpen = ref(false)
 const personToDelete = ref(null)
+
+const activeColumns = computed(() => {
+    return settingsForm.columnOrder
+        .filter((key) => settingsForm.visibleColumns.includes(key))
+        .map((key) => props.columns.find((col) => col.key === key))
+        .filter(Boolean)
+})
+
+const orderedColumnDefinitions = computed(() => {
+    return settingsForm.columnOrder
+        .map((key) => props.columns.find((col) => col.key === key))
+        .filter(Boolean)
+})
+
+const pagesToShow = computed(() => {
+    const current = props.people.current_page ?? 1
+    const last = props.people.last_page ?? 1
+
+    const start = Math.max(current - 2, 1)
+    const end = Math.min(current + 2, last)
+
+    const pages = []
+    for (let i = start; i <= end; i++) {
+        pages.push(i)
+    }
+
+    return pages
+})
 
 function applyFilters() {
     router.get('/people', {
@@ -370,20 +453,45 @@ function goToPage(page) {
     })
 }
 
-const pagesToShow = computed(() => {
-    const current = props.people.current_page ?? 1
-    const last = props.people.last_page ?? 1
+function getColumnLabel(key) {
+    return props.columns.find((col) => col.key === key)?.label ?? key
+}
 
-    const start = Math.max(current - 2, 1)
-    const end = Math.min(current + 2, last)
+function moveColumnLeft(index) {
+    if (index <= 0) return
 
-    const pages = []
-    for (let i = start; i <= end; i++) {
-        pages.push(i)
-    }
+    const temp = settingsForm.columnOrder[index - 1]
+    settingsForm.columnOrder[index - 1] = settingsForm.columnOrder[index]
+    settingsForm.columnOrder[index] = temp
+}
 
-    return pages
-})
+function moveColumnRight(index) {
+    if (index >= settingsForm.columnOrder.length - 1) return
+
+    const temp = settingsForm.columnOrder[index + 1]
+    settingsForm.columnOrder[index + 1] = settingsForm.columnOrder[index]
+    settingsForm.columnOrder[index] = temp
+}
+
+function saveColumnPreferences() {
+    router.post('/people/preferences', {
+        visible_columns: settingsForm.visibleColumns,
+        column_order: settingsForm.columnOrder,
+    }, {
+        preserveScroll: true,
+    })
+}
+
+function resetColumnSettingsLocally() {
+    settingsForm.visibleColumns = [...(props.visibleColumns ?? [])]
+    settingsForm.columnOrder = [...(props.columnOrder ?? [])]
+}
+
+function resetPreferencesOnServer() {
+    router.delete('/people/preferences', {
+        preserveScroll: true,
+    })
+}
 
 function openDeleteDialog(id) {
     personToDelete.value = id
@@ -401,4 +509,33 @@ function confirmDelete() {
         },
     })
 }
+
+function formatCell(row, key) {
+    const value = row[key]
+
+    if (value === null || value === undefined || value === '') {
+        return '—'
+    }
+
+    return value
+}
+
+function exportCsv() {
+    const params = new URLSearchParams()
+
+    if (filterForm.search) {
+        params.append('search', filterForm.search)
+    }
+
+    settingsForm.visibleColumns.forEach((col) => {
+        params.append('visible_columns[]', col)
+    })
+
+    settingsForm.columnOrder.forEach((col) => {
+        params.append('column_order[]', col)
+    })
+
+    window.location.href = `/people/export/csv?${params.toString()}`
+}
+
 </script>
