@@ -67,6 +67,17 @@ class PositionsDefinition
                     'default_visible' => true,
                     'default_order' => 5,
                 ],
+                [
+                    'key' => 'created_at',
+                    'label' => 'Created',
+                    'db_field' => 'positions.created_at',
+                    'sortable' => true,
+                    'searchable' => false,
+                    'hideable' => true,
+                    'exportable' => true,
+                    'default_visible' => false,
+                    'default_order' => 99,
+                ],
             ],
         ];
     }

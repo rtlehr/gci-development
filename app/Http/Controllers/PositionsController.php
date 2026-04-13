@@ -2,70 +2,76 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Person;
 use App\Models\Position;
-use Illuminate\Http\Request;
-use App\Support\ListDefinitions\PositionsDefinition;
-use App\Services\ListPreferenceService;
-use Illuminate\Support\Facades\Auth;
 use App\Models\UserListPreference;
-use Symfony\Component\HttpFoundation\StreamedResponse;
+use App\Services\ListPreferenceService;
+use App\Support\ListDefinitions\PositionsDefinition;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Response;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class PositionsController extends Controller
 {
     public function index(Request $request)
     {
-
         $definition = PositionsDefinition::get();
 
-        // ✅ Get filters from request
         $search = $request->input('search', '');
         $status = $request->input('status', '');
-
-        // ✅ Get sorting
         $sort = $request->input('sort', $definition['default_sort']);
         $direction = $request->input('direction', $definition['default_direction']);
 
-        // ✅ Get user preferences
+        $userId = $this->resolveUserIdFromPersonCode();
+
         $preferences = ListPreferenceService::getUserPreferences(
-            Auth::id(),
+            $userId,
             $definition['list_key']
         );
 
         $merged = ListPreferenceService::merge($definition, $preferences);
 
-        // ✅ Build query
         $query = Position::query();
 
-        // 🔍 Apply search (ONLY on visible + searchable columns)
         if ($search) {
-            $searchableColumns = collect($definition['columns'])
+            $searchableFields = collect($definition['columns'])
                 ->whereIn('key', $merged['visible'])
                 ->where('searchable', true)
                 ->pluck('db_field');
 
-            $query->where(function ($q) use ($searchableColumns, $search) {
-                foreach ($searchableColumns as $field) {
+            $query->where(function ($q) use ($searchableFields, $search) {
+                foreach ($searchableFields as $field) {
                     $q->orWhere($field, 'like', "%{$search}%");
                 }
             });
         }
 
-        // 🎯 Status filter
         if ($status) {
             $query->where('status', $status);
         }
 
-        // 🔄 Sorting (only if valid)
-        $validSort = collect($definition['columns'])
-            ->pluck('key')
-            ->contains($sort);
+        $sortableColumn = collect($definition['columns'])
+            ->firstWhere('key', $sort);
 
-        if ($validSort) {
-            $dbField = collect($definition['columns'])
-                ->firstWhere('key', $sort)['db_field'];
+        if (
+            $sortableColumn &&
+            in_array($sort, $merged['visible']) &&
+            ($sortableColumn['sortable'] ?? false)
+        ) {
+            $query->orderBy($sortableColumn['db_field'], $direction);
+        } else {
+            $defaultSortCol = collect($definition['columns'])
+                ->firstWhere('key', $definition['default_sort']);
 
-            $query->orderBy($dbField, $direction);
+            if ($defaultSortCol) {
+                $query->orderBy($defaultSortCol['db_field'], $definition['default_direction']);
+                $sort = $definition['default_sort'];
+                $direction = $definition['default_direction'];
+            } else {
+                $query->orderBy('positions.id', 'desc');
+                $sort = 'id';
+                $direction = 'desc';
+            }
         }
 
         $positions = $query->paginate(10)->withQueryString();
@@ -75,8 +81,6 @@ class PositionsController extends Controller
             'columns' => $definition['columns'],
             'visibleColumns' => $merged['visible'],
             'columnOrder' => $merged['order'],
-
-            // ✅ These were missing before
             'filters' => [
                 'search' => $search,
                 'status' => $status,
@@ -84,9 +88,6 @@ class PositionsController extends Controller
             'sort' => $sort,
             'direction' => $direction,
         ]);
-
-        
-
     }
 
     public function create()
@@ -98,9 +99,9 @@ class PositionsController extends Controller
     {
         $validated = $request->validate([
             'position_code' => ['nullable', 'string', 'max:255'],
-            'status' => ['nullable', 'in:Open,In Process,Closed'],
+            'status' => ['required', 'in:Open,In Process,Closed'],
             'labor_category' => ['nullable', 'string', 'max:255'],
-            'job_title' => ['nullable', 'string', 'max:255'],
+            'job_title' => ['required', 'string', 'max:255'],
             'level' => ['nullable', 'integer'],
             'project_team_name' => ['nullable', 'string', 'max:255'],
             'organization_name' => ['nullable', 'string', 'max:255'],
@@ -120,10 +121,8 @@ class PositionsController extends Controller
 
     public function show($id)
     {
-        $position = Position::with([
-            'currentAssignment.person',
-            'assignments.person',
-        ])->findOrFail($id);
+        $position = Position::with(['currentAssignment.person', 'assignments.person'])
+            ->findOrFail($id);
 
         return inertia('Positions/Show', [
             'position' => $position,
@@ -204,9 +203,11 @@ class PositionsController extends Controller
             ->values()
             ->toArray();
 
+        $userId = $this->resolveUserIdFromPersonCode();
+
         UserListPreference::updateOrCreate(
             [
-                'user_id' => Auth::id(),
+                'user_id' => $userId,
                 'list_key' => $definition['list_key'],
             ],
             [
@@ -223,8 +224,9 @@ class PositionsController extends Controller
     public function resetPreferences()
     {
         $definition = PositionsDefinition::get();
+        $userId = $this->resolveUserIdFromPersonCode();
 
-        UserListPreference::where('user_id', Auth::id())
+        UserListPreference::where('user_id', $userId)
             ->where('list_key', $definition['list_key'])
             ->delete();
 
@@ -243,7 +245,6 @@ class PositionsController extends Controller
         $status = $request->input('status', '');
 
         $allColumns = collect($definition['columns']);
-
         $validKeys = $allColumns->pluck('key')->toArray();
 
         $visibleColumns = collect($visibleColumns)
@@ -293,10 +294,8 @@ class PositionsController extends Controller
         return Response::streamDownload(function () use ($positions, $activeColumns) {
             $handle = fopen('php://output', 'w');
 
-            // Header row
             fputcsv($handle, $activeColumns->pluck('label')->toArray());
 
-            // Data rows
             foreach ($positions as $position) {
                 $row = [];
 
@@ -312,5 +311,27 @@ class PositionsController extends Controller
         }, $filename, [
             'Content-Type' => 'text/csv',
         ]);
+    }
+
+    protected function resolveUserIdFromPersonCode(): int
+    {
+        $data = include base_path('config/devuser.php');
+        $personCode = $data['person_code'] ?? null;
+
+        if (!$personCode) {
+            abort(500, 'No person_code found in devuser.php.');
+        }
+
+        $person = Person::where('person_code', $personCode)->first();
+
+        if (!$person) {
+            abort(500, "No person found for person_code {$personCode}.");
+        }
+
+        if (!$person->user_id) {
+            abort(500, "Person {$personCode} is not linked to a user account.");
+        }
+
+        return $person->user_id;
     }
 }

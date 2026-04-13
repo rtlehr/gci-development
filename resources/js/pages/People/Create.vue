@@ -17,7 +17,9 @@
             <form @submit.prevent="submit" class="space-y-6">
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div class="space-y-2">
-                        <Label for="person_code">Person Code</Label>
+                        <Label for="person_code">
+                            Person Code <span class="text-red-500">*</span>
+                        </Label>
                         <Input
                             id="person_code"
                             v-model="form.person_code"
@@ -155,6 +157,11 @@ function submit() {
     form.clearErrors()
 
     let hasError = false
+
+    if (!form.person_code || form.person_code.trim() === '') {
+        form.setError('person_code', 'Person code is required.')
+        hasError = true
+    }
 
     if (!form.first_name || form.first_name.trim() === '') {
         form.setError('first_name', 'First name is required.')

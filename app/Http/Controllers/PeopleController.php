@@ -3,13 +3,12 @@
 namespace App\Http\Controllers;
 
 use App\Models\Person;
-use Illuminate\Http\Request;
-
+use App\Models\User;
 use App\Models\UserListPreference;
 use App\Services\ListPreferenceService;
 use App\Support\ListDefinitions\PeopleDefinition;
-use Illuminate\Support\Facades\Auth;
-
+use Illuminate\Http\Request;
+use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Response;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
@@ -23,8 +22,10 @@ class PeopleController extends Controller
         $sort = $request->input('sort', $definition['default_sort']);
         $direction = $request->input('direction', $definition['default_direction']);
 
+        $userId = $this->resolveUserIdFromPersonCode();
+
         $preferences = ListPreferenceService::getUserPreferences(
-            Auth::id(),
+            $userId,
             $definition['list_key']
         );
 
@@ -80,27 +81,39 @@ class PeopleController extends Controller
 
     public function create()
     {
-        return inertia('People/Create');
+        $users = User::orderBy('name')->get(['id', 'name']);
+
+        return inertia('People/Create', [
+            'users' => $users,
+        ]);
     }
 
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'person_code' => ['nullable', 'string', 'max:255', 'unique:people,person_code'],
+            'person_code' => ['required', 'string', 'max:255', 'unique:people,person_code'],
             'first_name' => ['required', 'string', 'max:255'],
             'last_name' => ['required', 'string', 'max:255'],
             'company_name' => ['nullable', 'string', 'max:255'],
             'cell_phone' => ['nullable', 'string', 'max:255'],
-            'email' => ['nullable', 'email', 'max:255'],
+            'email' => ['nullable', 'email', 'max:255', 'unique:users,email'],
             'employment_status' => ['nullable', 'string', 'max:255'],
             'notes' => ['nullable', 'string'],
         ]);
+
+        $user = User::create([
+            'name' => $validated['person_code'],
+            'email' => $validated['email'] ?? null,
+            'password' => bcrypt(Str::random(32)),
+        ]);
+
+        $validated['user_id'] = $user->id;
 
         $person = Person::create($validated);
 
         return redirect()
             ->route('people.show', $person->id)
-            ->with('success', 'Person created successfully.');
+            ->with('success', 'Person and user account created successfully.');
     }
 
     public function show($id)
@@ -115,9 +128,11 @@ class PeopleController extends Controller
     public function edit($id)
     {
         $person = Person::findOrFail($id);
+        $users = User::orderBy('name')->get(['id', 'name']);
 
         return inertia('People/Edit', [
             'person' => $person,
+            'users' => $users,
         ]);
     }
 
@@ -126,7 +141,7 @@ class PeopleController extends Controller
         $person = Person::findOrFail($id);
 
         $validated = $request->validate([
-            'person_code' => ['nullable', 'string', 'max:255', 'unique:people,person_code,' . $person->id],
+            'person_code' => ['required', 'string', 'max:255', 'unique:people,person_code,' . $person->id],
             'first_name' => ['required', 'string', 'max:255'],
             'last_name' => ['required', 'string', 'max:255'],
             'company_name' => ['nullable', 'string', 'max:255'],
@@ -134,9 +149,20 @@ class PeopleController extends Controller
             'email' => ['nullable', 'email', 'max:255'],
             'employment_status' => ['nullable', 'string', 'max:255'],
             'notes' => ['nullable', 'string'],
+            'user_id' => ['nullable', 'exists:users,id', 'unique:people,user_id,' . $person->id],
         ]);
 
         $person->update($validated);
+
+        if ($person->user_id) {
+            $user = User::find($person->user_id);
+
+            if ($user) {
+                $user->name = $validated['person_code'];
+                $user->email = $validated['email'] ?? null;
+                $user->save();
+            }
+        }
 
         return redirect()
             ->route('people.index')
@@ -182,9 +208,11 @@ class PeopleController extends Controller
             ->values()
             ->toArray();
 
+        $userId = $this->resolveUserIdFromPersonCode();
+
         UserListPreference::updateOrCreate(
             [
-                'user_id' => Auth::id(),
+                'user_id' => $userId,
                 'list_key' => $definition['list_key'],
             ],
             [
@@ -201,8 +229,9 @@ class PeopleController extends Controller
     public function resetPreferences()
     {
         $definition = PeopleDefinition::get();
+        $userId = $this->resolveUserIdFromPersonCode();
 
-        UserListPreference::where('user_id', Auth::id())
+        UserListPreference::where('user_id', $userId)
             ->where('list_key', $definition['list_key'])
             ->delete();
 
@@ -220,7 +249,6 @@ class PeopleController extends Controller
         $search = $request->input('search', '');
 
         $allColumns = collect($definition['columns']);
-
         $validKeys = $allColumns->pluck('key')->toArray();
 
         $visibleColumns = collect($visibleColumns)
@@ -266,10 +294,8 @@ class PeopleController extends Controller
         return Response::streamDownload(function () use ($people, $activeColumns) {
             $handle = fopen('php://output', 'w');
 
-            // Header row
             fputcsv($handle, $activeColumns->pluck('label')->toArray());
 
-            // Data rows
             foreach ($people as $person) {
                 $row = [];
 
@@ -285,5 +311,27 @@ class PeopleController extends Controller
         }, $filename, [
             'Content-Type' => 'text/csv',
         ]);
+    }
+
+    protected function resolveUserIdFromPersonCode(): int
+    {
+        $data = include base_path('config/devuser.php');
+        $personCode = $data['person_code'] ?? null;
+
+        if (!$personCode) {
+            abort(500, 'No person_code found in devuser.php.');
+        }
+
+        $person = Person::where('person_code', $personCode)->first();
+
+        if (!$person) {
+            abort(500, "No person found for person_code {$personCode}.");
+        }
+
+        if (!$person->user_id) {
+            abort(500, "Person {$personCode} is not linked to a user account.");
+        }
+
+        return $person->user_id;
     }
 }
