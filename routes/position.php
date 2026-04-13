@@ -6,6 +6,15 @@ use App\Http\Controllers\PositionsController;
 Route::get('/positions', [PositionsController::class, 'index'])
     ->name('positions.index');
 
+Route::post('/positions/preferences', [PositionsController::class, 'savePreferences'])
+    ->name('positions.preferences.save');
+
+Route::delete('/positions/preferences', [PositionsController::class, 'resetPreferences'])
+    ->name('positions.preferences.reset');
+
+Route::get('/positions/export/csv', [PositionsController::class, 'exportCsv'])
+    ->name('positions.export.csv');
+
 Route::get('/positions/create', [PositionsController::class, 'create'])
     ->name('positions.create')
     ->middleware('permission:view_admin');

@@ -1,12 +1,106 @@
 <template>
     <div class="p-6 space-y-6">
-        <!-- Header -->
         <div class="flex items-center justify-between">
             <h1 class="text-2xl font-semibold">Positions</h1>
 
-            <Link href="/positions/create" v-if="can('view_admin')">
-                <Button>Create Position</Button>
-            </Link>
+            <div class="flex gap-2">
+                <Button variant="outline" @click="showColumnSettings = !showColumnSettings">
+                    {{ showColumnSettings ? 'Hide Column Settings' : 'Column Settings' }}
+                </Button>
+
+                <Button variant="outline" @click="exportCsv">
+                    Export CSV
+                </Button>
+
+                <Link href="/positions/create" v-if="can('view_admin')">
+                    <Button>Create Position</Button>
+                </Link>
+            </div>
+        </div>
+
+        <!-- Column Settings Panel -->
+        <div v-if="showColumnSettings" class="border rounded-xl p-4 bg-background space-y-4">
+            <div>
+                <h2 class="text-lg font-semibold">Column Settings</h2>
+                <p class="text-sm text-muted-foreground">
+                    Choose which columns are shown and change their order.
+                </p>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <!-- Visibility -->
+                <div class="space-y-3">
+                    <h3 class="font-medium">Visible Columns</h3>
+
+                    <div
+                        v-for="col in orderedColumnDefinitions"
+                        :key="col.key"
+                        class="flex items-center justify-between rounded-lg border p-3"
+                    >
+                        <div class="flex items-center gap-3">
+                            <input
+                                :id="`visible-${col.key}`"
+                                v-model="settingsForm.visibleColumns"
+                                :value="col.key"
+                                type="checkbox"
+                                class="h-4 w-4"
+                            />
+                            <Label :for="`visible-${col.key}`">{{ col.label }}</Label>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Order -->
+                <div class="space-y-3">
+                    <h3 class="font-medium">Column Order</h3>
+
+                    <div
+                        v-for="(colKey, index) in settingsForm.columnOrder"
+                        :key="colKey"
+                        class="flex items-center justify-between rounded-lg border p-3"
+                    >
+                        <div class="font-medium">
+                            {{ getColumnLabel(colKey) }}
+                        </div>
+
+                        <div class="flex gap-2">
+                            <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                :disabled="index === 0"
+                                @click="moveColumnLeft(index)"
+                            >
+                                Left
+                            </Button>
+
+                            <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                :disabled="index === settingsForm.columnOrder.length - 1"
+                                @click="moveColumnRight(index)"
+                            >
+                                Right
+                            </Button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="flex gap-2">
+                <Button @click="saveColumnPreferences">
+                    Save Preferences
+                </Button>
+
+                <Button variant="outline" @click="resetColumnSettingsLocally">
+                    Reset Unsaved Changes
+                </Button>
+
+                <Button variant="outline" @click="resetPreferencesOnServer">
+                    Reset to Defaults
+                </Button>
+            </div>
         </div>
 
         <!-- Filters -->
@@ -17,7 +111,7 @@
                     <Input
                         id="search"
                         v-model="filterForm.search"
-                        placeholder="Search by code, title, labor category, team..."
+                        placeholder="Search visible columns..."
                     />
                 </div>
 
@@ -26,7 +120,7 @@
                     <select
                         id="status-filter"
                         v-model="filterForm.status"
-                        class="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background"
+                        class="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
                     >
                         <option value="">All Statuses</option>
                         <option value="Open">Open</option>
@@ -49,59 +143,20 @@
             <Table>
                 <TableHeader>
                     <TableRow>
-                        <!--<TableHead>ID</TableHead>-->
-
-                        <TableHead @click="sortBy('position_code')" class="cursor-pointer select-none">
+                        <TableHead
+                            v-for="col in activeColumns"
+                            :key="col.key"
+                            @click="col.sortable ? sortBy(col.key) : null"
+                            :class="col.sortable ? 'cursor-pointer select-none' : ''"
+                        >
                             <div class="flex items-center gap-2">
-                                <span>PID</span>
-                                <component
-                                    :is="getSortIcon('position_code')"
-                                    class="h-4 w-4"
-                                    :class="sort === 'position_code' ? 'text-foreground' : 'text-muted-foreground'"
-                                />
-                            </div>
-                        </TableHead>
+                                <span>{{ col.label }}</span>
 
-                        <TableHead @click="sortBy('job_title')" class="cursor-pointer select-none">
-                            <div class="flex items-center gap-2">
-                                <span>Job Title</span>
                                 <component
-                                    :is="getSortIcon('job_title')"
+                                    v-if="col.sortable"
+                                    :is="getSortIcon(col.key)"
                                     class="h-4 w-4"
-                                    :class="sort === 'job_title' ? 'text-foreground' : 'text-muted-foreground'"
-                                />
-                            </div>
-                        </TableHead>
-
-                        <TableHead @click="sortBy('status')" class="cursor-pointer select-none">
-                            <div class="flex items-center gap-2">
-                                <span>Status</span>
-                                <component
-                                    :is="getSortIcon('status')"
-                                    class="h-4 w-4"
-                                    :class="sort === 'status' ? 'text-foreground' : 'text-muted-foreground'"
-                                />
-                            </div>
-                        </TableHead>
-
-                        <TableHead @click="sortBy('labor_category')" class="cursor-pointer select-none">
-                            <div class="flex items-center gap-2">
-                                <span>Labor Category</span>
-                                <component
-                                    :is="getSortIcon('labor_category')"
-                                    class="h-4 w-4"
-                                    :class="sort === 'labor_category' ? 'text-foreground' : 'text-muted-foreground'"
-                                />
-                            </div>
-                        </TableHead>
-
-                        <TableHead @click="sortBy('project_team_name')" class="cursor-pointer select-none">
-                            <div class="flex items-center gap-2">
-                                <span>Team</span>
-                                <component
-                                    :is="getSortIcon('project_team_name')"
-                                    class="h-4 w-4"
-                                    :class="sort === 'project_team_name' ? 'text-foreground' : 'text-muted-foreground'"
+                                    :class="sort === col.key ? 'text-foreground' : 'text-muted-foreground'"
                                 />
                             </div>
                         </TableHead>
@@ -112,7 +167,7 @@
 
                 <TableBody>
                     <TableRow v-if="!positions?.data?.length">
-                        <TableCell colspan="7" class="text-center py-8 text-muted-foreground">
+                        <TableCell :colspan="activeColumns.length + 1" class="text-center py-8 text-muted-foreground">
                             No positions found.
                         </TableCell>
                     </TableRow>
@@ -122,23 +177,20 @@
                         :key="position.id"
                         class="hover:bg-muted/50"
                     >
-                        <!--<TableCell>{{ position.id }}</TableCell>-->
+                        <TableCell
+                            v-for="col in activeColumns"
+                            :key="col.key"
+                        >
+                            <template v-if="col.key === 'status'">
+                                <Badge :class="getStatusClass(position.status)">
+                                    {{ position.status || 'Unknown' }}
+                                </Badge>
+                            </template>
 
-                        <TableCell>{{ position.position_code || '—' }}</TableCell>
-
-                        <TableCell class="font-medium">
-                            {{ position.job_title || 'Untitled' }}
+                            <template v-else>
+                                {{ formatCell(position, col.key) }}
+                            </template>
                         </TableCell>
-
-                        <TableCell>
-                            <Badge :class="getStatusClass(position.status)">
-                                {{ position.status || 'Unknown' }}
-                            </Badge>
-                        </TableCell>
-
-                        <TableCell>{{ position.labor_category || '—' }}</TableCell>
-
-                        <TableCell>{{ position.project_team_name || '—' }}</TableCell>
 
                         <TableCell class="text-right">
                             <DropdownMenu>
@@ -158,7 +210,7 @@
                                         </Link>
                                     </DropdownMenuItem>
 
-                                    <DropdownMenuItem v-if="can('view_admin')" as-child>
+                                    <DropdownMenuItem as-child  v-if="can('view_admin')">
                                         <Link :href="`/positions/${position.id}/edit`">
                                             Edit
                                         </Link>
@@ -167,7 +219,7 @@
                                     <DropdownMenuSeparator />
 
                                     <DropdownMenuItem
-                                        v-if="can('view_admin')"
+                                         v-if="can('view_admin')"
                                         @click="openDeleteDialog(position.id)"
                                         class="text-red-600 focus:text-red-600"
                                     >
@@ -250,6 +302,7 @@
 import { computed, reactive, ref } from 'vue'
 import { Link, router } from '@inertiajs/vue3'
 import { useAuth } from '@/composables/useAuth'
+
 import {
     ArrowDown,
     ArrowUp,
@@ -291,12 +344,22 @@ import {
     TableRow,
 } from '@/components/ui/table'
 
-const { can } = useAuth()
-
 const props = defineProps({
     positions: {
         type: Object,
         required: true,
+    },
+    columns: {
+        type: Array,
+        default: () => [],
+    },
+    visibleColumns: {
+        type: Array,
+        default: () => [],
+    },
+    columnOrder: {
+        type: Array,
+        default: () => [],
     },
     filters: {
         type: Object,
@@ -315,13 +378,50 @@ const props = defineProps({
     },
 })
 
+const { can } = useAuth()
+
+const showColumnSettings = ref(false)
+
 const filterForm = reactive({
     search: props.filters?.search ?? '',
     status: props.filters?.status ?? '',
 })
 
+const settingsForm = reactive({
+    visibleColumns: [...(props.visibleColumns ?? [])],
+    columnOrder: [...(props.columnOrder ?? [])],
+})
+
 const deleteDialogOpen = ref(false)
 const positionToDelete = ref(null)
+
+const activeColumns = computed(() => {
+    return settingsForm.columnOrder
+        .filter((key) => settingsForm.visibleColumns.includes(key))
+        .map((key) => props.columns.find((col) => col.key === key))
+        .filter(Boolean)
+})
+
+const orderedColumnDefinitions = computed(() => {
+    return settingsForm.columnOrder
+        .map((key) => props.columns.find((col) => col.key === key))
+        .filter(Boolean)
+})
+
+const pagesToShow = computed(() => {
+    const current = props.positions.current_page ?? 1
+    const last = props.positions.last_page ?? 1
+
+    const start = Math.max(current - 2, 1)
+    const end = Math.min(current + 2, last)
+
+    const pages = []
+    for (let i = start; i <= end; i++) {
+        pages.push(i)
+    }
+
+    return pages
+})
 
 function applyFilters() {
     router.get('/positions', {
@@ -384,20 +484,45 @@ function goToPage(page) {
     })
 }
 
-const pagesToShow = computed(() => {
-    const current = props.positions.current_page ?? 1
-    const last = props.positions.last_page ?? 1
+function getColumnLabel(key) {
+    return props.columns.find((col) => col.key === key)?.label ?? key
+}
 
-    const start = Math.max(current - 2, 1)
-    const end = Math.min(current + 2, last)
+function moveColumnLeft(index) {
+    if (index <= 0) return
 
-    const pages = []
-    for (let i = start; i <= end; i++) {
-        pages.push(i)
-    }
+    const temp = settingsForm.columnOrder[index - 1]
+    settingsForm.columnOrder[index - 1] = settingsForm.columnOrder[index]
+    settingsForm.columnOrder[index] = temp
+}
 
-    return pages
-})
+function moveColumnRight(index) {
+    if (index >= settingsForm.columnOrder.length - 1) return
+
+    const temp = settingsForm.columnOrder[index + 1]
+    settingsForm.columnOrder[index + 1] = settingsForm.columnOrder[index]
+    settingsForm.columnOrder[index] = temp
+}
+
+function saveColumnPreferences() {
+    router.post('/positions/preferences', {
+        visible_columns: settingsForm.visibleColumns,
+        column_order: settingsForm.columnOrder,
+    }, {
+        preserveScroll: true,
+    })
+}
+
+function resetColumnSettingsLocally() {
+    settingsForm.visibleColumns = [...(props.visibleColumns ?? [])]
+    settingsForm.columnOrder = [...(props.columnOrder ?? [])]
+}
+
+function resetPreferencesOnServer() {
+    router.delete('/positions/preferences', {
+        preserveScroll: true,
+    })
+}
 
 function openDeleteDialog(id) {
     positionToDelete.value = id
@@ -426,5 +551,40 @@ function getStatusClass(status) {
     if (value === 'closed') return 'bg-green-600 text-white hover:bg-green-600'
 
     return 'bg-gray-200 text-gray-800 hover:bg-gray-200'
+}
+
+function formatCell(row, key) {
+    const value = row[key]
+
+    if (value === null || value === undefined || value === '') {
+        return '—'
+    }
+
+    return value
+}
+
+function exportCsv() {
+    const params = new URLSearchParams()
+
+    // current filters
+    if (filterForm.search) {
+        params.append('search', filterForm.search)
+    }
+
+    if (filterForm.status) {
+        params.append('status', filterForm.status)
+    }
+
+    // current visible columns
+    settingsForm.visibleColumns.forEach((col) => {
+        params.append('visible_columns[]', col)
+    })
+
+    // current order
+    settingsForm.columnOrder.forEach((col) => {
+        params.append('column_order[]', col)
+    })
+
+    window.location.href = `/positions/export/csv?${params.toString()}`
 }
 </script>

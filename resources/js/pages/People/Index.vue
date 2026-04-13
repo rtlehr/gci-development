@@ -161,7 +161,7 @@
                                     <DropdownMenuSeparator />
 
                                     <DropdownMenuItem
-                                         v-if="can('view_admin')"
+                                        v-if="can('view_admin')"
                                         @click="openDeleteDialog(person.id)"
                                         class="text-red-600 focus:text-red-600"
                                     >

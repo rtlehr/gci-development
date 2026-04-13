@@ -2,7 +2,8 @@
 
 return [
     'enabled' => true,
-    'username' => 'ross.dev',
+    'username' => 'Test User',
+    'person_code' => 1000001,
     'role' => 'editor',
     'permissions' => [
         'special_export_access',
