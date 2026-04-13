@@ -18,7 +18,7 @@
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div class="space-y-2">
                         <Label for="person_code">
-                            Person Code <span class="text-red-500">*</span>
+                            AIN Number <span class="text-red-500">*</span>
                         </Label>
                         <Input
                             id="person_code"
