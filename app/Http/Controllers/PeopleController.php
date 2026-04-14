@@ -8,9 +8,9 @@ use App\Models\UserListPreference;
 use App\Services\ListEngine;
 use App\Services\UserResolver;
 use App\Support\ListDefinitions\PeopleDefinition;
+use App\Services\ListExportService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
-use Illuminate\Support\Facades\Response;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class PeopleController extends Controller
@@ -202,76 +202,16 @@ class PeopleController extends Controller
             ->with('success', 'Column preferences reset to defaults.');
     }
 
-    public function exportCsv(Request $request): StreamedResponse
-    {
-        $definition = PeopleDefinition::get();
-
-        $visibleColumns = $request->input('visible_columns', []);
-        $columnOrder = $request->input('column_order', []);
-        $search = $request->input('search', '');
-
-        $allColumns = collect($definition['columns']);
-        $validKeys = $allColumns->pluck('key')->toArray();
-
-        $visibleColumns = collect($visibleColumns)
-            ->filter(fn ($key) => in_array($key, $validKeys))
-            ->values()
-            ->toArray();
-
-        $columnOrder = collect($columnOrder)
-            ->filter(fn ($key) => in_array($key, $validKeys))
-            ->values()
-            ->toArray();
-
-        $activeColumnKeys = collect($columnOrder)
-            ->filter(fn ($key) => in_array($key, $visibleColumns))
-            ->values()
-            ->toArray();
-
-        $activeColumns = $allColumns
-            ->whereIn('key', $activeColumnKeys)
-            ->sortBy(function ($col) use ($activeColumnKeys) {
-                return array_search($col['key'], $activeColumnKeys);
-            })
-            ->values();
-
-        $query = Person::query();
-
-        if ($search) {
-            $searchableFields = $activeColumns
-                ->where('searchable', true)
-                ->pluck('db_field');
-
-            $query->where(function ($q) use ($searchableFields, $search) {
-                foreach ($searchableFields as $field) {
-                    $q->orWhere($field, 'like', "%{$search}%");
-                }
-            });
-        }
-
-        $people = $query->get();
-
-        $filename = 'people-export-' . now()->format('Y-m-d_H-i-s') . '.csv';
-
-        return Response::streamDownload(function () use ($people, $activeColumns) {
-            $handle = fopen('php://output', 'w');
-
-            fputcsv($handle, $activeColumns->pluck('label')->toArray());
-
-            foreach ($people as $person) {
-                $row = [];
-
-                foreach ($activeColumns as $column) {
-                    $key = $column['key'];
-                    $row[] = $person->{$key} ?? '';
-                }
-
-                fputcsv($handle, $row);
-            }
-
-            fclose($handle);
-        }, $filename, [
-            'Content-Type' => 'text/csv',
-        ]);
+    public function exportCsv(
+    Request $request,
+    ListExportService $listExportService
+    ): StreamedResponse {
+        return $listExportService->exportCsv(
+            request: $request,
+            definition: PeopleDefinition::get(),
+            query: Person::query(),
+            filenamePrefix: 'people-export'
+        );
     }
+
 }
