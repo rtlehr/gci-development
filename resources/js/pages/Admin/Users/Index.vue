@@ -120,7 +120,7 @@ function fullName(user) {
                     <TableRow>
                         <TableHead>AIN Number</TableHead>
                         <TableHead>Name</TableHead>
-                        <TableHead>Email</TableHead>
+                        <TableHead>Role</TableHead>
                         <TableHead>Permissions</TableHead>
                         <TableHead class="text-right">Actions</TableHead>
                     </TableRow>
@@ -147,7 +147,17 @@ function fullName(user) {
                         </TableCell>
 
                         <TableCell>
-                            {{ user.email || '—' }}
+                            <div v-if="user.roles?.length" class="flex flex-wrap gap-1">
+                                <Badge
+                                    v-for="role in user.roles"
+                                    :key="role.id"
+                                    variant="default"
+                                >
+                                    {{ role.label || role.name }}
+                                </Badge>
+                            </div>
+
+                            <span v-else class="text-muted-foreground">—</span>
                         </TableCell>
 
                         <TableCell>

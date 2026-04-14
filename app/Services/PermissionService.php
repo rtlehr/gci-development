@@ -3,29 +3,44 @@
 namespace App\Services;
 
 use App\Models\User;
+use Illuminate\Support\Facades\Cache;
 
 class PermissionService
 {
     public function getUserPermissions(int $userId): array
     {
-        $user = User::with('permissions')->find($userId);
+        return Cache::remember(
+            "user_permissions_{$userId}",
+            now()->addMinutes(10),
+            function () use ($userId) {
+                $user = User::with([
+                    'permissions',
+                    'roles.permissions',
+                ])->find($userId);
 
-        if (! $user) {
-            return [];
-        }
+                if (! $user) {
+                    return [];
+                }
 
-        return $user->permissions
-            ->pluck('name')
-            ->unique()
-            ->values()
-            ->toArray();
+                $directPermissions = $user->permissions->pluck('name')->toArray();
+
+                $rolePermissions = $user->roles
+                    ->flatMap(function ($role) {
+                        return $role->permissions->pluck('name');
+                    })
+                    ->toArray();
+
+                return collect([...$directPermissions, ...$rolePermissions])
+                    ->unique()
+                    ->values()
+                    ->toArray();
+            }
+        );
     }
 
     public function hasPermission(int $userId, string $permission): bool
     {
-        $permissions = $this->getUserPermissions($userId);
-
-        return in_array($permission, $permissions);
+        return in_array($permission, $this->getUserPermissions($userId));
     }
 
     public function hasAnyPermission(int $userId, array $permissions): bool
@@ -40,5 +55,10 @@ class PermissionService
         $userPermissions = $this->getUserPermissions($userId);
 
         return count(array_diff($permissions, $userPermissions)) === 0;
+    }
+
+    public function clearUserPermissionCache(int $userId): void
+    {
+        Cache::forget("user_permissions_{$userId}");
     }
 }
