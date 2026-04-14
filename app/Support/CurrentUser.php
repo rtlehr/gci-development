@@ -2,103 +2,66 @@
 
 namespace App\Support;
 
+use App\Models\User;
+use App\Services\PermissionService;
+use App\Services\UserResolver;
 use Illuminate\Http\Request;
 
 class CurrentUser
 {
-    public static function get(Request $request): ?array
+    public static function user(Request $request): ?array
     {
-        if (config('devuser.enabled')) {
-            $role = config('devuser.role');
-            $rolePermissions = config("roles.$role") ?? [];
-            $userPermissions = config('devuser.permissions', []);
+        try {
+            $userResolver = app(UserResolver::class);
+            $permissionService = app(PermissionService::class);
+
+            $person = $userResolver->resolvePerson();
+            $user = $userResolver->resolveUser();
+
+            $permissions = $permissionService->getUserPermissions($user->id);
+
+            $displayName = trim(($person->first_name ?? '') . ' ' . ($person->last_name ?? ''));
+
+            if ($displayName === '') {
+                $displayName = $user->name ?? '';
+            }
 
             return [
-                'username' => config('devuser.username'),
-                'role' => $role,
-                'permissions' => array_values(array_unique(array_merge(
-                    $rolePermissions,
-                    $userPermissions
-                ))),
+                'id' => $user->id,
+                'username' => $displayName,
+                'role' => config('devuser.role', ''), // temporary until role system is DB-backed
+                'permissions' => $permissions,
+                'email' => $user->email,
+                'person_code' => $person->person_code,
+                'first_name' => $person->first_name,
+                'last_name' => $person->last_name,
             ];
-        }
-
-        $user = $request->user();
-
-        if (! $user) {
+        } catch (\Throwable $e) {
             return null;
         }
+    }
 
-        $role = $user->role ?? 'viewer';
-
-        // later these could come from database columns or relationships
-        $rolePermissions = config("roles.$role") ?? [];
-        $userPermissions = $user->permissions ?? [];
-
-        return [
-            'username' => $user->name,
-            'role' => $role,
-            'permissions' => array_values(array_unique(array_merge(
-                $rolePermissions,
-                $userPermissions
-            ))),
-        ];
+    public static function permissions(Request $request): array
+    {
+        return self::user($request)['permissions'] ?? [];
     }
 
     public static function hasPermission(Request $request, string $permission): bool
     {
-        $user = static::get($request);
-
-        if (! $user) {
-            return false;
-        }
-
-        return in_array($permission, $user['permissions'] ?? []);
+        return in_array($permission, self::permissions($request));
     }
 
-    public static function hasRole(Request $request, string $role): bool
+    public static function securityLevel(Request $request): int
     {
-        $user = static::get($request);
-
-        if (! $user) {
-            return false;
-        }
-
-        return ($user['role'] ?? null) === $role;
+        return (int) config('devuser.security_level', 0);
     }
 
-    public static function requirePermission(Request $request, string $permission, string $message = 'Unauthorized'): void
+    public static function model(Request $request): ?User
     {
-        if (! static::hasPermission($request, $permission)) {
-            abort(403, $message);
+        try {
+            return app(UserResolver::class)->resolveUser();
+        } catch (\Throwable $e) {
+            return null;
         }
     }
-
-    public static function requireRole(Request $request, string $role, string $message = 'Unauthorized'): void
-    {
-        if (! static::hasRole($request, $role)) {
-            abort(403, $message);
-        }
-    }
-
-    public static function requireAnyPermission(Request $request, array $permissions, string $message = 'Unauthorized'): void
-    {
-        foreach ($permissions as $permission) {
-            if (static::hasPermission($request, $permission)) {
-                return;
-            }
-        }
-
-        abort(403, $message);
-    }
-
-    public static function requireAllPermissions(Request $request, array $permissions, string $message = 'Unauthorized'): void
-    {
-        foreach ($permissions as $permission) {
-            if (! static::hasPermission($request, $permission)) {
-                abort(403, $message);
-            }
-        }
-    }
-
 }

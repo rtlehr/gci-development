@@ -2,9 +2,14 @@ import { usePage } from '@inertiajs/vue3'
 import { computed } from 'vue'
 
 type AuthUser = {
+    id?: number
     username: string
     role: string
     permissions: string[]
+    email?: string
+    person_code?: string
+    first_name?: string
+    last_name?: string
 } | null
 
 type PageProps = {
