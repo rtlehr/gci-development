@@ -6,6 +6,7 @@ use App\Models\Person;
 use App\Models\User;
 use App\Models\UserListPreference;
 use App\Services\ListPreferenceService;
+use App\Services\UserResolver;
 use App\Support\ListDefinitions\PeopleDefinition;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
@@ -14,7 +15,7 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class PeopleController extends Controller
 {
-    public function index(Request $request)
+    public function index(Request $request, UserResolver $userResolver)
     {
         $definition = PeopleDefinition::get();
 
@@ -22,7 +23,7 @@ class PeopleController extends Controller
         $sort = $request->input('sort', $definition['default_sort']);
         $direction = $request->input('direction', $definition['default_direction']);
 
-        $userId = $this->resolveUserIdFromPersonCode();
+        $userId = $userResolver->resolveUserId();
 
         $preferences = ListPreferenceService::getUserPreferences(
             $userId,
@@ -186,7 +187,7 @@ class PeopleController extends Controller
             ->with('success', 'Person deleted successfully.');
     }
 
-    public function savePreferences(Request $request)
+    public function savePreferences(Request $request, UserResolver $userResolver)
     {
         $definition = PeopleDefinition::get();
         $validKeys = collect($definition['columns'])->pluck('key')->toArray();
@@ -208,7 +209,7 @@ class PeopleController extends Controller
             ->values()
             ->toArray();
 
-        $userId = $this->resolveUserIdFromPersonCode();
+        $userId = $userResolver->resolveUserId();
 
         UserListPreference::updateOrCreate(
             [
@@ -226,10 +227,10 @@ class PeopleController extends Controller
             ->with('success', 'Column preferences saved.');
     }
 
-    public function resetPreferences()
+    public function resetPreferences(UserResolver $userResolver)
     {
         $definition = PeopleDefinition::get();
-        $userId = $this->resolveUserIdFromPersonCode();
+        $userId = $userResolver->resolveUserId();
 
         UserListPreference::where('user_id', $userId)
             ->where('list_key', $definition['list_key'])
@@ -311,27 +312,5 @@ class PeopleController extends Controller
         }, $filename, [
             'Content-Type' => 'text/csv',
         ]);
-    }
-
-    protected function resolveUserIdFromPersonCode(): int
-    {
-        $data = include base_path('config/devuser.php');
-        $personCode = $data['person_code'] ?? null;
-
-        if (!$personCode) {
-            abort(500, 'No person_code found in devuser.php.');
-        }
-
-        $person = Person::where('person_code', $personCode)->first();
-
-        if (!$person) {
-            abort(500, "No person found for person_code {$personCode}.");
-        }
-
-        if (!$person->user_id) {
-            abort(500, "Person {$personCode} is not linked to a user account.");
-        }
-
-        return $person->user_id;
     }
 }
