@@ -4,7 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Position;
 use App\Models\UserListPreference;
-use App\Services\ListPreferenceService;
+use App\Services\ListEngine;
 use App\Services\UserResolver;
 use App\Support\ListDefinitions\PositionsDefinition;
 use Illuminate\Http\Request;
@@ -13,80 +13,38 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class PositionsController extends Controller
 {
-    public function index(Request $request, UserResolver $userResolver)
-    {
+    public function index(
+        Request $request,
+        UserResolver $userResolver,
+        ListEngine $listEngine
+    ) {
         $definition = PositionsDefinition::get();
-
-        $search = $request->input('search', '');
-        $status = $request->input('status', '');
-        $sort = $request->input('sort', $definition['default_sort']);
-        $direction = $request->input('direction', $definition['default_direction']);
-
         $userId = $userResolver->resolveUserId();
 
-        $preferences = ListPreferenceService::getUserPreferences(
-            $userId,
-            $definition['list_key']
+        $list = $listEngine->run(
+            request: $request,
+            definition: $definition,
+            userId: $userId,
+            query: Position::query(),
+            filterCallback: function ($query, $request) {
+                $status = $request->input('status', '');
+
+                if ($status) {
+                    $query->where('status', $status);
+                }
+            }
         );
 
-        $merged = ListPreferenceService::merge($definition, $preferences);
-
-        $query = Position::query();
-
-        if ($search) {
-            $searchableFields = collect($definition['columns'])
-                ->whereIn('key', $merged['visible'])
-                ->where('searchable', true)
-                ->pluck('db_field');
-
-            $query->where(function ($q) use ($searchableFields, $search) {
-                foreach ($searchableFields as $field) {
-                    $q->orWhere($field, 'like', "%{$search}%");
-                }
-            });
-        }
-
-        if ($status) {
-            $query->where('status', $status);
-        }
-
-        $sortableColumn = collect($definition['columns'])
-            ->firstWhere('key', $sort);
-
-        if (
-            $sortableColumn &&
-            in_array($sort, $merged['visible']) &&
-            ($sortableColumn['sortable'] ?? false)
-        ) {
-            $query->orderBy($sortableColumn['db_field'], $direction);
-        } else {
-            $defaultSortCol = collect($definition['columns'])
-                ->firstWhere('key', $definition['default_sort']);
-
-            if ($defaultSortCol) {
-                $query->orderBy($defaultSortCol['db_field'], $definition['default_direction']);
-                $sort = $definition['default_sort'];
-                $direction = $definition['default_direction'];
-            } else {
-                $query->orderBy('positions.id', 'desc');
-                $sort = 'id';
-                $direction = 'desc';
-            }
-        }
-
-        $positions = $query->paginate(10)->withQueryString();
+        $list['filters']['status'] = $request->input('status', '');
 
         return inertia('Positions/Index', [
-            'positions' => $positions,
-            'columns' => $definition['columns'],
-            'visibleColumns' => $merged['visible'],
-            'columnOrder' => $merged['order'],
-            'filters' => [
-                'search' => $search,
-                'status' => $status,
-            ],
-            'sort' => $sort,
-            'direction' => $direction,
+            'positions' => $list['rows'],
+            'columns' => $list['columns'],
+            'visibleColumns' => $list['visibleColumns'],
+            'columnOrder' => $list['columnOrder'],
+            'filters' => $list['filters'],
+            'sort' => $list['sort'],
+            'direction' => $list['direction'],
         ]);
     }
 
