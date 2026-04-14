@@ -6,7 +6,7 @@ use App\Models\Position;
 use App\Models\Person;
 use App\Models\PositionAssignment;
 use App\Models\User;
-// use Illuminate\Database\Console\Seeds\WithoutModelEvents;
+use Database\Seeders\PermissionSeeder;
 use Illuminate\Database\Seeder;
 
 class DatabaseSeeder extends Seeder
@@ -16,9 +16,14 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
+        // ✅ Seed permissions FIRST
+        $this->call([
+            PermissionSeeder::class,
+        ]);
+
         // User::factory(10)->create();
 
-        User::factory()->create([
+        $user = User::factory()->create([
             'name' => 'Test User',
             'email' => 'test@example.com',
         ]);
@@ -49,5 +54,13 @@ class DatabaseSeeder extends Seeder
                     'person_id' => $people->random()->id,
                 ]);
         }
+
+        // ✅ OPTIONAL: Attach permissions to your test user
+        $permissions = \App\Models\Permission::whereIn('name', [
+            'view_admin',
+            'special_export_access',
+        ])->pluck('id');
+
+        $user->permissions()->syncWithoutDetaching($permissions);
     }
 }

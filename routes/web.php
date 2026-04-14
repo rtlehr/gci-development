@@ -15,3 +15,4 @@ require __DIR__.'/people.php';
 require __DIR__.'/position.php';
 require __DIR__.'/PositionAssignments.php';
 require __DIR__.'/settings.php';
+require __DIR__.'/permissions.php';
