@@ -1,16 +1,28 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\UserPermissionController;
+use App\Http\Controllers\PermissionController;
 
-Route::get('/admin/users', [UserPermissionController::class, 'index'])
-    ->name('admin.users.index')
+Route::get('/admin/permissions', [PermissionController::class, 'index'])
+    ->name('admin.permissions.index')
     ->middleware('permission:view_admin');
 
-Route::get('/admin/users/{user}/permissions', [UserPermissionController::class, 'edit'])
-    ->name('admin.users.permissions.edit')
+Route::get('/admin/permissions/create', [PermissionController::class, 'create'])
+    ->name('admin.permissions.create')
     ->middleware('permission:view_admin');
 
-Route::put('/admin/users/{user}/permissions', [UserPermissionController::class, 'update'])
-    ->name('admin.users.permissions.update')
+Route::post('/admin/permissions', [PermissionController::class, 'store'])
+    ->name('admin.permissions.store')
+    ->middleware('permission:view_admin');
+
+Route::get('/admin/permissions/{permission}/edit', [PermissionController::class, 'edit'])
+    ->name('admin.permissions.edit')
+    ->middleware('permission:view_admin');
+
+Route::put('/admin/permissions/{permission}', [PermissionController::class, 'update'])
+    ->name('admin.permissions.update')
+    ->middleware('permission:view_admin');
+
+Route::delete('/admin/permissions/{permission}', [PermissionController::class, 'destroy'])
+    ->name('admin.permissions.destroy')
     ->middleware('permission:view_admin');
