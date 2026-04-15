@@ -1,11 +1,11 @@
 <script setup>
 import { computed, reactive, ref } from 'vue'
 import { Link, router } from '@inertiajs/vue3'
-import { MoreHorizontal } from 'lucide-vue-next'
-
+import { MoreHorizontal, Lock } from 'lucide-vue-next'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { Badge } from '@/components/ui/badge'
 
 import {
     AlertDialog,
@@ -178,11 +178,28 @@ function confirmDelete() {
                     >
                         <TableCell>{{ permission.group_name || '—' }}</TableCell>
                         <TableCell>{{ permission.label || '—' }}</TableCell>
-                        <TableCell>{{ permission.name || '—' }}</TableCell>
+                        <TableCell>
+                            <div class="flex items-center gap-2">
+                                <span>{{ permission.name || '—' }}</span>
+
+                                <Badge v-if="permission.is_locked" variant="outline">
+                                    Locked
+                                </Badge>
+                            </div>
+                        </TableCell>
                         <TableCell>{{ permission.description || '—' }}</TableCell>
 
                         <TableCell class="text-right">
-                            <DropdownMenu>
+                            <div v-if="permission.is_locked" class="flex justify-end">
+                                <div
+                                    class="inline-flex items-center justify-center h-9 w-9 rounded-md border text-muted-foreground cursor-not-allowed"
+                                    title="This permission is locked and can not be changed"
+                                >
+                                    <Lock class="h-4 w-4" />
+                                </div>
+                            </div>
+
+                            <DropdownMenu v-else>
                                 <DropdownMenuTrigger as-child>
                                     <Button variant="ghost" size="icon">
                                         <MoreHorizontal class="h-4 w-4" />
