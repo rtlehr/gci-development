@@ -53,6 +53,18 @@ const allMainNavItems: NavItem[] = [
         icon: ArrowLeftRight,
         permission: 'view_admin',
     },
+    {
+        title: 'Edit Permissions',
+        href: '/admin/permissions',
+        icon: ArrowLeftRight,
+        permission: 'view_admin',
+    },
+    {
+        title: 'Edit Roles',
+        href: '/admin/roles',
+        icon: ArrowLeftRight,
+        permission: 'view_admin',
+    },
 ]
 
 const mainNavItems = computed(() =>

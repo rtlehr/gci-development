@@ -46,7 +46,12 @@ class PermissionController extends Controller
             'group_name' => ['nullable', 'string', 'max:255'],
             'label' => ['nullable', 'string', 'max:255'],
             'description' => ['nullable', 'string'],
+            'is_system' => ['boolean'],
+            'is_locked' => ['boolean'],
         ]);
+
+        $validated['is_system'] = $request->boolean('is_system');
+        $validated['is_locked'] = $request->boolean('is_locked');
 
         Permission::create($validated);
 
@@ -63,13 +68,25 @@ class PermissionController extends Controller
     }
 
     public function update(Request $request, Permission $permission)
-    {
+    {   
+
+        if ($permission->is_locked) {
+            return redirect()
+                ->route('admin.permissions.index')
+                ->with('error', 'This permission is locked and cannot be edited.');
+        }
+
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:255', 'unique:permissions,name,' . $permission->id],
             'group_name' => ['nullable', 'string', 'max:255'],
             'label' => ['nullable', 'string', 'max:255'],
             'description' => ['nullable', 'string'],
+            'is_system' => ['boolean'],
+            'is_locked' => ['boolean'],
         ]);
+
+        $validated['is_system'] = $request->boolean('is_system');
+        $validated['is_locked'] = $request->boolean('is_locked');
 
         $permission->update($validated);
 
@@ -80,6 +97,13 @@ class PermissionController extends Controller
 
     public function destroy(Permission $permission)
     {
+
+        if ($permission->is_locked) {
+            return redirect()
+                ->route('admin.permissions.index')
+                ->with('error', 'This permission is locked and cannot be deleted.');
+        }
+
         $permission->delete();
 
         return redirect()

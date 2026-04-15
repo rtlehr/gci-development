@@ -12,6 +12,8 @@ class Permission extends Model
         'group_name',
         'label',
         'description',
+        'is_system',
+        'is_locked',
     ];
 
     public function users(): BelongsToMany

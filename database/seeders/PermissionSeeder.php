@@ -18,24 +18,32 @@ class PermissionSeeder extends Seeder
                 'group_name' => 'Admin',
                 'label' => 'View Admin',
                 'description' => 'Can access the admin area.',
+                'is_system' => true,
+                'is_locked' => true,
             ],
             [
                 'name' => 'special_export_access',
                 'group_name' => 'Admin',
                 'label' => 'Special Export Access',
                 'description' => 'Can use protected export features.',
+                'is_system' => false,
+                'is_locked' => false,
             ],
             [
                 'name' => 'edit_people',
                 'group_name' => 'People',
                 'label' => 'Edit People',
                 'description' => 'Can create and edit people.',
+                'is_system' => false,
+                'is_locked' => false,
             ],
             [
                 'name' => 'edit_positions',
                 'group_name' => 'Positions',
                 'label' => 'Edit Positions',
                 'description' => 'Can create and edit positions.',
+                'is_system' => false,
+                'is_locked' => false,
             ],
         ];
 

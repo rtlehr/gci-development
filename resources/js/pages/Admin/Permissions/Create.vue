@@ -10,6 +10,8 @@ const form = useForm({
     group_name: '',
     label: '',
     description: '',
+    is_system: false,
+    is_locked: false,
 })
 
 function submit() {
@@ -96,6 +98,47 @@ function submit() {
                     <p v-if="form.errors.description" class="text-sm text-red-500">
                         {{ form.errors.description }}
                     </p>
+                </div>
+
+                <div class="space-y-4">
+                    <div>
+                        <h2 class="text-lg font-semibold">Permission Flags</h2>
+                        <p class="text-sm text-muted-foreground">
+                            Control how this permission behaves in the system.
+                        </p>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div class="flex items-start gap-3 p-3 border rounded-lg">
+                            <input
+                                id="is_system"
+                                v-model="form.is_system"
+                                type="checkbox"
+                                class="mt-1"
+                            />
+                            <div>
+                                <Label for="is_system">System Permission</Label>
+                                <p class="text-xs text-muted-foreground">
+                                    Marks this as a built-in system permission.
+                                </p>
+                            </div>
+                        </div>
+
+                        <div class="flex items-start gap-3 p-3 border rounded-lg">
+                            <input
+                                id="is_locked"
+                                v-model="form.is_locked"
+                                type="checkbox"
+                                class="mt-1"
+                            />
+                            <div>
+                                <Label for="is_locked">Locked Permission</Label>
+                                <p class="text-xs text-muted-foreground">
+                                    Prevents this permission from being edited or deleted in the UI.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
                 </div>
 
                 <div class="flex gap-3">
