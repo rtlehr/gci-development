@@ -18,3 +18,4 @@ require __DIR__.'/settings.php';
 require __DIR__.'/UserPermissions.php';
 require __DIR__.'/Permissions.php';
 require __DIR__.'/Roles.php';
+require __DIR__.'/Ticket.php';

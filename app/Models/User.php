@@ -12,6 +12,9 @@ use Illuminate\Notifications\Notifiable;
 use Laravel\Fortify\TwoFactorAuthenticatable;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use App\Models\Permission;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use App\Models\Ticket;
+use App\Models\TicketActivity;
 
 #[Fillable(['name', 'email', 'password'])]
 #[Hidden(['password', 'two_factor_secret', 'two_factor_recovery_codes', 'remember_token'])]
@@ -47,6 +50,21 @@ class User extends Authenticatable
     public function roles(): BelongsToMany
     {
         return $this->belongsToMany(Role::class);
+    }
+
+    public function submittedTickets(): HasMany
+    {
+        return $this->hasMany(Ticket::class, 'submitted_by_user_id');
+    }
+
+    public function assignedTickets(): HasMany
+    {
+        return $this->hasMany(Ticket::class, 'assigned_to_user_id');
+    }
+
+    public function ticketActivities(): HasMany
+    {
+        return $this->hasMany(TicketActivity::class, 'changed_by_user_id');
     }
     
 }
