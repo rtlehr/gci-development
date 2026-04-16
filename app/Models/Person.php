@@ -7,6 +7,8 @@ use Illuminate\Database\Eloquent\Model;
 use App\Models\PositionAssignment;
 use App\Models\Position;
 use App\Models\User;
+use App\Models\PersonPhoneNumber;
+use App\Models\Address;
 
 class Person extends Model
 {
@@ -16,12 +18,13 @@ class Person extends Model
         'user_id',
         'person_code',
         'first_name',
+        'preferred_name',
         'last_name',
         'company_name',
-        'cell_phone',
         'email',
         'employment_status',
         'notes',
+        'resume_path',
     ];
 
     public function assignments()
@@ -50,5 +53,14 @@ class Person extends Model
     {
         return $this->hasOne(PersonPhoneNumber::class)->where('is_primary', true);
     }
-    
+
+    public function addresses()
+    {
+        return $this->hasMany(Address::class);
+    }
+
+    public function primaryAddress()
+    {
+        return $this->hasOne(Address::class)->where('is_primary', true);
+    }
 }

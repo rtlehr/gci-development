@@ -7,15 +7,14 @@ use App\Models\User;
 use App\Models\UserListPreference;
 use App\Services\ListEngine;
 use App\Services\ListExportService;
+use App\Services\AddressService;
+use App\Services\PersonPhoneService;
+use App\Services\PersonUserAccountService;
 use App\Services\UserResolver;
 use App\Support\ListDefinitions\PeopleDefinition;
 use Illuminate\Http\Request;
-use Illuminate\Support\Str;
-use Symfony\Component\HttpFoundation\StreamedResponse;
-use App\Models\PersonPhoneNumber;
-use App\Services\PersonPhoneService;
-use App\Services\PersonUserAccountService;
 use Illuminate\Support\Facades\DB;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class PeopleController extends Controller
 {
@@ -36,8 +35,28 @@ class PeopleController extends Controller
                     $join->on('primary_phone.person_id', '=', 'people.id')
                         ->where('primary_phone.is_primary', true);
                 })
+                ->leftJoin('addresses as primary_address', function ($join) {
+                    $join->on('primary_address.person_id', '=', 'people.id')
+                        ->where('primary_address.is_primary', true);
+                })
                 ->select('people.*')
                 ->selectRaw('primary_phone.phone_number as primary_phone_number')
+                ->selectRaw("
+                    TRIM(
+                        CONCAT(
+                            COALESCE(primary_address.city, ''),
+                            CASE
+                                WHEN primary_address.city IS NOT NULL
+                                    AND primary_address.city <> ''
+                                    AND primary_address.state IS NOT NULL
+                                    AND primary_address.state <> ''
+                                THEN ', '
+                                ELSE ''
+                            END,
+                            COALESCE(primary_address.state, '')
+                        )
+                    ) as primary_address_display
+                ")
         );
 
         return inertia('People/Index', [
@@ -61,9 +80,10 @@ class PeopleController extends Controller
     }
 
     public function store(
-    Request $request,
-    PersonPhoneService $personPhoneService,
-    PersonUserAccountService $personUserAccountService
+        Request $request,
+        PersonPhoneService $personPhoneService,
+        AddressService $addressService,
+        PersonUserAccountService $personUserAccountService
     ) {
         $validated = $request->validate([
             'person_code' => ['required', 'string', 'max:255', 'unique:people,person_code'],
@@ -74,6 +94,7 @@ class PeopleController extends Controller
             'email' => ['nullable', 'email', 'max:255', 'unique:users,email'],
             'employment_status' => ['nullable', 'string', 'max:255'],
             'notes' => ['nullable', 'string'],
+
             'phone_numbers' => ['nullable', 'array'],
             'phone_numbers.*.id' => ['nullable', 'integer'],
             'phone_numbers.*.phone_number' => ['nullable', 'string', 'max:50'],
@@ -81,11 +102,30 @@ class PeopleController extends Controller
             'phone_numbers.*.is_primary' => ['nullable', 'boolean'],
             'phone_numbers.*.extension' => ['nullable', 'string', 'max:20'],
             'phone_numbers.*.notes' => ['nullable', 'string'],
+
+            'addresses' => ['nullable', 'array'],
+            'addresses.*.id' => ['nullable', 'integer'],
+            'addresses.*.address_type' => ['nullable', 'string', 'max:50'],
+            'addresses.*.line_1' => ['nullable', 'string', 'max:255'],
+            'addresses.*.line_2' => ['nullable', 'string', 'max:255'],
+            'addresses.*.city' => ['nullable', 'string', 'max:255'],
+            'addresses.*.state' => ['nullable', 'string', 'max:100'],
+            'addresses.*.postal_code' => ['nullable', 'string', 'max:20'],
+            'addresses.*.country' => ['nullable', 'string', 'max:100'],
+            'addresses.*.is_primary' => ['nullable', 'boolean'],
+            'addresses.*.notes' => ['nullable', 'string'],
         ]);
 
-        return DB::transaction(function () use ($validated, $personPhoneService, $personUserAccountService) {
+        return DB::transaction(function () use (
+            $validated,
+            $personPhoneService,
+            $personAddressService,
+            $personUserAccountService
+        ) {
             $phoneNumbersInput = $validated['phone_numbers'] ?? [];
-            unset($validated['phone_numbers']);
+            $addressesInput = $validated['addresses'] ?? [];
+
+            unset($validated['phone_numbers'], $validated['addresses']);
 
             $user = $personUserAccountService->createForPerson($validated);
 
@@ -94,6 +134,7 @@ class PeopleController extends Controller
             $person = Person::create($validated);
 
             $personPhoneService->createForPerson($person, $phoneNumbersInput);
+            $personAddressService->createForPerson($person, $addressesInput);
 
             return redirect()
                 ->route('people.show', $person->id)
@@ -107,6 +148,8 @@ class PeopleController extends Controller
             'assignments.position',
             'phoneNumbers',
             'primaryPhoneNumber',
+            'addresses',
+            'primaryAddress',
         ])->findOrFail($id);
 
         return inertia('People/Show', [
@@ -114,16 +157,22 @@ class PeopleController extends Controller
         ]);
     }
 
-    public function edit($id, PersonPhoneService $personPhoneService)
-    {
+    public function edit(
+        $id,
+        PersonPhoneService $personPhoneService,
+        AddressService $personAddressService
+    ) {
         $person = Person::with([
             'phoneNumbers',
             'primaryPhoneNumber',
+            'addresses',
+            'primaryAddress',
         ])->findOrFail($id);
 
         $users = User::orderBy('name')->get(['id', 'name']);
 
         $person->phone_numbers = $personPhoneService->normalizeForForm($person->phoneNumbers);
+        $person->addresses = $personAddressService->normalizeForForm($person->addresses);
 
         return inertia('People/Edit', [
             'person' => $person,
@@ -132,10 +181,11 @@ class PeopleController extends Controller
     }
 
     public function update(
-    Request $request,
-    $id,
-    PersonPhoneService $personPhoneService,
-    PersonUserAccountService $personUserAccountService
+        Request $request,
+        $id,
+        PersonPhoneService $personPhoneService,
+        AddressService $personAddressService,
+        PersonUserAccountService $personUserAccountService
     ) {
         $person = Person::findOrFail($id);
 
@@ -149,6 +199,7 @@ class PeopleController extends Controller
             'employment_status' => ['nullable', 'string', 'max:255'],
             'notes' => ['nullable', 'string'],
             'user_id' => ['nullable', 'exists:users,id', 'unique:people,user_id,' . $person->id],
+
             'phone_numbers' => ['nullable', 'array'],
             'phone_numbers.*.id' => ['nullable', 'integer'],
             'phone_numbers.*.phone_number' => ['nullable', 'string', 'max:50'],
@@ -156,16 +207,37 @@ class PeopleController extends Controller
             'phone_numbers.*.is_primary' => ['nullable', 'boolean'],
             'phone_numbers.*.extension' => ['nullable', 'string', 'max:20'],
             'phone_numbers.*.notes' => ['nullable', 'string'],
+
+            'addresses' => ['nullable', 'array'],
+            'addresses.*.id' => ['nullable', 'integer'],
+            'addresses.*.address_type' => ['nullable', 'string', 'max:50'],
+            'addresses.*.line_1' => ['nullable', 'string', 'max:255'],
+            'addresses.*.line_2' => ['nullable', 'string', 'max:255'],
+            'addresses.*.city' => ['nullable', 'string', 'max:255'],
+            'addresses.*.state' => ['nullable', 'string', 'max:100'],
+            'addresses.*.postal_code' => ['nullable', 'string', 'max:20'],
+            'addresses.*.country' => ['nullable', 'string', 'max:100'],
+            'addresses.*.is_primary' => ['nullable', 'boolean'],
+            'addresses.*.notes' => ['nullable', 'string'],
         ]);
 
-        return DB::transaction(function () use ($person, $validated, $personPhoneService, $personUserAccountService) {
+        return DB::transaction(function () use (
+            $person,
+            $validated,
+            $personPhoneService,
+            $personAddressService,
+            $personUserAccountService
+        ) {
             $phoneNumbersInput = $validated['phone_numbers'] ?? [];
-            unset($validated['phone_numbers']);
+            $addressesInput = $validated['addresses'] ?? [];
+
+            unset($validated['phone_numbers'], $validated['addresses']);
 
             $person->update($validated);
 
             $personUserAccountService->syncFromPerson($person, $validated);
             $personPhoneService->sync($person, $phoneNumbersInput);
+            $personAddressService->sync($person, $addressesInput);
 
             return redirect()
                 ->route('people.index')
@@ -256,8 +328,28 @@ class PeopleController extends Controller
                     $join->on('primary_phone.person_id', '=', 'people.id')
                         ->where('primary_phone.is_primary', true);
                 })
+                ->leftJoin('addresses as primary_address', function ($join) {
+                    $join->on('primary_address.person_id', '=', 'people.id')
+                        ->where('primary_address.is_primary', true);
+                })
                 ->select('people.*')
-                ->selectRaw('primary_phone.phone_number as primary_phone_number'),
+                ->selectRaw('primary_phone.phone_number as primary_phone_number')
+                ->selectRaw("
+                    TRIM(
+                        CONCAT(
+                            COALESCE(primary_address.city, ''),
+                            CASE
+                                WHEN primary_address.city IS NOT NULL
+                                    AND primary_address.city <> ''
+                                    AND primary_address.state IS NOT NULL
+                                    AND primary_address.state <> ''
+                                THEN ', '
+                                ELSE ''
+                            END,
+                            COALESCE(primary_address.state, '')
+                        )
+                    ) as primary_address_display
+                "),
             filenamePrefix: 'people-export'
         );
     }

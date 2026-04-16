@@ -92,6 +92,52 @@
 
         <Card>
             <CardHeader>
+                <CardTitle>Addresses</CardTitle>
+            </CardHeader>
+            <CardContent>
+                <div v-if="addresses.length" class="space-y-3">
+                    <div
+                        v-for="address in addresses"
+                        :key="address.id"
+                        class="rounded-lg border p-4"
+                    >
+                        <div class="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+                            <div class="min-w-0">
+                                <div class="font-medium">
+                                    {{ formatAddressType(address.address_type) }}
+                                </div>
+
+                                <div class="mt-2 text-sm text-muted-foreground whitespace-pre-line">
+                                    <div v-for="(line, index) in addressLines(address)" :key="index">
+                                        {{ line }}
+                                    </div>
+                                </div>
+
+                                <div
+                                    v-if="address.notes"
+                                    class="mt-2 text-sm text-muted-foreground whitespace-pre-line"
+                                >
+                                    {{ address.notes }}
+                                </div>
+                            </div>
+
+                            <div class="flex items-center gap-2">
+                                <Badge v-if="address.is_primary" variant="default">
+                                    Primary
+                                </Badge>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div v-else class="text-sm text-muted-foreground">
+                    No addresses available.
+                </div>
+            </CardContent>
+        </Card>
+
+        <Card>
+            <CardHeader>
                 <CardTitle>Current Assignments</CardTitle>
             </CardHeader>
             <CardContent>
@@ -332,6 +378,14 @@ const phoneNumbers = computed(() => {
     })
 })
 
+const addresses = computed(() => {
+    const items = props.person.addresses ?? []
+
+    return [...items].sort((a, b) => {
+        return Number(Boolean(b.is_primary)) - Number(Boolean(a.is_primary))
+    })
+})
+
 const activeAssignments = computed(() => {
     if (!props.person.assignments) return []
 
@@ -362,6 +416,28 @@ function formatPhoneType(value) {
 
     const normalized = String(value).replaceAll('_', ' ')
     return normalized.charAt(0).toUpperCase() + normalized.slice(1)
+}
+
+function formatAddressType(value) {
+    if (!value) return 'Other'
+
+    const normalized = String(value).replaceAll('_', ' ')
+    return normalized.charAt(0).toUpperCase() + normalized.slice(1)
+}
+
+function addressLines(address) {
+    const cityStatePostal = [
+        address.city,
+        address.state,
+        address.postal_code,
+    ].filter(Boolean).join(', ')
+
+    return [
+        address.line_1,
+        address.line_2,
+        cityStatePostal,
+        address.country,
+    ].filter(Boolean)
 }
 
 function openDeleteDialog(id) {

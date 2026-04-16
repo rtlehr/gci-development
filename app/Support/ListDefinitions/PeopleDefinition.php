@@ -89,6 +89,18 @@ class PeopleDefinition
                     'default_visible' => true,
                     'default_order' => 7,
                 ],
+                [
+                    'key' => 'primary_address_display',
+                    'label' => 'Primary Address',
+                    'db_field' => 'primary_address_display',
+                    'sortable' => true,
+                    'searchable' => true,
+                    'hideable' => true,
+                    'exportable' => true,
+                    'default_visible' => true,
+                    'default_order' => 7,
+                ],
+
             ],
         ];
     }
