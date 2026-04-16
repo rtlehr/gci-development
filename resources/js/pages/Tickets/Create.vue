@@ -23,7 +23,12 @@ const form = useForm({
     category: 'Other',
     description: '',
     source_url: props.sourceUrl || window.location.href,
+    screenshot: null,
 })
+
+function handleScreenshotChange(event) {
+    form.screenshot = event.target.files[0] || null
+}
 
 function submit() {
     form.clearErrors()
@@ -137,6 +142,23 @@ function submit() {
                             disabled
                         />
                     </div>
+                </div>
+
+                <div class="space-y-2">
+                    <Label for="screenshot">Screenshot</Label>
+                    <Input
+                        id="screenshot"
+                        type="file"
+                        accept="image/*"
+                        @change="handleScreenshotChange"
+                        :class="form.errors.screenshot ? 'border-red-500' : ''"
+                    />
+                    <p class="text-xs text-muted-foreground">
+                        Optional. Upload a screenshot to help explain the issue.
+                    </p>
+                    <p v-if="form.errors.screenshot" class="text-sm text-red-500">
+                        {{ form.errors.screenshot }}
+                    </p>
                 </div>
 
                 <div class="space-y-2">

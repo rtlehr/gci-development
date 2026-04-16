@@ -41,12 +41,19 @@ class TicketController extends Controller
             'category' => ['nullable', 'string', 'max:255'],
             'description' => ['required', 'string'],
             'source_url' => ['nullable', 'string'],
+            'screenshot' => ['nullable', 'image', 'max:5120'], // 5MB
         ]);
 
         $userId = $userResolver->resolveUserId();
 
         $nextId = (Ticket::max('id') ?? 0) + 1;
         $ticketNumber = 'TCK-' . str_pad((string) $nextId, 6, '0', STR_PAD_LEFT);
+
+        $screenshotPath = null;
+
+        if ($request->hasFile('screenshot')) {
+            $screenshotPath = $request->file('screenshot')->store('ticket-screenshots', 'public');
+        }
 
         $ticket = Ticket::create([
             'ticket_number' => $ticketNumber,
@@ -57,6 +64,7 @@ class TicketController extends Controller
             'category' => $validated['category'] ?? null,
             'description' => $validated['description'],
             'source_url' => $validated['source_url'] ?? null,
+            'screenshot_path' => $screenshotPath,
             'status' => 'new',
         ]);
 

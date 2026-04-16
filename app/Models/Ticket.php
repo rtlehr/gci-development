@@ -17,6 +17,7 @@ class Ticket extends Model
         'category',
         'description',
         'source_url',
+        'screenshot_path',
         'assigned_to_user_id',
         'status',
         'resolution_notes',

@@ -238,6 +238,23 @@ const sourceUrl = computed(() => props.ticket.source_url || '—')
                             {{ ticket.description }}
                         </div>
                     </div>
+
+                    <div v-if="ticket.screenshot_path" class="space-y-2">
+                    <p class="text-sm text-muted-foreground">Screenshot</p>
+
+                    <a
+                        :href="`/storage/${ticket.screenshot_path}`"
+                        target="_blank"
+                        class="inline-block"
+                    >
+                        <img
+                            :src="`/storage/${ticket.screenshot_path}`"
+                            alt="Ticket screenshot"
+                            class="max-h-[400px] rounded-lg border"
+                        />
+                    </a>
+                </div>
+
                 </div>
 
                 <div class="border rounded-xl p-6 bg-background space-y-6">
