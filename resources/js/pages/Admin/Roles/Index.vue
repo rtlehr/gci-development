@@ -1,7 +1,12 @@
 <script setup>
 import { computed, reactive, ref } from 'vue'
 import { Link, router } from '@inertiajs/vue3'
-import { MoreHorizontal } from 'lucide-vue-next'
+import {
+    ArrowDown,
+    ArrowUp,
+    ArrowUpDown,
+    MoreHorizontal,
+} from 'lucide-vue-next'
 
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -41,20 +46,65 @@ const props = defineProps({
         type: Object,
         required: true,
     },
+    columns: {
+        type: Array,
+        default: () => [
+            { key: 'label', label: 'Label', sortable: true },
+            { key: 'name', label: 'Name', sortable: true },
+            { key: 'description', label: 'Description', sortable: false },
+            { key: 'permissions_count', label: 'Permission Count', sortable: true },
+        ],
+    },
+    visibleColumns: {
+        type: Array,
+        default: () => ['label', 'name', 'description', 'permissions_count'],
+    },
+    columnOrder: {
+        type: Array,
+        default: () => ['label', 'name', 'description', 'permissions_count'],
+    },
     filters: {
         type: Object,
         default: () => ({
             search: '',
         }),
     },
+    sort: {
+        type: String,
+        default: 'name',
+    },
+    direction: {
+        type: String,
+        default: 'asc',
+    },
 })
+
+const showColumnSettings = ref(false)
 
 const filterForm = reactive({
     search: props.filters?.search ?? '',
 })
 
+const settingsForm = reactive({
+    visibleColumns: [...(props.visibleColumns ?? [])],
+    columnOrder: [...(props.columnOrder ?? [])],
+})
+
 const deleteDialogOpen = ref(false)
 const roleToDelete = ref(null)
+
+const activeColumns = computed(() => {
+    return settingsForm.columnOrder
+        .filter((key) => settingsForm.visibleColumns.includes(key))
+        .map((key) => props.columns.find((col) => col.key === key))
+        .filter(Boolean)
+})
+
+const orderedColumnDefinitions = computed(() => {
+    return settingsForm.columnOrder
+        .map((key) => props.columns.find((col) => col.key === key))
+        .filter(Boolean)
+})
 
 const pagesToShow = computed(() => {
     const current = props.roles.current_page ?? 1
@@ -74,6 +124,8 @@ const pagesToShow = computed(() => {
 function applyFilters() {
     router.get('/admin/roles', {
         search: filterForm.search,
+        sort: props.sort,
+        direction: props.direction,
     }, {
         preserveState: true,
         replace: true,
@@ -83,19 +135,86 @@ function applyFilters() {
 function resetFilters() {
     filterForm.search = ''
 
-    router.get('/admin/roles', {}, {
+    router.get('/admin/roles', {
+        sort: props.sort,
+        direction: props.direction,
+    }, {
         preserveState: true,
         replace: true,
     })
+}
+
+function sortBy(column) {
+    let nextDirection = 'asc'
+
+    if (props.sort === column && props.direction === 'asc') {
+        nextDirection = 'desc'
+    }
+
+    router.get('/admin/roles', {
+        search: filterForm.search,
+        sort: column,
+        direction: nextDirection,
+    }, {
+        preserveState: true,
+        replace: true,
+    })
+}
+
+function getSortIcon(column) {
+    if (props.sort !== column) return ArrowUpDown
+    return props.direction === 'asc' ? ArrowUp : ArrowDown
 }
 
 function goToPage(page) {
     router.get('/admin/roles', {
         page,
         search: filterForm.search,
+        sort: props.sort,
+        direction: props.direction,
     }, {
         preserveState: true,
         replace: true,
+    })
+}
+
+function getColumnLabel(key) {
+    return props.columns.find((col) => col.key === key)?.label ?? key
+}
+
+function moveColumnLeft(index) {
+    if (index <= 0) return
+
+    const temp = settingsForm.columnOrder[index - 1]
+    settingsForm.columnOrder[index - 1] = settingsForm.columnOrder[index]
+    settingsForm.columnOrder[index] = temp
+}
+
+function moveColumnRight(index) {
+    if (index >= settingsForm.columnOrder.length - 1) return
+
+    const temp = settingsForm.columnOrder[index + 1]
+    settingsForm.columnOrder[index + 1] = settingsForm.columnOrder[index]
+    settingsForm.columnOrder[index] = temp
+}
+
+function saveColumnPreferences() {
+    router.post('/admin/roles/preferences', {
+        visible_columns: settingsForm.visibleColumns,
+        column_order: settingsForm.columnOrder,
+    }, {
+        preserveScroll: true,
+    })
+}
+
+function resetColumnSettingsLocally() {
+    settingsForm.visibleColumns = [...(props.visibleColumns ?? [])]
+    settingsForm.columnOrder = [...(props.columnOrder ?? [])]
+}
+
+function resetPreferencesOnServer() {
+    router.delete('/admin/roles/preferences', {
+        preserveScroll: true,
     })
 }
 
@@ -115,21 +234,136 @@ function confirmDelete() {
         },
     })
 }
+
+function formatCell(row, key) {
+    const value = row[key]
+
+    if (value === null || value === undefined || value === '') {
+        return '—'
+    }
+
+    return value
+}
+
+function exportCsv() {
+    const params = new URLSearchParams()
+
+    if (filterForm.search) {
+        params.append('search', filterForm.search)
+    }
+
+    settingsForm.visibleColumns.forEach((col) => {
+        params.append('visible_columns[]', col)
+    })
+
+    settingsForm.columnOrder.forEach((col) => {
+        params.append('column_order[]', col)
+    })
+
+    window.location.href = `/admin/roles/export/csv?${params.toString()}`
+}
 </script>
 
 <template>
     <div class="p-6 space-y-6">
         <div class="flex items-center justify-between">
+            <h1 class="text-2xl font-semibold">Roles</h1>
+
+            <div class="flex gap-2">
+                <Button variant="outline" @click="showColumnSettings = !showColumnSettings">
+                    {{ showColumnSettings ? 'Hide Column Settings' : 'Column Settings' }}
+                </Button>
+
+                <Button variant="outline" @click="exportCsv">
+                    Export CSV
+                </Button>
+
+                <Link href="/admin/roles/create">
+                    <Button>Create Role</Button>
+                </Link>
+            </div>
+        </div>
+
+        <div v-if="showColumnSettings" class="border rounded-xl p-4 bg-background space-y-4">
             <div>
-                <h1 class="text-2xl font-semibold">Roles</h1>
-                <p class="text-sm text-muted-foreground mt-1">
-                    Manage roles and the permissions they grant.
+                <h2 class="text-lg font-semibold">Column Settings</h2>
+                <p class="text-sm text-muted-foreground">
+                    Choose which columns are shown and change their order.
                 </p>
             </div>
 
-            <Link href="/admin/roles/create">
-                <Button>Create Role</Button>
-            </Link>
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <div class="space-y-3">
+                    <h3 class="font-medium">Visible Columns</h3>
+
+                    <div
+                        v-for="col in orderedColumnDefinitions"
+                        :key="col.key"
+                        class="flex items-center justify-between rounded-lg border p-3"
+                    >
+                        <div class="flex items-center gap-3">
+                            <input
+                                :id="`visible-${col.key}`"
+                                v-model="settingsForm.visibleColumns"
+                                :value="col.key"
+                                type="checkbox"
+                                class="h-4 w-4"
+                            />
+                            <Label :for="`visible-${col.key}`">{{ col.label }}</Label>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="space-y-3">
+                    <h3 class="font-medium">Column Order</h3>
+
+                    <div
+                        v-for="(colKey, index) in settingsForm.columnOrder"
+                        :key="colKey"
+                        class="flex items-center justify-between rounded-lg border p-3"
+                    >
+                        <div class="font-medium">
+                            {{ getColumnLabel(colKey) }}
+                        </div>
+
+                        <div class="flex gap-2">
+                            <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                :disabled="index === 0"
+                                @click="moveColumnLeft(index)"
+                            >
+                                Left
+                            </Button>
+
+                            <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                :disabled="index === settingsForm.columnOrder.length - 1"
+                                @click="moveColumnRight(index)"
+                            >
+                                Right
+                            </Button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="flex gap-2">
+                <Button @click="saveColumnPreferences">
+                    Save Preferences
+                </Button>
+
+                <Button variant="outline" @click="resetColumnSettingsLocally">
+                    Reset Unsaved Changes
+                </Button>
+
+                <Button variant="outline" @click="resetPreferencesOnServer">
+                    Reset to Defaults
+                </Button>
+            </div>
         </div>
 
         <div class="border rounded-xl p-4 bg-background">
@@ -156,17 +390,31 @@ function confirmDelete() {
             <Table>
                 <TableHeader>
                     <TableRow>
-                        <TableHead>Label</TableHead>
-                        <TableHead>Name</TableHead>
-                        <TableHead>Description</TableHead>
-                        <TableHead>Permission Count</TableHead>
+                        <TableHead
+                            v-for="col in activeColumns"
+                            :key="col.key"
+                            @click="col.sortable ? sortBy(col.key) : null"
+                            :class="col.sortable ? 'cursor-pointer select-none' : ''"
+                        >
+                            <div class="flex items-center gap-2">
+                                <span>{{ col.label }}</span>
+
+                                <component
+                                    v-if="col.sortable"
+                                    :is="getSortIcon(col.key)"
+                                    class="h-4 w-4"
+                                    :class="sort === col.key ? 'text-foreground' : 'text-muted-foreground'"
+                                />
+                            </div>
+                        </TableHead>
+
                         <TableHead class="text-right">Actions</TableHead>
                     </TableRow>
                 </TableHeader>
 
                 <TableBody>
                     <TableRow v-if="!roles?.data?.length">
-                        <TableCell colspan="5" class="text-center py-8 text-muted-foreground">
+                        <TableCell :colspan="activeColumns.length + 1" class="text-center py-8 text-muted-foreground">
                             No roles found.
                         </TableCell>
                     </TableRow>
@@ -176,10 +424,12 @@ function confirmDelete() {
                         :key="role.id"
                         class="hover:bg-muted/50"
                     >
-                        <TableCell>{{ role.label || '—' }}</TableCell>
-                        <TableCell>{{ role.name || '—' }}</TableCell>
-                        <TableCell>{{ role.description || '—' }}</TableCell>
-                        <TableCell>{{ role.permissions_count ?? 0 }}</TableCell>
+                        <TableCell
+                            v-for="col in activeColumns"
+                            :key="col.key"
+                        >
+                            {{ formatCell(role, col.key) }}
+                        </TableCell>
 
                         <TableCell class="text-right">
                             <DropdownMenu>

@@ -4,35 +4,54 @@ namespace App\Http\Controllers;
 
 use App\Models\Permission;
 use App\Models\Role;
+use App\Models\UserListPreference;
+use App\Services\ListEngine;
+use App\Services\ListExportService;
 use App\Services\PermissionService;
-use App\Models\User;
+use App\Services\UserResolver;
+use App\Support\ListDefinitions\RolesDefinition;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class RoleController extends Controller
 {
-    public function index(Request $request)
-    {
-        $search = $request->input('search', '');
+    public function index(
+        Request $request,
+        UserResolver $userResolver,
+        ListEngine $listEngine
+    ) {
+        $definition = RolesDefinition::get();
+        $userId = $userResolver->resolveUserId();
 
-        $roles = Role::query()
-            ->withCount('permissions')
-            ->when($search, function ($query, $search) {
-                $query->where(function ($q) use ($search) {
-                    $q->where('name', 'like', "%{$search}%")
-                        ->orWhere('label', 'like', "%{$search}%")
-                        ->orWhere('description', 'like', "%{$search}%");
-                });
-            })
-            ->orderBy('name')
-            ->paginate(10)
-            ->withQueryString();
+        $list = $listEngine->run(
+            request: $request,
+            definition: $definition,
+            userId: $userId,
+            query: Role::query()->withCount('permissions'),
+            filterCallback: function ($query, $request) {
+                $search = $request->input('search', '');
+
+                if ($search) {
+                    $query->where(function ($q) use ($search) {
+                        $q->where('name', 'like', "%{$search}%")
+                            ->orWhere('label', 'like', "%{$search}%")
+                            ->orWhere('description', 'like', "%{$search}%");
+                    });
+                }
+            }
+        );
+
+        $list['filters']['search'] = $request->input('search', '');
 
         return Inertia::render('Admin/Roles/Index', [
-            'roles' => $roles,
-            'filters' => [
-                'search' => $search,
-            ],
+            'roles' => $list['rows'],
+            'columns' => $list['columns'],
+            'visibleColumns' => $list['visibleColumns'],
+            'columnOrder' => $list['columnOrder'],
+            'filters' => $list['filters'],
+            'sort' => $list['sort'],
+            'direction' => $list['direction'],
         ]);
     }
 
@@ -42,15 +61,11 @@ class RoleController extends Controller
             ->orderBy('group_name')
             ->orderBy('name')
             ->get(['id', 'name', 'group_name', 'label', 'description'])
-            ->groupBy(function ($permission) {
-                return $permission->group_name ?: 'Other';
-            })
-            ->map(function ($groupPermissions, $groupName) {
-                return [
-                    'group' => $groupName,
-                    'permissions' => $groupPermissions->values(),
-                ];
-            })
+            ->groupBy(fn ($permission) => $permission->group_name ?: 'Other')
+            ->map(fn ($groupPermissions, $groupName) => [
+                'group' => $groupName,
+                'permissions' => $groupPermissions->values(),
+            ])
             ->values();
 
         return Inertia::render('Admin/Roles/Create', [
@@ -89,15 +104,11 @@ class RoleController extends Controller
             ->orderBy('group_name')
             ->orderBy('name')
             ->get(['id', 'name', 'group_name', 'label', 'description'])
-            ->groupBy(function ($permission) {
-                return $permission->group_name ?: 'Other';
-            })
-            ->map(function ($groupPermissions, $groupName) {
-                return [
-                    'group' => $groupName,
-                    'permissions' => $groupPermissions->values(),
-                ];
-            })
+            ->groupBy(fn ($permission) => $permission->group_name ?: 'Other')
+            ->map(fn ($groupPermissions, $groupName) => [
+                'group' => $groupName,
+                'permissions' => $groupPermissions->values(),
+            ])
             ->values();
 
         return Inertia::render('Admin/Roles/Edit', [
@@ -145,6 +156,83 @@ class RoleController extends Controller
         return redirect()
             ->route('admin.roles.index')
             ->with('success', 'Role deleted successfully.');
+    }
+
+    public function savePreferences(Request $request, UserResolver $userResolver)
+    {
+        $definition = RolesDefinition::get();
+        $validKeys = collect($definition['columns'])->pluck('key')->toArray();
+
+        $validated = $request->validate([
+            'visible_columns' => ['required', 'array'],
+            'visible_columns.*' => ['string'],
+            'column_order' => ['required', 'array'],
+            'column_order.*' => ['string'],
+        ]);
+
+        $visibleColumns = collect($validated['visible_columns'])
+            ->filter(fn ($key) => in_array($key, $validKeys))
+            ->values()
+            ->toArray();
+
+        $columnOrder = collect($validated['column_order'])
+            ->filter(fn ($key) => in_array($key, $validKeys))
+            ->values()
+            ->toArray();
+
+        $userId = $userResolver->resolveUserId();
+
+        UserListPreference::updateOrCreate(
+            [
+                'user_id' => $userId,
+                'list_key' => $definition['list_key'],
+            ],
+            [
+                'visible_columns' => $visibleColumns,
+                'column_order' => $columnOrder,
+            ]
+        );
+
+        return redirect()
+            ->route('admin.roles.index')
+            ->with('success', 'Column preferences saved.');
+    }
+
+    public function resetPreferences(UserResolver $userResolver)
+    {
+        $definition = RolesDefinition::get();
+        $userId = $userResolver->resolveUserId();
+
+        UserListPreference::where('user_id', $userId)
+            ->where('list_key', $definition['list_key'])
+            ->delete();
+
+        return redirect()
+            ->route('admin.roles.index')
+            ->with('success', 'Column preferences reset to defaults.');
+    }
+
+    public function exportCsv(
+        Request $request,
+        ListExportService $listExportService
+    ): StreamedResponse {
+        return $listExportService->exportCsv(
+            request: $request,
+            definition: RolesDefinition::get(),
+            query: Role::query()->withCount('permissions'),
+            filenamePrefix: 'roles-export',
+            filterCallback: function ($query, $request) {
+                $search = $request->input('search', '');
+
+                if ($search) {
+                    $query->where(function ($q) use ($search) {
+                        $q->where('name', 'like', "%{$search}%")
+                            ->orWhere('label', 'like', "%{$search}%")
+                            ->orWhere('description', 'like', "%{$search}%");
+                    });
+                }
+            }
+        );
     }
 
     protected function clearCachesForUsersWithRole(Role $role): void
