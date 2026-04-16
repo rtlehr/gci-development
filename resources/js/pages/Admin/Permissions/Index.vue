@@ -1,7 +1,14 @@
 <script setup>
 import { computed, reactive, ref } from 'vue'
 import { Link, router } from '@inertiajs/vue3'
-import { MoreHorizontal, Lock } from 'lucide-vue-next'
+import {
+    ArrowDown,
+    ArrowUp,
+    ArrowUpDown,
+    MoreHorizontal,
+    Lock,
+} from 'lucide-vue-next'
+
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -41,20 +48,65 @@ const props = defineProps({
         type: Object,
         required: true,
     },
+    columns: {
+        type: Array,
+        default: () => [
+            { key: 'group_name', label: 'Group', sortable: true },
+            { key: 'label', label: 'Label', sortable: true },
+            { key: 'name', label: 'Name', sortable: true },
+            { key: 'description', label: 'Description', sortable: false },
+        ],
+    },
+    visibleColumns: {
+        type: Array,
+        default: () => ['group_name', 'label', 'name', 'description'],
+    },
+    columnOrder: {
+        type: Array,
+        default: () => ['group_name', 'label', 'name', 'description'],
+    },
     filters: {
         type: Object,
         default: () => ({
             search: '',
         }),
     },
+    sort: {
+        type: String,
+        default: 'name',
+    },
+    direction: {
+        type: String,
+        default: 'asc',
+    },
 })
+
+const showColumnSettings = ref(false)
 
 const filterForm = reactive({
     search: props.filters?.search ?? '',
 })
 
+const settingsForm = reactive({
+    visibleColumns: [...props.visibleColumns],
+    columnOrder: [...props.columnOrder],
+})
+
 const deleteDialogOpen = ref(false)
 const permissionToDelete = ref(null)
+
+const activeColumns = computed(() => {
+    return settingsForm.columnOrder
+        .filter((key) => settingsForm.visibleColumns.includes(key))
+        .map((key) => props.columns.find((col) => col.key === key))
+        .filter(Boolean)
+})
+
+const orderedColumnDefinitions = computed(() => {
+    return settingsForm.columnOrder
+        .map((key) => props.columns.find((col) => col.key === key))
+        .filter(Boolean)
+})
 
 const pagesToShow = computed(() => {
     const current = props.permissions.current_page ?? 1
@@ -74,6 +126,8 @@ const pagesToShow = computed(() => {
 function applyFilters() {
     router.get('/admin/permissions', {
         search: filterForm.search,
+        sort: props.sort,
+        direction: props.direction,
     }, {
         preserveState: true,
         replace: true,
@@ -83,19 +137,84 @@ function applyFilters() {
 function resetFilters() {
     filterForm.search = ''
 
-    router.get('/admin/permissions', {}, {
+    router.get('/admin/permissions', {
+        sort: props.sort,
+        direction: props.direction,
+    }, {
         preserveState: true,
         replace: true,
     })
+}
+
+function sortBy(column) {
+    let nextDirection = 'asc'
+
+    if (props.sort === column && props.direction === 'asc') {
+        nextDirection = 'desc'
+    }
+
+    router.get('/admin/permissions', {
+        search: filterForm.search,
+        sort: column,
+        direction: nextDirection,
+    }, {
+        preserveState: true,
+        replace: true,
+    })
+}
+
+function getSortIcon(column) {
+    if (props.sort !== column) return ArrowUpDown
+    return props.direction === 'asc' ? ArrowUp : ArrowDown
 }
 
 function goToPage(page) {
     router.get('/admin/permissions', {
         page,
         search: filterForm.search,
+        sort: props.sort,
+        direction: props.direction,
     }, {
         preserveState: true,
         replace: true,
+    })
+}
+
+function getColumnLabel(key) {
+    return props.columns.find((col) => col.key === key)?.label ?? key
+}
+
+function moveColumnLeft(index) {
+    if (index <= 0) return
+    const temp = settingsForm.columnOrder[index - 1]
+    settingsForm.columnOrder[index - 1] = settingsForm.columnOrder[index]
+    settingsForm.columnOrder[index] = temp
+}
+
+function moveColumnRight(index) {
+    if (index >= settingsForm.columnOrder.length - 1) return
+    const temp = settingsForm.columnOrder[index + 1]
+    settingsForm.columnOrder[index + 1] = settingsForm.columnOrder[index]
+    settingsForm.columnOrder[index] = temp
+}
+
+function saveColumnPreferences() {
+    router.post('/admin/permissions/preferences', {
+        visible_columns: settingsForm.visibleColumns,
+        column_order: settingsForm.columnOrder,
+    }, {
+        preserveScroll: true,
+    })
+}
+
+function resetColumnSettingsLocally() {
+    settingsForm.visibleColumns = [...props.visibleColumns]
+    settingsForm.columnOrder = [...props.columnOrder]
+}
+
+function resetPreferencesOnServer() {
+    router.delete('/admin/permissions/preferences', {
+        preserveScroll: true,
     })
 }
 
@@ -115,23 +234,136 @@ function confirmDelete() {
         },
     })
 }
+
+function formatCell(row, key) {
+    const value = row[key]
+    if (!value) return '—'
+    return value
+}
+
+function exportCsv() {
+    const params = new URLSearchParams()
+
+    if (filterForm.search) {
+        params.append('search', filterForm.search)
+    }
+
+    settingsForm.visibleColumns.forEach((col) => {
+        params.append('visible_columns[]', col)
+    })
+
+    settingsForm.columnOrder.forEach((col) => {
+        params.append('column_order[]', col)
+    })
+
+    window.location.href = `/admin/permissions/export/csv?${params.toString()}`
+}
 </script>
 
 <template>
     <div class="p-6 space-y-6">
         <div class="flex items-center justify-between">
+            <h1 class="text-2xl font-semibold">Permissions</h1>
+
+            <div class="flex gap-2">
+                <Button variant="outline" @click="showColumnSettings = !showColumnSettings">
+                    {{ showColumnSettings ? 'Hide Column Settings' : 'Column Settings' }}
+                </Button>
+
+                <Button variant="outline" @click="exportCsv">
+                    Export CSV
+                </Button>
+
+                <Link href="/admin/permissions/create">
+                    <Button>Create Permission</Button>
+                </Link>
+            </div>
+        </div>
+
+        <!-- Column Settings -->
+        <div v-if="showColumnSettings" class="border rounded-xl p-4 bg-background space-y-4">
             <div>
-                <h1 class="text-2xl font-semibold">Permissions</h1>
-                <p class="text-sm text-muted-foreground mt-1">
-                    Manage permission definitions for the application.
+                <h2 class="text-lg font-semibold">Column Settings</h2>
+                <p class="text-sm text-muted-foreground">
+                    Choose which columns are shown and change their order.
                 </p>
             </div>
 
-            <Link href="/admin/permissions/create">
-                <Button>Create Permission</Button>
-            </Link>
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <div class="space-y-3">
+                    <h3 class="font-medium">Visible Columns</h3>
+
+                    <div
+                        v-for="col in orderedColumnDefinitions"
+                        :key="col.key"
+                        class="flex items-center justify-between rounded-lg border p-3"
+                    >
+                        <div class="flex items-center gap-3">
+                            <input
+                                :id="`visible-${col.key}`"
+                                v-model="settingsForm.visibleColumns"
+                                :value="col.key"
+                                type="checkbox"
+                                class="h-4 w-4"
+                            />
+                            <Label :for="`visible-${col.key}`">{{ col.label }}</Label>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="space-y-3">
+                    <h3 class="font-medium">Column Order</h3>
+
+                    <div
+                        v-for="(colKey, index) in settingsForm.columnOrder"
+                        :key="colKey"
+                        class="flex items-center justify-between rounded-lg border p-3"
+                    >
+                        <div class="font-medium">
+                            {{ getColumnLabel(colKey) }}
+                        </div>
+
+                        <div class="flex gap-2">
+                            <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                :disabled="index === 0"
+                                @click="moveColumnLeft(index)"
+                            >
+                                Left
+                            </Button>
+
+                            <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                :disabled="index === settingsForm.columnOrder.length - 1"
+                                @click="moveColumnRight(index)"
+                            >
+                                Right
+                            </Button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="flex gap-2">
+                <Button @click="saveColumnPreferences">
+                    Save Preferences
+                </Button>
+
+                <Button variant="outline" @click="resetColumnSettingsLocally">
+                    Reset Unsaved Changes
+                </Button>
+
+                <Button variant="outline" @click="resetPreferencesOnServer">
+                    Reset to Defaults
+                </Button>
+            </div>
         </div>
 
+        <!-- Filters -->
         <div class="border rounded-xl p-4 bg-background">
             <form @submit.prevent="applyFilters" class="flex flex-col md:flex-row gap-4 md:items-end">
                 <div class="flex-1 space-y-2">
@@ -152,21 +384,36 @@ function confirmDelete() {
             </form>
         </div>
 
+        <!-- Table -->
         <div class="border rounded-xl bg-background overflow-hidden">
             <Table>
                 <TableHeader>
                     <TableRow>
-                        <TableHead>Group</TableHead>
-                        <TableHead>Label</TableHead>
-                        <TableHead>Name</TableHead>
-                        <TableHead>Description</TableHead>
+                        <TableHead
+                            v-for="col in activeColumns"
+                            :key="col.key"
+                            @click="col.sortable ? sortBy(col.key) : null"
+                            :class="col.sortable ? 'cursor-pointer select-none' : ''"
+                        >
+                            <div class="flex items-center gap-2">
+                                <span>{{ col.label }}</span>
+
+                                <component
+                                    v-if="col.sortable"
+                                    :is="getSortIcon(col.key)"
+                                    class="h-4 w-4"
+                                    :class="sort === col.key ? 'text-foreground' : 'text-muted-foreground'"
+                                />
+                            </div>
+                        </TableHead>
+
                         <TableHead class="text-right">Actions</TableHead>
                     </TableRow>
                 </TableHeader>
 
                 <TableBody>
                     <TableRow v-if="!permissions?.data?.length">
-                        <TableCell colspan="5" class="text-center py-8 text-muted-foreground">
+                        <TableCell :colspan="activeColumns.length + 1" class="text-center py-8 text-muted-foreground">
                             No permissions found.
                         </TableCell>
                     </TableRow>
@@ -176,25 +423,27 @@ function confirmDelete() {
                         :key="permission.id"
                         class="hover:bg-muted/50"
                     >
-                        <TableCell>{{ permission.group_name || '—' }}</TableCell>
-                        <TableCell>{{ permission.label || '—' }}</TableCell>
-                        <TableCell>
-                            <div class="flex items-center gap-2">
-                                <span>{{ permission.name || '—' }}</span>
+                        <TableCell
+                            v-for="col in activeColumns"
+                            :key="col.key"
+                        >
+                            <template v-if="col.key === 'name'">
+                                <div class="flex items-center gap-2">
+                                    <span>{{ formatCell(permission, col.key) }}</span>
+                                    <Badge v-if="permission.is_locked" variant="outline">
+                                        Locked
+                                    </Badge>
+                                </div>
+                            </template>
 
-                                <Badge v-if="permission.is_locked" variant="outline">
-                                    Locked
-                                </Badge>
-                            </div>
+                            <template v-else>
+                                {{ formatCell(permission, col.key) }}
+                            </template>
                         </TableCell>
-                        <TableCell>{{ permission.description || '—' }}</TableCell>
 
                         <TableCell class="text-right">
                             <div v-if="permission.is_locked" class="flex justify-end">
-                                <div
-                                    class="inline-flex items-center justify-center h-9 w-9 rounded-md border text-muted-foreground cursor-not-allowed"
-                                    title="This permission is locked and can not be changed"
-                                >
+                                <div class="inline-flex items-center justify-center h-9 w-9 rounded-md border text-muted-foreground cursor-not-allowed">
                                     <Lock class="h-4 w-4" />
                                 </div>
                             </div>
@@ -232,6 +481,7 @@ function confirmDelete() {
             </Table>
         </div>
 
+        <!-- Pagination -->
         <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
             <div class="text-sm text-muted-foreground">
                 Showing {{ permissions.from ?? 0 }} to {{ permissions.to ?? 0 }} of {{ permissions.total ?? 0 }} permissions
@@ -268,6 +518,7 @@ function confirmDelete() {
             </div>
         </div>
 
+        <!-- Delete Dialog -->
         <AlertDialog :open="deleteDialogOpen" @update:open="deleteDialogOpen = $event">
             <AlertDialogContent>
                 <AlertDialogHeader>

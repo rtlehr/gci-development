@@ -3,34 +3,54 @@
 namespace App\Http\Controllers;
 
 use App\Models\Permission;
+use App\Models\UserListPreference;
+use App\Services\ListEngine;
+use App\Services\UserResolver;
+use App\Services\ListExportService;
+use App\Support\ListDefinitions\PermissionsDefinition;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class PermissionController extends Controller
 {
-    public function index(Request $request)
-    {
-        $search = $request->input('search', '');
+    public function index(
+        Request $request,
+        UserResolver $userResolver,
+        ListEngine $listEngine
+    ) {
+        $definition = PermissionsDefinition::get();
+        $userId = $userResolver->resolveUserId();
 
-        $permissions = Permission::query()
-            ->when($search, function ($query, $search) {
-                $query->where(function ($q) use ($search) {
-                    $q->where('name', 'like', "%{$search}%")
-                        ->orWhere('label', 'like', "%{$search}%")
-                        ->orWhere('group_name', 'like', "%{$search}%")
-                        ->orWhere('description', 'like', "%{$search}%");
-                });
-            })
-            ->orderBy('group_name')
-            ->orderBy('name')
-            ->paginate(10)
-            ->withQueryString();
+        $list = $listEngine->run(
+            request: $request,
+            definition: $definition,
+            userId: $userId,
+            query: Permission::query(),
+            filterCallback: function ($query, $request) {
+                $search = $request->input('search', '');
+
+                if ($search) {
+                    $query->where(function ($q) use ($search) {
+                        $q->where('name', 'like', "%{$search}%")
+                            ->orWhere('label', 'like', "%{$search}%")
+                            ->orWhere('group_name', 'like', "%{$search}%")
+                            ->orWhere('description', 'like', "%{$search}%");
+                    });
+                }
+            }
+        );
+
+        $list['filters']['search'] = $request->input('search', '');
 
         return Inertia::render('Admin/Permissions/Index', [
-            'permissions' => $permissions,
-            'filters' => [
-                'search' => $search,
-            ],
+            'permissions' => $list['rows'],
+            'columns' => $list['columns'],
+            'visibleColumns' => $list['visibleColumns'],
+            'columnOrder' => $list['columnOrder'],
+            'filters' => $list['filters'],
+            'sort' => $list['sort'],
+            'direction' => $list['direction'],
         ]);
     }
 
@@ -68,8 +88,7 @@ class PermissionController extends Controller
     }
 
     public function update(Request $request, Permission $permission)
-    {   
-
+    {
         if ($permission->is_locked) {
             return redirect()
                 ->route('admin.permissions.index')
@@ -97,7 +116,6 @@ class PermissionController extends Controller
 
     public function destroy(Permission $permission)
     {
-
         if ($permission->is_locked) {
             return redirect()
                 ->route('admin.permissions.index')
@@ -109,5 +127,83 @@ class PermissionController extends Controller
         return redirect()
             ->route('admin.permissions.index')
             ->with('success', 'Permission deleted successfully.');
+    }
+
+    public function savePreferences(Request $request, UserResolver $userResolver)
+    {
+        $definition = PermissionsDefinition::get();
+        $validKeys = collect($definition['columns'])->pluck('key')->toArray();
+
+        $validated = $request->validate([
+            'visible_columns' => ['required', 'array'],
+            'visible_columns.*' => ['string'],
+            'column_order' => ['required', 'array'],
+            'column_order.*' => ['string'],
+        ]);
+
+        $visibleColumns = collect($validated['visible_columns'])
+            ->filter(fn ($key) => in_array($key, $validKeys))
+            ->values()
+            ->toArray();
+
+        $columnOrder = collect($validated['column_order'])
+            ->filter(fn ($key) => in_array($key, $validKeys))
+            ->values()
+            ->toArray();
+
+        $userId = $userResolver->resolveUserId();
+
+        UserListPreference::updateOrCreate(
+            [
+                'user_id' => $userId,
+                'list_key' => $definition['list_key'],
+            ],
+            [
+                'visible_columns' => $visibleColumns,
+                'column_order' => $columnOrder,
+            ]
+        );
+
+        return redirect()
+            ->route('admin.permissions.index')
+            ->with('success', 'Column preferences saved.');
+    }
+
+    public function resetPreferences(UserResolver $userResolver)
+    {
+        $definition = PermissionsDefinition::get();
+        $userId = $userResolver->resolveUserId();
+
+        UserListPreference::where('user_id', $userId)
+            ->where('list_key', $definition['list_key'])
+            ->delete();
+
+        return redirect()
+            ->route('admin.permissions.index')
+            ->with('success', 'Column preferences reset to defaults.');
+    }
+
+    public function exportCsv(
+        Request $request,
+        ListExportService $listExportService
+    ): StreamedResponse {
+        return $listExportService->exportCsv(
+            request: $request,
+            definition: PermissionsDefinition::get(),
+            query: Permission::query(),
+            filenamePrefix: 'permissions-export',
+            filterCallback: function ($query, $request) {
+                $search = $request->input('search', '');
+
+                if ($search) {
+                    $query->where(function ($q) use ($search) {
+                        $q->where('name', 'like', "%{$search}%")
+                            ->orWhere('label', 'like', "%{$search}%")
+                            ->orWhere('group_name', 'like', "%{$search}%")
+                            ->orWhere('description', 'like', "%{$search}%");
+                    });
+                }
+            }
+        );
     }
 }
