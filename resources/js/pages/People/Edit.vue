@@ -14,6 +14,7 @@
         </div>
 
         <form @submit.prevent="submit" class="space-y-6">
+
             <Card class="rounded-xl">
                 <CardHeader>
                     <CardTitle>Person Details</CardTitle>
@@ -505,7 +506,8 @@
                         </Button>
                     </div>
                 </CardHeader>
-
+            </Card>
+            
                 <AttachmentUploader
                     ref="attachmentsRef"
                     v-model="form.attachments"
