@@ -6,7 +6,7 @@ use App\Http\Controllers\PeopleController;
 Route::get('/people', [PeopleController::class, 'index'])
     ->name('people.index');
 
-Route::post('/people/preferences', [PeopleController::class, 'savePreferences'])
+Route::post('/people/preferences', [PeopleController::class, 'savePreferences'])   
     ->name('people.preferences.save');
 
 Route::delete('/people/preferences', [PeopleController::class, 'resetPreferences'])

@@ -511,6 +511,14 @@ function confirmDelete() {
 }
 
 function formatCell(row, key) {
+    if (key === 'primary_phone_number') {
+        return row.primary_phone_number
+            ?? row.primary_phone?.phone_number
+            ?? row.primaryPhoneNumber?.phone_number
+            ?? row.primary_phone_number_value
+            ?? '—'
+    }
+
     const value = row[key]
 
     if (value === null || value === undefined || value === '') {
@@ -537,5 +545,4 @@ function exportCsv() {
 
     window.location.href = `/people/export/csv?${params.toString()}`
 }
-
 </script>

@@ -6,12 +6,16 @@ use App\Models\Person;
 use App\Models\User;
 use App\Models\UserListPreference;
 use App\Services\ListEngine;
+use App\Services\ListExportService;
 use App\Services\UserResolver;
 use App\Support\ListDefinitions\PeopleDefinition;
-use App\Services\ListExportService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 use Symfony\Component\HttpFoundation\StreamedResponse;
+use App\Models\PersonPhoneNumber;
+use App\Services\PersonPhoneService;
+use App\Services\PersonUserAccountService;
+use Illuminate\Support\Facades\DB;
 
 class PeopleController extends Controller
 {
@@ -27,7 +31,13 @@ class PeopleController extends Controller
             request: $request,
             definition: $definition,
             userId: $userId,
-            query: Person::query(),
+            query: Person::query()
+                ->leftJoin('person_phone_numbers as primary_phone', function ($join) {
+                    $join->on('primary_phone.person_id', '=', 'people.id')
+                        ->where('primary_phone.is_primary', true);
+                })
+                ->select('people.*')
+                ->selectRaw('primary_phone.phone_number as primary_phone_number')
         );
 
         return inertia('People/Index', [
@@ -50,47 +60,70 @@ class PeopleController extends Controller
         ]);
     }
 
-    public function store(Request $request)
-    {
+    public function store(
+    Request $request,
+    PersonPhoneService $personPhoneService,
+    PersonUserAccountService $personUserAccountService
+    ) {
         $validated = $request->validate([
             'person_code' => ['required', 'string', 'max:255', 'unique:people,person_code'],
             'first_name' => ['required', 'string', 'max:255'],
+            'preferred_name' => ['nullable', 'string', 'max:255'],
             'last_name' => ['required', 'string', 'max:255'],
             'company_name' => ['nullable', 'string', 'max:255'],
-            'cell_phone' => ['nullable', 'string', 'max:255'],
             'email' => ['nullable', 'email', 'max:255', 'unique:users,email'],
             'employment_status' => ['nullable', 'string', 'max:255'],
             'notes' => ['nullable', 'string'],
+            'phone_numbers' => ['nullable', 'array'],
+            'phone_numbers.*.id' => ['nullable', 'integer'],
+            'phone_numbers.*.phone_number' => ['nullable', 'string', 'max:50'],
+            'phone_numbers.*.phone_type' => ['nullable', 'string', 'max:50'],
+            'phone_numbers.*.is_primary' => ['nullable', 'boolean'],
+            'phone_numbers.*.extension' => ['nullable', 'string', 'max:20'],
+            'phone_numbers.*.notes' => ['nullable', 'string'],
         ]);
 
-        $user = User::create([
-            'name' => $validated['person_code'],
-            'email' => $validated['email'] ?? null,
-            'password' => bcrypt(Str::random(32)),
-        ]);
+        return DB::transaction(function () use ($validated, $personPhoneService, $personUserAccountService) {
+            $phoneNumbersInput = $validated['phone_numbers'] ?? [];
+            unset($validated['phone_numbers']);
 
-        $validated['user_id'] = $user->id;
+            $user = $personUserAccountService->createForPerson($validated);
 
-        $person = Person::create($validated);
+            $validated['user_id'] = $user->id;
 
-        return redirect()
-            ->route('people.show', $person->id)
-            ->with('success', 'Person and user account created successfully.');
+            $person = Person::create($validated);
+
+            $personPhoneService->createForPerson($person, $phoneNumbersInput);
+
+            return redirect()
+                ->route('people.show', $person->id)
+                ->with('success', 'Person and user account created successfully.');
+        });
     }
 
     public function show($id)
     {
-        $person = Person::with(['assignments.position'])->findOrFail($id);
+        $person = Person::with([
+            'assignments.position',
+            'phoneNumbers',
+            'primaryPhoneNumber',
+        ])->findOrFail($id);
 
         return inertia('People/Show', [
             'person' => $person,
         ]);
     }
 
-    public function edit($id)
+    public function edit($id, PersonPhoneService $personPhoneService)
     {
-        $person = Person::findOrFail($id);
+        $person = Person::with([
+            'phoneNumbers',
+            'primaryPhoneNumber',
+        ])->findOrFail($id);
+
         $users = User::orderBy('name')->get(['id', 'name']);
+
+        $person->phone_numbers = $personPhoneService->normalizeForForm($person->phoneNumbers);
 
         return inertia('People/Edit', [
             'person' => $person,
@@ -98,37 +131,46 @@ class PeopleController extends Controller
         ]);
     }
 
-    public function update(Request $request, $id)
-    {
+    public function update(
+    Request $request,
+    $id,
+    PersonPhoneService $personPhoneService,
+    PersonUserAccountService $personUserAccountService
+    ) {
         $person = Person::findOrFail($id);
 
         $validated = $request->validate([
             'person_code' => ['required', 'string', 'max:255', 'unique:people,person_code,' . $person->id],
             'first_name' => ['required', 'string', 'max:255'],
+            'preferred_name' => ['nullable', 'string', 'max:255'],
             'last_name' => ['required', 'string', 'max:255'],
             'company_name' => ['nullable', 'string', 'max:255'],
-            'cell_phone' => ['nullable', 'string', 'max:255'],
             'email' => ['nullable', 'email', 'max:255'],
             'employment_status' => ['nullable', 'string', 'max:255'],
             'notes' => ['nullable', 'string'],
             'user_id' => ['nullable', 'exists:users,id', 'unique:people,user_id,' . $person->id],
+            'phone_numbers' => ['nullable', 'array'],
+            'phone_numbers.*.id' => ['nullable', 'integer'],
+            'phone_numbers.*.phone_number' => ['nullable', 'string', 'max:50'],
+            'phone_numbers.*.phone_type' => ['nullable', 'string', 'max:50'],
+            'phone_numbers.*.is_primary' => ['nullable', 'boolean'],
+            'phone_numbers.*.extension' => ['nullable', 'string', 'max:20'],
+            'phone_numbers.*.notes' => ['nullable', 'string'],
         ]);
 
-        $person->update($validated);
+        return DB::transaction(function () use ($person, $validated, $personPhoneService, $personUserAccountService) {
+            $phoneNumbersInput = $validated['phone_numbers'] ?? [];
+            unset($validated['phone_numbers']);
 
-        if ($person->user_id) {
-            $user = User::find($person->user_id);
+            $person->update($validated);
 
-            if ($user) {
-                $user->name = $validated['person_code'];
-                $user->email = $validated['email'] ?? null;
-                $user->save();
-            }
-        }
+            $personUserAccountService->syncFromPerson($person, $validated);
+            $personPhoneService->sync($person, $phoneNumbersInput);
 
-        return redirect()
-            ->route('people.index')
-            ->with('success', 'Person updated successfully.');
+            return redirect()
+                ->route('people.index')
+                ->with('success', 'Person updated successfully.');
+        });
     }
 
     public function destroy($id)
@@ -203,15 +245,20 @@ class PeopleController extends Controller
     }
 
     public function exportCsv(
-    Request $request,
-    ListExportService $listExportService
+        Request $request,
+        ListExportService $listExportService
     ): StreamedResponse {
         return $listExportService->exportCsv(
             request: $request,
             definition: PeopleDefinition::get(),
-            query: Person::query(),
+            query: Person::query()
+                ->leftJoin('person_phone_numbers as primary_phone', function ($join) {
+                    $join->on('primary_phone.person_id', '=', 'people.id')
+                        ->where('primary_phone.is_primary', true);
+                })
+                ->select('people.*')
+                ->selectRaw('primary_phone.phone_number as primary_phone_number'),
             filenamePrefix: 'people-export'
         );
     }
-
 }

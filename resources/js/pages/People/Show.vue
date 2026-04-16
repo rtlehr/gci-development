@@ -33,10 +33,10 @@
                 <CardContent class="space-y-4">
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <DetailItem label="First Name" :value="person.first_name" />
+                        <DetailItem label="Preferred Name" :value="person.preferred_name" />
                         <DetailItem label="Last Name" :value="person.last_name" />
                         <DetailItem label="Person Code" :value="person.person_code" />
                         <DetailItem label="Company Name" :value="person.company_name" />
-                        <DetailItem label="Cell Phone" :value="person.cell_phone" />
                         <DetailItem label="Email" :value="person.email" />
                         <DetailItem label="Employment Status" :value="person.employment_status" />
                         <DetailItem label="Created" :value="formatDate(person.created_at)" />
@@ -46,71 +46,116 @@
 
             <Card>
                 <CardHeader>
-                    <CardTitle>Current Assignments</CardTitle>
+                    <CardTitle>Phone Numbers</CardTitle>
                 </CardHeader>
                 <CardContent>
-                    <div v-if="activeAssignments.length" class="space-y-3">
+                    <div v-if="phoneNumbers.length" class="space-y-3">
                         <div
-                            v-for="assignment in activeAssignments"
-                            :key="assignment.id"
-                            class="border rounded-lg p-4"
+                            v-for="phone in phoneNumbers"
+                            :key="phone.id"
+                            class="rounded-lg border p-4"
                         >
-                            <div class="flex items-start justify-between gap-4">
+                            <div class="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
                                 <div class="min-w-0">
-                                    <div class="font-medium">
-                                        {{ assignment.position?.job_title || 'Unnamed Position' }}
+                                    <div class="font-medium break-words">
+                                        {{ phone.phone_number || '—' }}
                                     </div>
-                                    <div class="text-sm text-muted-foreground mt-1">
-                                        Code: {{ assignment.position?.position_code || '—' }}
+
+                                    <div class="mt-1 flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
+                                        <span>{{ formatPhoneType(phone.phone_type) }}</span>
+                                        <span v-if="phone.extension">• Ext. {{ phone.extension }}</span>
                                     </div>
-                                    <div class="text-sm text-muted-foreground">
-                                        Status: {{ assignment.assignment_status || '—' }}
-                                    </div>
-                                    <div class="text-sm text-muted-foreground">
-                                        Type: {{ assignment.assignment_type || '—' }}
-                                    </div>
-                                    <div class="text-sm text-muted-foreground">
-                                        Start Date: {{ formatDate(assignment.start_date) }}
+
+                                    <div
+                                        v-if="phone.notes"
+                                        class="mt-2 text-sm text-muted-foreground whitespace-pre-line"
+                                    >
+                                        {{ phone.notes }}
                                     </div>
                                 </div>
 
-                                <DropdownMenu>
-                                    <DropdownMenuTrigger as-child>
-                                        <Button variant="ghost" size="icon">
-                                            <MoreHorizontal class="h-4 w-4" />
-                                        </Button>
-                                    </DropdownMenuTrigger>
-
-                                    <DropdownMenuContent align="end">
-                                        <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                                        <DropdownMenuSeparator />
-
-                                        <DropdownMenuItem as-child>
-                                            <Link :href="`/position-assignments/${assignment.id}/edit?return_to=/people/${person.id}`">
-                                                Edit
-                                            </Link>
-                                        </DropdownMenuItem>
-
-                                        <DropdownMenuSeparator />
-
-                                        <DropdownMenuItem
-                                            @click="openDeleteDialog(assignment.id)"
-                                            class="text-red-600 focus:text-red-600"
-                                        >
-                                            Delete
-                                        </DropdownMenuItem>
-                                    </DropdownMenuContent>
-                                </DropdownMenu>
+                                <div class="flex items-center gap-2">
+                                    <Badge v-if="phone.is_primary" variant="default">
+                                        Primary
+                                    </Badge>
+                                </div>
                             </div>
                         </div>
                     </div>
 
-                    <div v-else class="text-sm text-muted-foreground">  
-                        No active assignments found.
+                    <div v-else class="text-sm text-muted-foreground">
+                        No phone numbers available.
                     </div>
                 </CardContent>
             </Card>
         </div>
+
+        <Card>
+            <CardHeader>
+                <CardTitle>Current Assignments</CardTitle>
+            </CardHeader>
+            <CardContent>
+                <div v-if="activeAssignments.length" class="space-y-3">
+                    <div
+                        v-for="assignment in activeAssignments"
+                        :key="assignment.id"
+                        class="border rounded-lg p-4"
+                    >
+                        <div class="flex items-start justify-between gap-4">
+                            <div class="min-w-0">
+                                <div class="font-medium">
+                                    {{ assignment.position?.job_title || 'Unnamed Position' }}
+                                </div>
+                                <div class="text-sm text-muted-foreground mt-1">
+                                    Code: {{ assignment.position?.position_code || '—' }}
+                                </div>
+                                <div class="text-sm text-muted-foreground">
+                                    Status: {{ assignment.assignment_status || '—' }}
+                                </div>
+                                <div class="text-sm text-muted-foreground">
+                                    Type: {{ assignment.assignment_type || '—' }}
+                                </div>
+                                <div class="text-sm text-muted-foreground">
+                                    Start Date: {{ formatDate(assignment.start_date) }}
+                                </div>
+                            </div>
+
+                            <DropdownMenu>
+                                <DropdownMenuTrigger as-child>
+                                    <Button variant="ghost" size="icon">
+                                        <MoreHorizontal class="h-4 w-4" />
+                                    </Button>
+                                </DropdownMenuTrigger>
+
+                                <DropdownMenuContent align="end">
+                                    <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                                    <DropdownMenuSeparator />
+
+                                    <DropdownMenuItem as-child>
+                                        <Link :href="`/position-assignments/${assignment.id}/edit?return_to=/people/${person.id}`">
+                                            Edit
+                                        </Link>
+                                    </DropdownMenuItem>
+
+                                    <DropdownMenuSeparator />
+
+                                    <DropdownMenuItem
+                                        @click="openDeleteDialog(assignment.id)"
+                                        class="text-red-600 focus:text-red-600"
+                                    >
+                                        Delete
+                                    </DropdownMenuItem>
+                                </DropdownMenuContent>
+                            </DropdownMenu>
+                        </div>
+                    </div>
+                </div>
+
+                <div v-else class="text-sm text-muted-foreground">
+                    No active assignments found.
+                </div>
+            </CardContent>
+        </Card>
 
         <Card>
             <CardHeader>
@@ -247,6 +292,7 @@ import {
     AlertDialogHeader,
     AlertDialogTitle,
 } from '@/components/ui/alert-dialog'
+import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import {
@@ -278,6 +324,14 @@ const props = defineProps({
 const deleteDialogOpen = ref(false)
 const assignmentToDelete = ref(null)
 
+const phoneNumbers = computed(() => {
+    const phones = props.person.phone_numbers ?? props.person.phoneNumbers ?? []
+
+    return [...phones].sort((a, b) => {
+        return Number(Boolean(b.is_primary)) - Number(Boolean(a.is_primary))
+    })
+})
+
 const activeAssignments = computed(() => {
     if (!props.person.assignments) return []
 
@@ -301,6 +355,13 @@ function formatDate(value) {
     if (Number.isNaN(date.getTime())) return value
 
     return date.toLocaleDateString()
+}
+
+function formatPhoneType(value) {
+    if (!value) return 'Other'
+
+    const normalized = String(value).replaceAll('_', ' ')
+    return normalized.charAt(0).toUpperCase() + normalized.slice(1)
 }
 
 function openDeleteDialog(id) {

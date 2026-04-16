@@ -40,4 +40,15 @@ class Person extends Model
     {
         return $this->belongsTo(User::class);
     }
+
+    public function phoneNumbers()
+    {
+        return $this->hasMany(PersonPhoneNumber::class);
+    }
+
+    public function primaryPhoneNumber()
+    {
+        return $this->hasOne(PersonPhoneNumber::class)->where('is_primary', true);
+    }
+    
 }
