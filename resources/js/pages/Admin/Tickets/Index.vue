@@ -1,10 +1,17 @@
 <script setup>
-import { computed, reactive } from 'vue'
+import { computed, reactive, ref } from 'vue'
 import { Link, router } from '@inertiajs/vue3'
+import {
+    ArrowDown,
+    ArrowUp,
+    ArrowUpDown,
+} from 'lucide-vue-next'
+
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Badge } from '@/components/ui/badge'
+
 import {
     Table,
     TableBody,
@@ -23,6 +30,42 @@ const props = defineProps({
         type: Array,
         default: () => [],
     },
+    columns: {
+        type: Array,
+        default: () => [
+            { key: 'ticket_number', label: 'Ticket', sortable: true },
+            { key: 'title', label: 'Title', sortable: true },
+            { key: 'request_type', label: 'Type', sortable: true },
+            { key: 'importance', label: 'Importance', sortable: true },
+            { key: 'status', label: 'Status', sortable: true },
+            { key: 'submitted_by_name', label: 'Submitted By', sortable: true },
+            { key: 'assigned_to_name', label: 'Assigned To', sortable: true },
+        ],
+    },
+    visibleColumns: {
+        type: Array,
+        default: () => [
+            'ticket_number',
+            'title',
+            'request_type',
+            'importance',
+            'status',
+            'submitted_by_name',
+            'assigned_to_name',
+        ],
+    },
+    columnOrder: {
+        type: Array,
+        default: () => [
+            'ticket_number',
+            'title',
+            'request_type',
+            'importance',
+            'status',
+            'submitted_by_name',
+            'assigned_to_name',
+        ],
+    },
     filters: {
         type: Object,
         default: () => ({
@@ -33,7 +76,17 @@ const props = defineProps({
             assigned_to_user_id: '',
         }),
     },
+    sort: {
+        type: String,
+        default: 'ticket_number',
+    },
+    direction: {
+        type: String,
+        default: 'desc',
+    },
 })
+
+const showColumnSettings = ref(false)
 
 const filterForm = reactive({
     search: props.filters?.search ?? '',
@@ -41,6 +94,24 @@ const filterForm = reactive({
     importance: props.filters?.importance ?? '',
     request_type: props.filters?.request_type ?? '',
     assigned_to_user_id: props.filters?.assigned_to_user_id ?? '',
+})
+
+const settingsForm = reactive({
+    visibleColumns: [...props.visibleColumns],
+    columnOrder: [...props.columnOrder],
+})
+
+const activeColumns = computed(() => {
+    return settingsForm.columnOrder
+        .filter((key) => settingsForm.visibleColumns.includes(key))
+        .map((key) => props.columns.find((col) => col.key === key))
+        .filter(Boolean)
+})
+
+const orderedColumnDefinitions = computed(() => {
+    return settingsForm.columnOrder
+        .map((key) => props.columns.find((col) => col.key === key))
+        .filter(Boolean)
 })
 
 const pagesToShow = computed(() => {
@@ -65,6 +136,8 @@ function applyFilters() {
         importance: filterForm.importance,
         request_type: filterForm.request_type,
         assigned_to_user_id: filterForm.assigned_to_user_id,
+        sort: props.sort,
+        direction: props.direction,
     }, {
         preserveState: true,
         replace: true,
@@ -78,10 +151,39 @@ function resetFilters() {
     filterForm.request_type = ''
     filterForm.assigned_to_user_id = ''
 
-    router.get('/admin/tickets', {}, {
+    router.get('/admin/tickets', {
+        sort: props.sort,
+        direction: props.direction,
+    }, {
         preserveState: true,
         replace: true,
     })
+}
+
+function sortBy(column) {
+    let nextDirection = 'asc'
+
+    if (props.sort === column && props.direction === 'asc') {
+        nextDirection = 'desc'
+    }
+
+    router.get('/admin/tickets', {
+        search: filterForm.search,
+        status: filterForm.status,
+        importance: filterForm.importance,
+        request_type: filterForm.request_type,
+        assigned_to_user_id: filterForm.assigned_to_user_id,
+        sort: column,
+        direction: nextDirection,
+    }, {
+        preserveState: true,
+        replace: true,
+    })
+}
+
+function getSortIcon(column) {
+    if (props.sort !== column) return ArrowUpDown
+    return props.direction === 'asc' ? ArrowUp : ArrowDown
 }
 
 function goToPage(page) {
@@ -92,9 +194,49 @@ function goToPage(page) {
         importance: filterForm.importance,
         request_type: filterForm.request_type,
         assigned_to_user_id: filterForm.assigned_to_user_id,
+        sort: props.sort,
+        direction: props.direction,
     }, {
         preserveState: true,
         replace: true,
+    })
+}
+
+function getColumnLabel(key) {
+    return props.columns.find((col) => col.key === key)?.label ?? key
+}
+
+function moveColumnLeft(index) {
+    if (index <= 0) return
+    const temp = settingsForm.columnOrder[index - 1]
+    settingsForm.columnOrder[index - 1] = settingsForm.columnOrder[index]
+    settingsForm.columnOrder[index] = temp
+}
+
+function moveColumnRight(index) {
+    if (index >= settingsForm.columnOrder.length - 1) return
+    const temp = settingsForm.columnOrder[index + 1]
+    settingsForm.columnOrder[index + 1] = settingsForm.columnOrder[index]
+    settingsForm.columnOrder[index] = temp
+}
+
+function saveColumnPreferences() {
+    router.post('/admin/tickets/preferences', {
+        visible_columns: settingsForm.visibleColumns,
+        column_order: settingsForm.columnOrder,
+    }, {
+        preserveScroll: true,
+    })
+}
+
+function resetColumnSettingsLocally() {
+    settingsForm.visibleColumns = [...props.visibleColumns]
+    settingsForm.columnOrder = [...props.columnOrder]
+}
+
+function resetPreferencesOnServer() {
+    router.delete('/admin/tickets/preferences', {
+        preserveScroll: true,
     })
 }
 
@@ -102,36 +244,48 @@ function submittedByName(ticket) {
     const first = ticket.submitted_by?.person?.first_name ?? ''
     const last = ticket.submitted_by?.person?.last_name ?? ''
     const name = `${first} ${last}`.trim()
-
     return name || ticket.submitted_by?.name || '—'
 }
 
 function assignedToName(ticket) {
     if (!ticket.assigned_to) return 'Unassigned'
-
     const first = ticket.assigned_to?.person?.first_name ?? ''
     const last = ticket.assigned_to?.person?.last_name ?? ''
     const name = `${first} ${last}`.trim()
-
     return name || ticket.assigned_to?.name || '—'
 }
 
-function statusBadgeClass(status) {
-    if (status === 'new') return 'bg-gray-500 text-white hover:bg-gray-500'
-    if (status === 'in_progress') return 'bg-blue-600 text-white hover:bg-blue-600'
-    if (status === 'on_hold') return 'bg-yellow-500 text-black hover:bg-yellow-500'
-    if (status === 'complete') return 'bg-green-600 text-white hover:bg-green-600'
-    if (status === 'canceled') return 'bg-red-600 text-white hover:bg-red-600'
+function formatCell(ticket, key) {
+    switch (key) {
+        case 'submitted_by_name':
+            return ticket.submitted_by_name || submittedByName(ticket)
+        case 'assigned_to_name':
+            return ticket.assigned_to_name || assignedToName(ticket)
+        case 'request_type':
+            return formatRequestType(ticket.request_type)
+        case 'importance':
+            return formatImportance(ticket.importance)
+        case 'status':
+            return formatStatus(ticket.status)
+        default:
+            return ticket[key] ?? '—'
+    }
+}
 
-    return 'bg-gray-200 text-gray-800 hover:bg-gray-200'
+function statusBadgeClass(status) {
+    if (status === 'new') return 'bg-gray-500 text-white'
+    if (status === 'in_progress') return 'bg-blue-600 text-white'
+    if (status === 'on_hold') return 'bg-yellow-500 text-black'
+    if (status === 'complete') return 'bg-green-600 text-white'
+    if (status === 'canceled') return 'bg-red-600 text-white'
+    return 'bg-gray-200 text-gray-800'
 }
 
 function importanceBadgeClass(importance) {
-    if (importance === 'show_stopper') return 'bg-red-600 text-white hover:bg-red-600'
-    if (importance === 'asap') return 'bg-orange-500 text-white hover:bg-orange-500'
-    if (importance === 'nice_to_have') return 'bg-gray-500 text-white hover:bg-gray-500'
-
-    return 'bg-gray-200 text-gray-800 hover:bg-gray-200'
+    if (importance === 'show_stopper') return 'bg-red-600 text-white'
+    if (importance === 'asap') return 'bg-orange-500 text-white'
+    if (importance === 'nice_to_have') return 'bg-gray-500 text-white'
+    return 'bg-gray-200 text-gray-800'
 }
 
 function formatStatus(status) {
@@ -140,7 +294,6 @@ function formatStatus(status) {
     if (status === 'on_hold') return 'On Hold'
     if (status === 'complete') return 'Complete'
     if (status === 'canceled') return 'Canceled'
-
     return status || '—'
 }
 
@@ -148,76 +301,137 @@ function formatImportance(importance) {
     if (importance === 'show_stopper') return 'Show Stopper'
     if (importance === 'asap') return 'Needed ASAP'
     if (importance === 'nice_to_have') return 'Nice to Have'
-
     return importance || '—'
 }
 
 function formatRequestType(type) {
     if (type === 'bug') return 'Bug'
     if (type === 'improvement') return 'Improvement'
-
     return type || '—'
+}
+
+function exportCsv() {
+    const params = new URLSearchParams()
+
+    if (filterForm.search) params.append('search', filterForm.search)
+    if (filterForm.status) params.append('status', filterForm.status)
+    if (filterForm.importance) params.append('importance', filterForm.importance)
+    if (filterForm.request_type) params.append('request_type', filterForm.request_type)
+    if (filterForm.assigned_to_user_id) params.append('assigned_to_user_id', filterForm.assigned_to_user_id)
+
+    settingsForm.visibleColumns.forEach(col => params.append('visible_columns[]', col))
+    settingsForm.columnOrder.forEach(col => params.append('column_order[]', col))
+
+    window.location.href = `/admin/tickets/export/csv?${params.toString()}`
 }
 </script>
 
 <template>
     <div class="p-6 space-y-6">
         <div class="flex items-center justify-between">
-            <div>
-                <h1 class="text-2xl font-semibold">Tickets</h1>
-                <p class="text-sm text-muted-foreground mt-1">
-                    Manage bug reports and improvement requests.
-                </p>
+            <h1 class="text-2xl font-semibold">Tickets</h1>
+
+            <div class="flex gap-2">
+                <Button variant="outline" @click="showColumnSettings = !showColumnSettings">
+                    {{ showColumnSettings ? 'Hide Column Settings' : 'Column Settings' }}
+                </Button>
+
+                <Button variant="outline" @click="exportCsv">
+                    Export CSV
+                </Button>
             </div>
         </div>
 
+        <!-- Column Settings -->
+        <div v-if="showColumnSettings" class="border rounded-xl p-4 bg-background space-y-4">
+            <div>
+                <h2 class="text-lg font-semibold">Column Settings</h2>
+                <p class="text-sm text-muted-foreground">
+                    Choose which columns are shown and change their order.
+                </p>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <div class="space-y-3">
+                    <h3 class="font-medium">Visible Columns</h3>
+
+                    <div
+                        v-for="col in orderedColumnDefinitions"
+                        :key="col.key"
+                        class="flex items-center justify-between rounded-lg border p-3"
+                    >
+                        <div class="flex items-center gap-3">
+                            <input
+                                :id="`visible-${col.key}`"
+                                v-model="settingsForm.visibleColumns"
+                                :value="col.key"
+                                type="checkbox"
+                                class="h-4 w-4"
+                            />
+                            <Label :for="`visible-${col.key}`">{{ col.label }}</Label>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="space-y-3">
+                    <h3 class="font-medium">Column Order</h3>
+
+                    <div
+                        v-for="(colKey, index) in settingsForm.columnOrder"
+                        :key="colKey"
+                        class="flex items-center justify-between rounded-lg border p-3"
+                    >
+                        <div class="font-medium">
+                            {{ getColumnLabel(colKey) }}
+                        </div>
+
+                        <div class="flex gap-2">
+                            <Button size="sm" variant="outline" :disabled="index === 0" @click="moveColumnLeft(index)">Left</Button>
+                            <Button size="sm" variant="outline" :disabled="index === settingsForm.columnOrder.length - 1" @click="moveColumnRight(index)">Right</Button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="flex gap-2">
+                <Button @click="saveColumnPreferences">Save Preferences</Button>
+                <Button variant="outline" @click="resetColumnSettingsLocally">Reset Unsaved Changes</Button>
+                <Button variant="outline" @click="resetPreferencesOnServer">Reset to Defaults</Button>
+            </div>
+        </div>
+
+        <!-- Filters -->
         <div class="border rounded-xl p-4 bg-background">
             <form @submit.prevent="applyFilters" class="space-y-4">
                 <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-5 gap-4">
                     <div class="space-y-2 xl:col-span-2">
-                        <Label for="search">Search</Label>
-                        <Input
-                            id="search"
-                            v-model="filterForm.search"
-                            placeholder="Search ticket number, title, or description..."
-                        />
+                        <Label>Search</Label>
+                        <Input v-model="filterForm.search" />
                     </div>
 
                     <div class="space-y-2">
-                        <Label for="request_type">Request Type</Label>
-                        <select
-                            id="request_type"
-                            v-model="filterForm.request_type"
-                            class="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-                        >
-                            <option value="">All Types</option>
+                        <Label>Request Type</Label>
+                        <select v-model="filterForm.request_type" class="h-10 border rounded-md px-3">
+                            <option value="">All</option>
                             <option value="bug">Bug</option>
                             <option value="improvement">Improvement</option>
                         </select>
                     </div>
 
                     <div class="space-y-2">
-                        <Label for="importance">Importance</Label>
-                        <select
-                            id="importance"
-                            v-model="filterForm.importance"
-                            class="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-                        >
-                            <option value="">All Importance</option>
+                        <Label>Importance</Label>
+                        <select v-model="filterForm.importance" class="h-10 border rounded-md px-3">
+                            <option value="">All</option>
                             <option value="show_stopper">Show Stopper</option>
-                            <option value="asap">Needed ASAP</option>
+                            <option value="asap">ASAP</option>
                             <option value="nice_to_have">Nice to Have</option>
                         </select>
                     </div>
 
                     <div class="space-y-2">
-                        <Label for="status">Status</Label>
-                        <select
-                            id="status"
-                            v-model="filterForm.status"
-                            class="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-                        >
-                            <option value="">All Statuses</option>
+                        <Label>Status</Label>
+                        <select v-model="filterForm.status" class="h-10 border rounded-md px-3">
+                            <option value="">All</option>
                             <option value="new">New</option>
                             <option value="in_progress">In Progress</option>
                             <option value="on_hold">On Hold</option>
@@ -227,87 +441,60 @@ function formatRequestType(type) {
                     </div>
                 </div>
 
-                <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-5 gap-4">
-                    <div class="space-y-2 xl:col-span-2">
-                        <Label for="assigned_to_user_id">Assigned To</Label>
-                        <select
-                            id="assigned_to_user_id"
-                            v-model="filterForm.assigned_to_user_id"
-                            class="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-                        >
-                            <option value="">All</option>
-                            <option value="unassigned">Unassigned</option>
-                            <option
-                                v-for="user in assignableUsers"
-                                :key="user.id"
-                                :value="String(user.id)"
-                            >
-                                {{ user.name }}
-                            </option>
-                        </select>
-                    </div>
-
-                    <div class="flex gap-2 md:items-end xl:col-span-3">
-                        <Button type="submit">Apply</Button>
-                        <Button type="button" variant="outline" @click="resetFilters">
-                            Reset
-                        </Button>
-                    </div>
+                <div class="flex gap-2">
+                    <Button type="submit">Apply</Button>
+                    <Button type="button" variant="outline" @click="resetFilters">Reset</Button>
                 </div>
             </form>
         </div>
 
+        <!-- Table -->
         <div class="border rounded-xl bg-background overflow-hidden">
             <Table>
                 <TableHeader>
                     <TableRow>
-                        <TableHead>Ticket</TableHead>
-                        <TableHead>Title</TableHead>
-                        <TableHead>Type</TableHead>
-                        <TableHead>Importance</TableHead>
-                        <TableHead>Status</TableHead>
-                        <TableHead>Submitted By</TableHead>
-                        <TableHead>Assigned To</TableHead>
+                        <TableHead
+                            v-for="col in activeColumns"
+                            :key="col.key"
+                            @click="col.sortable ? sortBy(col.key) : null"
+                            :class="col.sortable ? 'cursor-pointer' : ''"
+                        >
+                            <div class="flex items-center gap-2">
+                                {{ col.label }}
+                                <component v-if="col.sortable" :is="getSortIcon(col.key)" class="h-4 w-4" />
+                            </div>
+                        </TableHead>
                         <TableHead class="text-right">Actions</TableHead>
                     </TableRow>
                 </TableHeader>
 
                 <TableBody>
                     <TableRow v-if="!tickets?.data?.length">
-                        <TableCell colspan="8" class="text-center py-8 text-muted-foreground">
-                            No tickets found.
-                        </TableCell>
+                        <TableCell :colspan="activeColumns.length + 1" class="text-center py-8">No tickets found.</TableCell>
                     </TableRow>
 
-                    <TableRow
-                        v-for="ticket in tickets.data"
-                        :key="ticket.id"
-                        class="hover:bg-muted/50"
-                    >
-                        <TableCell>{{ ticket.ticket_number }}</TableCell>
-                        <TableCell>{{ ticket.title }}</TableCell>
-                        <TableCell>{{ formatRequestType(ticket.request_type) }}</TableCell>
+                    <TableRow v-for="ticket in tickets.data" :key="ticket.id">
+                        <TableCell v-for="col in activeColumns" :key="col.key">
+                            <template v-if="col.key === 'status'">
+                                <Badge :class="statusBadgeClass(ticket.status)">
+                                    {{ formatStatus(ticket.status) }}
+                                </Badge>
+                            </template>
 
-                        <TableCell>
-                            <Badge :class="importanceBadgeClass(ticket.importance)">
-                                {{ formatImportance(ticket.importance) }}
-                            </Badge>
+                            <template v-else-if="col.key === 'importance'">
+                                <Badge :class="importanceBadgeClass(ticket.importance)">
+                                    {{ formatImportance(ticket.importance) }}
+                                </Badge>
+                            </template>
+
+                            <template v-else>
+                                {{ formatCell(ticket, col.key) }}
+                            </template>
                         </TableCell>
-
-                        <TableCell>
-                            <Badge :class="statusBadgeClass(ticket.status)">
-                                {{ formatStatus(ticket.status) }}
-                            </Badge>
-                        </TableCell>
-
-                        <TableCell>{{ submittedByName(ticket) }}</TableCell>
-                        <TableCell>{{ assignedToName(ticket) }}</TableCell>
 
                         <TableCell class="text-right">
                             <Link :href="`/admin/tickets/${ticket.id}`">
-                                <Button variant="outline" size="sm">
-                                    Open
-                                </Button>
+                                <Button size="sm">Open</Button>
                             </Link>
                         </TableCell>
                     </TableRow>
@@ -315,39 +502,13 @@ function formatRequestType(type) {
             </Table>
         </div>
 
-        <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-            <div class="text-sm text-muted-foreground">
-                Showing {{ tickets.from ?? 0 }} to {{ tickets.to ?? 0 }} of {{ tickets.total ?? 0 }} tickets
-            </div>
-
-            <div class="flex items-center gap-2 flex-wrap">
-                <Button
-                    size="sm"
-                    variant="outline"
-                    :disabled="tickets.current_page === 1"
-                    @click="goToPage(tickets.current_page - 1)"
-                >
-                    Previous
-                </Button>
-
-                <Button
-                    v-for="page in pagesToShow"
-                    :key="page"
-                    size="sm"
-                    :variant="page === tickets.current_page ? 'default' : 'outline'"
-                    @click="goToPage(page)"
-                >
-                    {{ page }}
-                </Button>
-
-                <Button
-                    size="sm"
-                    variant="outline"
-                    :disabled="tickets.current_page === tickets.last_page"
-                    @click="goToPage(tickets.current_page + 1)"
-                >
-                    Next
-                </Button>
+        <!-- Pagination -->
+        <div class="flex justify-between">
+            <div>Showing {{ tickets.from ?? 0 }} to {{ tickets.to ?? 0 }} of {{ tickets.total ?? 0 }}</div>
+            <div class="flex gap-2">
+                <Button size="sm" @click="goToPage(tickets.current_page - 1)">Prev</Button>
+                <Button v-for="page in pagesToShow" :key="page" size="sm" @click="goToPage(page)">{{ page }}</Button>
+                <Button size="sm" @click="goToPage(tickets.current_page + 1)">Next</Button>
             </div>
         </div>
     </div>

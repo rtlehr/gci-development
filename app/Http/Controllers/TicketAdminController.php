@@ -5,51 +5,93 @@ namespace App\Http\Controllers;
 use App\Models\Ticket;
 use App\Models\TicketActivity;
 use App\Models\User;
+use App\Models\UserListPreference;
+use App\Services\ListEngine;
+use App\Services\ListExportService;
 use App\Services\UserResolver;
+use App\Support\ListDefinitions\TicketsDefinition;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class TicketAdminController extends Controller
 {
-    public function index(Request $request)
-    {
-        $search = $request->input('search', '');
-        $status = $request->input('status', '');
-        $importance = $request->input('importance', '');
-        $requestType = $request->input('request_type', '');
-        $assignedTo = $request->input('assigned_to_user_id', '');
+    public function index(
+        Request $request,
+        UserResolver $userResolver,
+        ListEngine $listEngine
+    ) {
+        $definition = TicketsDefinition::get();
+        $userId = $userResolver->resolveUserId();
 
-        $tickets = Ticket::query()
+        $list = $listEngine->run(
+            request: $request,
+            definition: $definition,
+            userId: $userId,
+            query: Ticket::query()
+            ->leftJoin('users as submitted_users', 'submitted_users.id', '=', 'tickets.submitted_by_user_id')
+            ->leftJoin('people as submitted_people', 'submitted_people.user_id', '=', 'submitted_users.id')
+            ->leftJoin('users as assigned_users', 'assigned_users.id', '=', 'tickets.assigned_to_user_id')
+            ->leftJoin('people as assigned_people', 'assigned_people.user_id', '=', 'assigned_users.id')
             ->with([
                 'submittedBy.person',
                 'assignedTo.person',
             ])
-            ->when($search, function ($query, $search) {
-                $query->where(function ($q) use ($search) {
-                    $q->where('ticket_number', 'like', "%{$search}%")
-                        ->orWhere('title', 'like', "%{$search}%")
-                        ->orWhere('description', 'like', "%{$search}%");
-                });
-            })
-            ->when($status, function ($query, $status) {
-                $query->where('status', $status);
-            })
-            ->when($importance, function ($query, $importance) {
-                $query->where('importance', $importance);
-            })
-            ->when($requestType, function ($query, $requestType) {
-                $query->where('request_type', $requestType);
-            })
-            ->when($assignedTo, function ($query, $assignedTo) {
-                if ($assignedTo === 'unassigned') {
-                    $query->whereNull('assigned_to_user_id');
-                } else {
-                    $query->where('assigned_to_user_id', $assignedTo);
+            ->select('tickets.*')
+            ->selectRaw("
+                TRIM(
+                    CONCAT(
+                        COALESCE(submitted_people.first_name, ''),
+                        ' ',
+                        COALESCE(submitted_people.last_name, '')
+                    )
+                ) as submitted_by_name
+            ")
+            ->selectRaw("
+                TRIM(
+                    CONCAT(
+                        COALESCE(assigned_people.first_name, ''),
+                        ' ',
+                        COALESCE(assigned_people.last_name, '')
+                    )
+                ) as assigned_to_name
+            "),
+            filterCallback: function ($query, $request) {
+                $search = $request->input('search', '');
+                $status = $request->input('status', '');
+                $importance = $request->input('importance', '');
+                $requestType = $request->input('request_type', '');
+                $assignedTo = $request->input('assigned_to_user_id', '');
+
+                if ($search) {
+                    $query->where(function ($q) use ($search) {
+                        $q->where('tickets.ticket_number', 'like', "%{$search}%")
+                            ->orWhere('tickets.title', 'like', "%{$search}%")
+                            ->orWhere('tickets.description', 'like', "%{$search}%");
+                    });
                 }
-            })
-            ->latest()
-            ->paginate(10)
-            ->withQueryString();
+
+                if ($status) {
+                    $query->where('tickets.status', $status);
+                }
+
+                if ($importance) {
+                    $query->where('tickets.importance', $importance);
+                }
+
+                if ($requestType) {
+                    $query->where('tickets.request_type', $requestType);
+                }
+
+                if ($assignedTo) {
+                    if ($assignedTo === 'unassigned') {
+                        $query->whereNull('tickets.assigned_to_user_id');
+                    } else {
+                        $query->where('tickets.assigned_to_user_id', $assignedTo);
+                    }
+                }
+            }
+        );
 
         $assignableUsers = User::query()
             ->with('person')
@@ -71,16 +113,21 @@ class TicketAdminController extends Controller
             })
             ->values();
 
+        $list['filters']['search'] = $request->input('search', '');
+        $list['filters']['status'] = $request->input('status', '');
+        $list['filters']['importance'] = $request->input('importance', '');
+        $list['filters']['request_type'] = $request->input('request_type', '');
+        $list['filters']['assigned_to_user_id'] = $request->input('assigned_to_user_id', '');
+
         return Inertia::render('Admin/Tickets/Index', [
-            'tickets' => $tickets,
+            'tickets' => $list['rows'],
+            'columns' => $list['columns'],
+            'visibleColumns' => $list['visibleColumns'],
+            'columnOrder' => $list['columnOrder'],
+            'filters' => $list['filters'],
+            'sort' => $list['sort'],
+            'direction' => $list['direction'],
             'assignableUsers' => $assignableUsers,
-            'filters' => [
-                'search' => $search,
-                'status' => $status,
-                'importance' => $importance,
-                'request_type' => $requestType,
-                'assigned_to_user_id' => $assignedTo,
-            ],
         ]);
     }
 
@@ -230,5 +277,133 @@ class TicketAdminController extends Controller
         return redirect()
             ->route('admin.tickets.show', $ticket->id)
             ->with('success', 'Comment added successfully.');
+    }
+
+    public function savePreferences(Request $request, UserResolver $userResolver)
+    {
+        $definition = TicketsDefinition::get();
+        $validKeys = collect($definition['columns'])->pluck('key')->toArray();
+
+        $validated = $request->validate([
+            'visible_columns' => ['required', 'array'],
+            'visible_columns.*' => ['string'],
+            'column_order' => ['required', 'array'],
+            'column_order.*' => ['string'],
+        ]);
+
+        $visibleColumns = collect($validated['visible_columns'])
+            ->filter(fn ($key) => in_array($key, $validKeys))
+            ->values()
+            ->toArray();
+
+        $columnOrder = collect($validated['column_order'])
+            ->filter(fn ($key) => in_array($key, $validKeys))
+            ->values()
+            ->toArray();
+
+        $userId = $userResolver->resolveUserId();
+
+        UserListPreference::updateOrCreate(
+            [
+                'user_id' => $userId,
+                'list_key' => $definition['list_key'],
+            ],
+            [
+                'visible_columns' => $visibleColumns,
+                'column_order' => $columnOrder,
+            ]
+        );
+
+        return redirect()
+            ->route('admin.tickets.index')
+            ->with('success', 'Column preferences saved.');
+    }
+
+    public function resetPreferences(UserResolver $userResolver)
+    {
+        $definition = TicketsDefinition::get();
+        $userId = $userResolver->resolveUserId();
+
+        UserListPreference::where('user_id', $userId)
+            ->where('list_key', $definition['list_key'])
+            ->delete();
+
+        return redirect()
+            ->route('admin.tickets.index')
+            ->with('success', 'Column preferences reset to defaults.');
+    }
+
+    public function exportCsv(
+        Request $request,
+        ListExportService $listExportService
+    ): StreamedResponse {
+        return $listExportService->exportCsv(
+            request: $request,
+            definition: TicketsDefinition::get(),
+            query: Ticket::query()
+                ->leftJoin('users as submitted_users', 'submitted_users.id', '=', 'tickets.submitted_by_user_id')
+                ->leftJoin('people as submitted_people', 'submitted_people.user_id', '=', 'submitted_users.id')
+                ->leftJoin('users as assigned_users', 'assigned_users.id', '=', 'tickets.assigned_to_user_id')
+                ->leftJoin('people as assigned_people', 'assigned_people.user_id', '=', 'assigned_users.id')
+                ->with([
+                    'submittedBy.person',
+                    'assignedTo.person',
+                ])
+                ->select('tickets.*')
+                ->selectRaw("
+                    TRIM(
+                        CONCAT(
+                            COALESCE(submitted_people.first_name, ''),
+                            ' ',
+                            COALESCE(submitted_people.last_name, '')
+                        )
+                    ) as submitted_by_name
+                ")
+                ->selectRaw("
+                    TRIM(
+                        CONCAT(
+                            COALESCE(assigned_people.first_name, ''),
+                            ' ',
+                            COALESCE(assigned_people.last_name, '')
+                        )
+                    ) as assigned_to_name
+                "),
+            filenamePrefix: 'tickets-export',
+            filterCallback: function ($query, $request) {
+                $search = $request->input('search', '');
+                $status = $request->input('status', '');
+                $importance = $request->input('importance', '');
+                $requestType = $request->input('request_type', '');
+                $assignedTo = $request->input('assigned_to_user_id', '');
+
+                if ($search) {
+                    $query->where(function ($q) use ($search) {
+                        $q->where('tickets.ticket_number', 'like', "%{$search}%")
+                            ->orWhere('tickets.title', 'like', "%{$search}%")
+                            ->orWhere('tickets.description', 'like', "%{$search}%");
+                    });
+                }
+
+                if ($status) {
+                    $query->where('tickets.status', $status);
+                }
+
+                if ($importance) {
+                    $query->where('tickets.importance', $importance);
+                }
+
+                if ($requestType) {
+                    $query->where('tickets.request_type', $requestType);
+                }
+
+                if ($assignedTo) {
+                    if ($assignedTo === 'unassigned') {
+                        $query->whereNull('tickets.assigned_to_user_id');
+                    } else {
+                        $query->where('tickets.assigned_to_user_id', $assignedTo);
+                    }
+                }
+            }
+        );
     }
 }

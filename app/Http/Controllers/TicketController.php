@@ -26,7 +26,7 @@ class TicketController extends Controller
                 'id' => $user->id,
                 'username' => $displayName,
                 'email' => $user->email,
-                'person_code' => $person->person_code,
+                'person_code' => $person->person_code ?? null,
             ],
             'sourceUrl' => $request->input('source_url', url()->previous()),
         ]);
@@ -41,7 +41,7 @@ class TicketController extends Controller
             'category' => ['nullable', 'string', 'max:255'],
             'description' => ['required', 'string'],
             'source_url' => ['nullable', 'string'],
-            'screenshot' => ['nullable', 'image', 'max:5120'], // 5MB
+            'screenshot' => ['nullable', 'image', 'max:5120'],
         ]);
 
         $userId = $userResolver->resolveUserId();
