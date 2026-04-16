@@ -62,6 +62,12 @@ const allMainNavItems: NavItem[] = [
         icon: ArrowLeftRight,
         permission: 'view_admin',
     },
+    {
+        title: 'View Tickets',
+        href: '/admin/tickets',
+        icon: ArrowLeftRight,
+        permission: 'view_admin',
+    },
 ]
 
 const mainNavItems = computed(() =>
