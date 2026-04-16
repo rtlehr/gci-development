@@ -136,8 +136,6 @@
             </CardContent>
         </Card>
 
-        <AttachmentList :attachments="person.attachments ?? []" />
-
         <Card>
             <CardHeader>
                 <CardTitle>Current Assignments</CardTitle>
@@ -202,17 +200,6 @@
                 <div v-else class="text-sm text-muted-foreground">
                     No active assignments found.
                 </div>
-            </CardContent>
-        </Card>
-
-        <Card>
-            <CardHeader>
-                <CardTitle>Notes</CardTitle>
-            </CardHeader>
-            <CardContent>
-                <p class="text-sm whitespace-pre-line">
-                    {{ person.notes || 'No notes available.' }}
-                </p>
             </CardContent>
         </Card>
 
@@ -297,6 +284,19 @@
                 </div>
             </CardContent>
         </Card>
+
+        <Card>
+            <CardHeader>
+                <CardTitle>Notes</CardTitle>
+            </CardHeader>
+            <CardContent>
+                <p class="text-sm whitespace-pre-line">
+                    {{ person.notes || 'No notes available.' }}
+                </p>
+            </CardContent>
+        </Card>
+        
+        <AttachmentList :attachments="person.attachments ?? []" />
 
         <AlertDialog :open="deleteDialogOpen" @update:open="deleteDialogOpen = $event">
             <AlertDialogContent>
