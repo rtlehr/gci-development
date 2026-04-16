@@ -490,6 +490,29 @@
                 </CardContent>
             </Card>
 
+            <Card class="rounded-xl">
+                <CardHeader>
+                    <div class="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+                        <div>
+                            <CardTitle>Attachments</CardTitle>
+                            <CardDescription>
+                                Upload files such as resumes or supporting documents.
+                            </CardDescription>
+                        </div>
+
+                        <Button type="button" variant="outline" @click="addAttachment">
+                            Add File
+                        </Button>
+                    </div>
+                </CardHeader>
+
+                <AttachmentUploader
+                    ref="attachmentsRef"
+                    v-model="form.attachments"
+                    :errors="form.errors"
+                    :show-existing="false"
+                />
+
             <div class="flex gap-3">
                 <Button type="submit" :disabled="form.processing">
                     {{ form.processing ? 'Saving...' : 'Create Person' }}
@@ -505,11 +528,15 @@
 
 <script setup>
 import { Link, useForm } from '@inertiajs/vue3'
+import { ref } from 'vue'
+import AttachmentUploader from '@/components/attachments/AttachmentUploader.vue'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
+
+const attachmentsRef = ref(null)
 
 const createEmptyPhoneNumber = (isPrimary = false) => ({
     phone_number: '',
@@ -531,6 +558,13 @@ const createEmptyAddress = (isPrimary = false) => ({
     notes: '',
 })
 
+const createEmptyAttachment = () => ({
+    file: null,
+    category: '',
+    description: '',
+    is_primary: false,
+})
+
 const form = useForm({
     person_code: '',
     first_name: '',
@@ -542,6 +576,7 @@ const form = useForm({
     notes: '',
     phone_numbers: [createEmptyPhoneNumber(true)],
     addresses: [createEmptyAddress(true)],
+    attachments: [],
 })
 
 function addPhoneNumber() {
@@ -684,6 +719,43 @@ function validateAddresses() {
     return hasError
 }
 
+function addAttachment() {
+    form.attachments.push(createEmptyAttachment())
+}
+
+function removeAttachment(index) {
+    form.attachments.splice(index, 1)
+}
+
+function handleFileChange(event, index) {
+    const file = event.target.files?.[0] ?? null
+    form.attachments[index].file = file
+}
+
+function setPrimaryAttachment(index) {
+    form.attachments = form.attachments.map((attachment, attachmentIndex) => ({
+        ...attachment,
+        is_primary: attachmentIndex === index,
+    }))
+}
+
+function attachmentFieldError(index, field) {
+    return form.errors[`attachments.${index}.${field}`]
+}
+
+function validateAttachments() {
+    let hasError = false
+
+    form.attachments.forEach((attachment, index) => {
+        if (!attachment.file) {
+            form.setError(`attachments.${index}.file`, 'A file is required.')
+            hasError = true
+        }
+    })
+
+    return hasError
+}
+
 function submit() {
     form.clearErrors()
 
@@ -712,8 +784,33 @@ function submit() {
         hasError = true
     }
 
+    if (validateAttachments()) {
+        hasError = true
+    }
+
+    if (attachmentsRef.value && !attachmentsRef.value.validate()) {
+        hasError = true
+    }
+
     if (hasError) return
 
-    form.post('/people')
+    form.transform((data) => {
+        const transformed = {
+            ...data,
+            attachment_meta: data.attachments.map((attachment, index) => ({
+                category: attachment.category ?? '',
+                description: attachment.description ?? '',
+                is_primary: attachment.is_primary ? 1 : 0,
+                sort_order: index,
+            })),
+            new_attachments: data.attachments.map((attachment) => attachment.file).filter(Boolean),
+        }
+
+        delete transformed.attachments
+
+        return transformed
+    }).post('/people', {
+        forceFormData: true,
+    })
 }
 </script>

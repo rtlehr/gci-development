@@ -5,9 +5,10 @@ namespace App\Http\Controllers;
 use App\Models\Person;
 use App\Models\User;
 use App\Models\UserListPreference;
+use App\Services\AddressService;
+use App\Services\AttachmentService;
 use App\Services\ListEngine;
 use App\Services\ListExportService;
-use App\Services\AddressService;
 use App\Services\PersonPhoneService;
 use App\Services\PersonUserAccountService;
 use App\Services\UserResolver;
@@ -83,7 +84,8 @@ class PeopleController extends Controller
         Request $request,
         PersonPhoneService $personPhoneService,
         AddressService $addressService,
-        PersonUserAccountService $personUserAccountService
+        PersonUserAccountService $personUserAccountService,
+        AttachmentService $attachmentService
     ) {
         $validated = $request->validate([
             'person_code' => ['required', 'string', 'max:255', 'unique:people,person_code'],
@@ -114,18 +116,36 @@ class PeopleController extends Controller
             'addresses.*.country' => ['nullable', 'string', 'max:100'],
             'addresses.*.is_primary' => ['nullable', 'boolean'],
             'addresses.*.notes' => ['nullable', 'string'],
+
+            'new_attachments' => ['nullable', 'array'],
+            'new_attachments.*' => ['file', 'max:10240'],
+            'attachment_meta' => ['nullable', 'array'],
+            'attachment_meta.*.category' => ['nullable', 'string', 'max:100'],
+            'attachment_meta.*.description' => ['nullable', 'string'],
+            'attachment_meta.*.is_primary' => ['nullable', 'boolean'],
+            'attachment_meta.*.sort_order' => ['nullable', 'integer'],
         ]);
+
+        $newAttachments = $request->file('new_attachments', []);
 
         return DB::transaction(function () use (
             $validated,
+            $newAttachments,
             $personPhoneService,
-            $personAddressService,
-            $personUserAccountService
+            $addressService,
+            $personUserAccountService,
+            $attachmentService
         ) {
             $phoneNumbersInput = $validated['phone_numbers'] ?? [];
             $addressesInput = $validated['addresses'] ?? [];
+            $attachmentMeta = $validated['attachment_meta'] ?? [];
 
-            unset($validated['phone_numbers'], $validated['addresses']);
+            unset(
+                $validated['phone_numbers'],
+                $validated['addresses'],
+                $validated['new_attachments'],
+                $validated['attachment_meta']
+            );
 
             $user = $personUserAccountService->createForPerson($validated);
 
@@ -134,7 +154,15 @@ class PeopleController extends Controller
             $person = Person::create($validated);
 
             $personPhoneService->createForPerson($person, $phoneNumbersInput);
-            $personAddressService->createForPerson($person, $addressesInput);
+            $addressService->createForPerson($person, $addressesInput);
+
+            $attachmentService->validatePrimaryPerCategory($attachmentMeta);
+            $attachmentService->uploadForModel(
+                model: $person,
+                files: $newAttachments,
+                metadata: $attachmentMeta,
+                uploadedByUserId: $user->id
+            );
 
             return redirect()
                 ->route('people.show', $person->id)
@@ -150,6 +178,7 @@ class PeopleController extends Controller
             'primaryPhoneNumber',
             'addresses',
             'primaryAddress',
+            'attachments',
         ])->findOrFail($id);
 
         return inertia('People/Show', [
@@ -160,19 +189,22 @@ class PeopleController extends Controller
     public function edit(
         $id,
         PersonPhoneService $personPhoneService,
-        AddressService $personAddressService
+        AddressService $addressService,
+        AttachmentService $attachmentService
     ) {
         $person = Person::with([
             'phoneNumbers',
             'primaryPhoneNumber',
             'addresses',
             'primaryAddress',
+            'attachments',
         ])->findOrFail($id);
 
         $users = User::orderBy('name')->get(['id', 'name']);
 
         $person->phone_numbers = $personPhoneService->normalizeForForm($person->phoneNumbers);
-        $person->addresses = $personAddressService->normalizeForForm($person->addresses);
+        $person->addresses = $addressService->normalizeForForm($person->addresses);
+        $person->attachments_for_ui = $attachmentService->normalizeForUi($person->attachments);
 
         return inertia('People/Edit', [
             'person' => $person,
@@ -184,8 +216,9 @@ class PeopleController extends Controller
         Request $request,
         $id,
         PersonPhoneService $personPhoneService,
-        AddressService $personAddressService,
-        PersonUserAccountService $personUserAccountService
+        AddressService $addressService,
+        PersonUserAccountService $personUserAccountService,
+        AttachmentService $attachmentService
     ) {
         $person = Person::findOrFail($id);
 
@@ -219,25 +252,56 @@ class PeopleController extends Controller
             'addresses.*.country' => ['nullable', 'string', 'max:100'],
             'addresses.*.is_primary' => ['nullable', 'boolean'],
             'addresses.*.notes' => ['nullable', 'string'],
+
+            'new_attachments' => ['nullable', 'array'],
+            'new_attachments.*' => ['file', 'max:10240'],
+            'attachment_meta' => ['nullable', 'array'],
+            'attachment_meta.*.category' => ['nullable', 'string', 'max:100'],
+            'attachment_meta.*.description' => ['nullable', 'string'],
+            'attachment_meta.*.is_primary' => ['nullable', 'boolean'],
+            'attachment_meta.*.sort_order' => ['nullable', 'integer'],
+            'remove_attachment_ids' => ['nullable', 'array'],
+            'remove_attachment_ids.*' => ['integer'],
         ]);
+
+        $newAttachments = $request->file('new_attachments', []);
 
         return DB::transaction(function () use (
             $person,
             $validated,
+            $newAttachments,
             $personPhoneService,
-            $personAddressService,
-            $personUserAccountService
+            $addressService,
+            $personUserAccountService,
+            $attachmentService
         ) {
             $phoneNumbersInput = $validated['phone_numbers'] ?? [];
             $addressesInput = $validated['addresses'] ?? [];
+            $attachmentMeta = $validated['attachment_meta'] ?? [];
+            $removeAttachmentIds = $validated['remove_attachment_ids'] ?? [];
 
-            unset($validated['phone_numbers'], $validated['addresses']);
+            unset(
+                $validated['phone_numbers'],
+                $validated['addresses'],
+                $validated['new_attachments'],
+                $validated['attachment_meta'],
+                $validated['remove_attachment_ids']
+            );
 
             $person->update($validated);
 
             $personUserAccountService->syncFromPerson($person, $validated);
             $personPhoneService->sync($person, $phoneNumbersInput);
-            $personAddressService->sync($person, $addressesInput);
+            $addressService->sync($person, $addressesInput);
+
+            $attachmentService->validatePrimaryPerCategory($attachmentMeta);
+            $attachmentService->syncForModel(
+                model: $person,
+                newFiles: $newAttachments,
+                metadata: $attachmentMeta,
+                removeIds: $removeAttachmentIds,
+                uploadedByUserId: $person->user_id
+            );
 
             return redirect()
                 ->route('people.index')

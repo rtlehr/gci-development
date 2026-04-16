@@ -490,6 +490,30 @@
                 </CardContent>
             </Card>
 
+            <Card class="rounded-xl">
+                <CardHeader>
+                    <div class="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+                        <div>
+                            <CardTitle>Attachments</CardTitle>
+                            <CardDescription>
+                                Upload additional files and manage existing attachments.
+                            </CardDescription>
+                        </div>
+
+                        <Button type="button" variant="outline" @click="addAttachment">
+                            Add File
+                        </Button>
+                    </div>
+                </CardHeader>
+
+                <AttachmentUploader
+                    ref="attachmentsRef"
+                    v-model="form.attachments"
+                    v-model:existingAttachments="form.existing_attachments"
+                    v-model:removeAttachmentIds="form.remove_attachment_ids"
+                    :errors="form.errors"
+                />
+
             <div class="flex gap-3">
                 <Button type="submit" :disabled="form.processing">
                     {{ form.processing ? 'Saving...' : 'Save Changes' }}
@@ -504,12 +528,17 @@
 </template>
 
 <script setup>
+import { computed } from 'vue'
+import { ref } from 'vue'
+import AttachmentUploader from '@/components/attachments/AttachmentUploader.vue'
 import { Link, useForm } from '@inertiajs/vue3'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
+
+const attachmentsRef = ref(null)
 
 const props = defineProps({
     person: {
@@ -538,6 +567,13 @@ const createEmptyAddress = (isPrimary = false) => ({
     country: 'USA',
     is_primary: isPrimary,
     notes: '',
+})
+
+const createEmptyAttachment = () => ({
+    file: null,
+    category: '',
+    description: '',
+    is_primary: false,
 })
 
 const existingPhoneNumbers = (props.person.phone_numbers ?? props.person.phoneNumbers ?? []).map((phone, index) => ({
@@ -581,6 +617,17 @@ const normalizedAddresses = existingAddresses.length
     }))
     : [createEmptyAddress(true)]
 
+const existingAttachmentsSeed = (props.person.attachments_for_ui ?? props.person.attachments ?? []).map((attachment) => ({
+    id: attachment.id ?? null,
+    original_name: attachment.original_name ?? '',
+    category: attachment.category ?? '',
+    description: attachment.description ?? '',
+    is_primary: Boolean(attachment.is_primary ?? false),
+    size: attachment.size ?? 0,
+    url: attachment.url ?? null,
+    marked_for_removal: false,
+}))
+
 const form = useForm({
     person_code: props.person.person_code ?? '',
     first_name: props.person.first_name ?? '',
@@ -592,7 +639,12 @@ const form = useForm({
     notes: props.person.notes ?? '',
     phone_numbers: normalizedPhoneNumbers,
     addresses: normalizedAddresses,
+    attachments: [],
+    existing_attachments: existingAttachmentsSeed,
+    remove_attachment_ids: [],
 })
+
+const existingAttachments = computed(() => form.existing_attachments ?? [])
 
 function addPhoneNumber() {
     form.phone_numbers.push(createEmptyPhoneNumber(form.phone_numbers.length === 0))
@@ -734,6 +786,78 @@ function validateAddresses() {
     return hasError
 }
 
+function addAttachment() {
+    form.attachments.push(createEmptyAttachment())
+}
+
+function removeAttachment(index) {
+    form.attachments.splice(index, 1)
+}
+
+function handleFileChange(event, index) {
+    const file = event.target.files?.[0] ?? null
+    form.attachments[index].file = file
+}
+
+function setPrimaryAttachment(index) {
+    form.attachments = form.attachments.map((attachment, attachmentIndex) => ({
+        ...attachment,
+        is_primary: attachmentIndex === index,
+    }))
+}
+
+function attachmentFieldError(index, field) {
+    return form.errors[`attachments.${index}.${field}`]
+}
+
+function validateAttachments() {
+    let hasError = false
+
+    form.attachments.forEach((attachment, index) => {
+        if (!attachment.file) {
+            form.setError(`attachments.${index}.file`, 'A file is required.')
+            hasError = true
+        }
+    })
+
+    return hasError
+}
+
+function markAttachmentForRemoval(index) {
+    const attachment = form.existing_attachments[index]
+    if (!attachment) return
+
+    attachment.marked_for_removal = true
+
+    if (!form.remove_attachment_ids.includes(attachment.id)) {
+        form.remove_attachment_ids.push(attachment.id)
+    }
+}
+
+function undoAttachmentRemoval(index) {
+    const attachment = form.existing_attachments[index]
+    if (!attachment) return
+
+    attachment.marked_for_removal = false
+    form.remove_attachment_ids = form.remove_attachment_ids.filter((id) => id !== attachment.id)
+}
+
+function formatCategory(value) {
+    if (!value) return 'Other'
+    const normalized = String(value).replaceAll('_', ' ')
+    return normalized.charAt(0).toUpperCase() + normalized.slice(1)
+}
+
+function formatFileSize(size) {
+    const value = Number(size ?? 0)
+
+    if (!value) return ''
+
+    if (value < 1024) return `${value} B`
+    if (value < 1024 * 1024) return `${(value / 1024).toFixed(1)} KB`
+    return `${(value / (1024 * 1024)).toFixed(1)} MB`
+}
+
 function submit() {
     form.clearErrors()
 
@@ -762,8 +886,36 @@ function submit() {
         hasError = true
     }
 
+    if (validateAttachments()) {
+        hasError = true
+    }
+
+    if (attachmentsRef.value && !attachmentsRef.value.validate()) {
+        hasError = true
+    }
+
     if (hasError) return
 
-    form.put(`/people/${props.person.id}`)
+    form.transform((data) => {
+        const transformed = {
+            ...data,
+            _method: 'put',
+            attachment_meta: data.attachments.map((attachment, index) => ({
+                category: attachment.category ?? '',
+                description: attachment.description ?? '',
+                is_primary: attachment.is_primary ? 1 : 0,
+                sort_order: index,
+            })),
+            new_attachments: data.attachments.map((attachment) => attachment.file).filter(Boolean),
+            remove_attachment_ids: data.remove_attachment_ids ?? [],
+        }
+
+        delete transformed.attachments
+        delete transformed.existing_attachments
+
+        return transformed
+    }).post(`/people/${props.person.id}`, {
+        forceFormData: true,
+    })
 }
 </script>

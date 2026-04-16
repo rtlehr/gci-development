@@ -136,6 +136,8 @@
             </CardContent>
         </Card>
 
+        <AttachmentList :attachments="person.attachments ?? []" />
+
         <Card>
             <CardHeader>
                 <CardTitle>Current Assignments</CardTitle>
@@ -358,6 +360,8 @@ import {
     TableRow,
 } from '@/components/ui/table'
 
+import AttachmentList from '@/components/attachments/AttachmentList.vue'
+
 const { can } = useAuth()
 
 const props = defineProps({
@@ -383,6 +387,22 @@ const addresses = computed(() => {
 
     return [...items].sort((a, b) => {
         return Number(Boolean(b.is_primary)) - Number(Boolean(a.is_primary))
+    })
+})
+
+const attachments = computed(() => {
+    const items = props.person.attachments ?? []
+
+    return [...items].sort((a, b) => {
+        if (Number(Boolean(b.is_primary)) !== Number(Boolean(a.is_primary))) {
+            return Number(Boolean(b.is_primary)) - Number(Boolean(a.is_primary))
+        }
+
+        if ((a.sort_order ?? 0) !== (b.sort_order ?? 0)) {
+            return (a.sort_order ?? 0) - (b.sort_order ?? 0)
+        }
+
+        return (a.id ?? 0) - (b.id ?? 0)
     })
 })
 
@@ -425,6 +445,13 @@ function formatAddressType(value) {
     return normalized.charAt(0).toUpperCase() + normalized.slice(1)
 }
 
+function formatCategory(value) {
+    if (!value) return 'Other'
+
+    const normalized = String(value).replaceAll('_', ' ')
+    return normalized.charAt(0).toUpperCase() + normalized.slice(1)
+}
+
 function addressLines(address) {
     const cityStatePostal = [
         address.city,
@@ -438,6 +465,16 @@ function addressLines(address) {
         cityStatePostal,
         address.country,
     ].filter(Boolean)
+}
+
+function formatFileSize(size) {
+    const value = Number(size ?? 0)
+
+    if (!value) return ''
+
+    if (value < 1024) return `${value} B`
+    if (value < 1024 * 1024) return `${(value / 1024).toFixed(1)} KB`
+    return `${(value / (1024 * 1024)).toFixed(1)} MB`
 }
 
 function openDeleteDialog(id) {

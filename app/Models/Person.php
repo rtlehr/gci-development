@@ -9,6 +9,7 @@ use App\Models\Position;
 use App\Models\User;
 use App\Models\PersonPhoneNumber;
 use App\Models\Address;
+use App\Models\Attachment;
 
 class Person extends Model
 {
@@ -63,4 +64,10 @@ class Person extends Model
     {
         return $this->hasOne(Address::class)->where('is_primary', true);
     }
+
+    public function attachments()
+    {
+        return $this->morphMany(Attachment::class, 'attachable');
+    }
+    
 }
