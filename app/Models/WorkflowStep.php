@@ -3,11 +3,13 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class WorkflowStep extends Model
 {
     protected $fillable = [
+        'workflow_id',
         'code',
         'name',
         'step_order',
@@ -30,6 +32,11 @@ class WorkflowStep extends Model
         'allows_comments' => 'boolean',
         'allows_status' => 'boolean',
     ];
+
+    public function workflow(): BelongsTo
+    {
+        return $this->belongsTo(Workflow::class);
+    }
 
     public function statuses(): HasMany
     {

@@ -5,10 +5,11 @@ namespace App\Http\Controllers;
 use App\Models\Candidate;
 use App\Models\Person;
 use App\Models\Position;
-use App\Models\WorkflowStep;
+use App\Models\Workflow;
 use Illuminate\Http\Request;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Response as ResponseFacade;
+use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -145,12 +146,93 @@ class CandidateController extends Controller
     /**
      * Show the form for creating a new resource.
      */
-    public function create(): Response
+    public function create(Request $request): Response
     {
+        $workflows = Workflow::query()
+            ->where('is_active', true)
+            ->orderByDesc('is_primary')
+            ->orderBy('name')
+            ->get(['id', 'name', 'code', 'is_primary']);
+
+        if ($workflows->isEmpty()) {
+            abort(500, 'No active workflows are configured.');
+        }
+
+        $primaryWorkflow = $workflows->firstWhere('is_primary', true);
+
+        $selectedWorkflowId = $request->integer('workflow_id');
+
+        if (!$selectedWorkflowId) {
+            $selectedWorkflowId = $primaryWorkflow?->id ?? $workflows->first()->id;
+        }
+
+        $selectedWorkflow = Workflow::query()
+            ->with([
+                'steps' => function ($query) {
+                    $query->where('is_active', true)->orderBy('step_order');
+                },
+                'steps.statuses' => function ($query) {
+                    $query->where('is_active', true)->orderBy('sort_order');
+                },
+            ])
+            ->where('is_active', true)
+            ->find($selectedWorkflowId);
+
+        if (!$selectedWorkflow) {
+            $selectedWorkflow = Workflow::query()
+                ->with([
+                    'steps' => function ($query) {
+                        $query->where('is_active', true)->orderBy('step_order');
+                    },
+                    'steps.statuses' => function ($query) {
+                        $query->where('is_active', true)->orderBy('sort_order');
+                    },
+                ])
+                ->findOrFail($primaryWorkflow?->id ?? $workflows->first()->id);
+        }
+
         return Inertia::render('Candidates/Create', [
             'people' => $this->getPeopleOptions(),
             'positions' => $this->getPositionOptions(),
-            'workflowSteps' => $this->getWorkflowSteps(),
+            'workflows' => $workflows->map(function ($workflow) {
+                return [
+                    'id' => $workflow->id,
+                    'name' => $workflow->name,
+                    'code' => $workflow->code,
+                    'is_primary' => (bool) $workflow->is_primary,
+                ];
+            })->values(),
+            'workflow' => [
+                'id' => $selectedWorkflow->id,
+                'name' => $selectedWorkflow->name,
+                'code' => $selectedWorkflow->code,
+                'is_primary' => (bool) $selectedWorkflow->is_primary,
+            ],
+            'workflowSteps' => $selectedWorkflow->steps->map(function ($step) {
+                return [
+                    'id' => $step->id,
+                    'code' => $step->code,
+                    'name' => $step->name,
+                    'step_order' => $step->step_order,
+                    'is_active' => (bool) $step->is_active,
+                    'allows_requested_at' => (bool) $step->allows_requested_at,
+                    'allows_scheduled_at' => (bool) $step->allows_scheduled_at,
+                    'allows_completed_at' => (bool) $step->allows_completed_at,
+                    'allows_notes' => (bool) $step->allows_notes,
+                    'allows_comments' => (bool) $step->allows_comments,
+                    'allows_status' => (bool) $step->allows_status,
+                    'default_status' => $step->default_status,
+                    'statuses' => $step->statuses->map(function ($status) {
+                        return [
+                            'id' => $status->id,
+                            'status_code' => $status->status_code,
+                            'status_label' => $status->status_label,
+                            'sort_order' => $status->sort_order,
+                            'is_default' => (bool) $status->is_default,
+                        ];
+                    })->values(),
+                ];
+            })->values(),
         ]);
     }
 
@@ -162,6 +244,7 @@ class CandidateController extends Controller
         $data = $request->validate([
             'person_id' => ['required', 'exists:people,id'],
             'position_id' => ['required', 'exists:positions,id'],
+            'workflow_id' => ['required', 'exists:workflows,id'],
             'status' => ['required', 'in:submitted,selected,approved,assigned'],
             'candidate_fbr' => ['nullable', 'numeric'],
             'submitted_at' => ['nullable', 'date'],
@@ -179,9 +262,29 @@ class CandidateController extends Controller
             'step_events.*.comments' => ['nullable', 'string', 'max:2500'],
         ]);
 
+        $selectedWorkflow = Workflow::query()
+            ->where('id', $data['workflow_id'])
+            ->where('is_active', true)
+            ->first();
+
+        if (!$selectedWorkflow) {
+            throw ValidationException::withMessages([
+                'workflow_id' => 'The selected workflow is not active or does not exist.',
+            ]);
+        }
+
+        $allowedStepIds = $selectedWorkflow->steps()
+            ->where('is_active', true)
+            ->pluck('id')
+            ->map(fn ($id) => (int) $id)
+            ->all();
+
+        $this->validateStepEventsBelongToWorkflow($data['step_events'] ?? [], $allowedStepIds);
+
         $candidate = Candidate::create([
             'person_id' => $data['person_id'],
             'position_id' => $data['position_id'],
+            'workflow_id' => $selectedWorkflow->id,
             'status' => $data['status'],
             'candidate_fbr' => $data['candidate_fbr'] ?? null,
             'submitted_at' => $data['submitted_at'] ?? null,
@@ -219,31 +322,22 @@ class CandidateController extends Controller
         $candidate->load([
             'person:id,first_name,last_name,person_code,email',
             'position:id,job_title,position_code,status',
+            'workflow:id,name,code',
             'submittedBy:id,first_name,last_name',
-            'stepEvents.workflowStep:id,code,name,step_order',
+            'stepEvents.workflowStep:id,workflow_id,code,name,step_order,allows_requested_at,allows_scheduled_at,allows_completed_at,allows_notes,allows_comments,allows_status,default_status',
             'stepEvents.performedBy:id,first_name,last_name',
+            'workflow.steps' => function ($query) {
+                $query->orderBy('step_order');
+            },
         ]);
 
-        $workflowSteps = WorkflowStep::query()
-            ->where('is_active', true)
-            ->orderBy('step_order')
-            ->get([
-                'id',
-                'code',
-                'name',
-                'step_order',
-                'allows_requested_at',
-                'allows_scheduled_at',
-                'allows_completed_at',
-                'allows_notes',
-                'allows_comments',
-                'allows_status',
-                'default_status',
-            ]);
+        if (!$candidate->workflow) {
+            abort(500, 'This candidate does not have an associated workflow.');
+        }
 
         $stepEventsByWorkflowStepId = $candidate->stepEvents->keyBy('workflow_step_id');
 
-        $workflowDisplay = $workflowSteps->map(function ($step) use ($stepEventsByWorkflowStepId) {
+        $workflowDisplay = $candidate->workflow->steps->map(function ($step) use ($stepEventsByWorkflowStepId) {
             $event = $stepEventsByWorkflowStepId->get($step->id);
 
             return [
@@ -279,13 +373,18 @@ class CandidateController extends Controller
         $candidateData = [
             'id' => $candidate->id,
             'candidate_code' => $candidate->candidate_code,
-            'person_id' => $candidate->person_id,
-            'position_id' => $candidate->position_id,
+            'workflow_id' => $candidate->workflow_id,
             'status' => $candidate->status,
             'candidate_fbr' => $candidate->candidate_fbr,
             'submitted_at' => $candidate->submitted_at,
             'submitted_by_person_id' => $candidate->submitted_by_person_id,
             'scheduled_start_date' => $candidate->scheduled_start_date,
+
+            'workflow' => [
+                'id' => $candidate->workflow->id,
+                'name' => $candidate->workflow->name,
+                'code' => $candidate->workflow->code,
+            ],
 
             'person' => $candidate->person ? [
                 'id' => $candidate->person->id,
@@ -322,14 +421,25 @@ class CandidateController extends Controller
     public function edit(Candidate $candidate): Response
     {
         $candidate->load([
+            'workflow.steps' => function ($query) {
+                $query->orderBy('step_order');
+            },
+            'workflow.steps.statuses' => function ($query) {
+                $query->where('is_active', true)->orderBy('sort_order');
+            },
             'stepEvents',
         ]);
+
+        if (!$candidate->workflow) {
+            abort(500, 'This candidate does not have an associated workflow.');
+        }
 
         $candidateData = [
             'id' => $candidate->id,
             'candidate_code' => $candidate->candidate_code,
             'person_id' => $candidate->person_id,
             'position_id' => $candidate->position_id,
+            'workflow_id' => $candidate->workflow_id,
             'status' => $candidate->status,
             'candidate_fbr' => $candidate->candidate_fbr,
             'submitted_at' => $candidate->submitted_at?->format('Y-m-d\TH:i'),
@@ -354,7 +464,36 @@ class CandidateController extends Controller
             'candidate' => $candidateData,
             'people' => $this->getPeopleOptions(),
             'positions' => $this->getPositionOptions(),
-            'workflowSteps' => $this->getWorkflowSteps(),
+            'workflow' => [
+                'id' => $candidate->workflow->id,
+                'name' => $candidate->workflow->name,
+                'code' => $candidate->workflow->code,
+            ],
+            'workflowSteps' => $candidate->workflow->steps->map(function ($step) {
+                return [
+                    'id' => $step->id,
+                    'code' => $step->code,
+                    'name' => $step->name,
+                    'step_order' => $step->step_order,
+                    'is_active' => (bool) $step->is_active,
+                    'allows_requested_at' => (bool) $step->allows_requested_at,
+                    'allows_scheduled_at' => (bool) $step->allows_scheduled_at,
+                    'allows_completed_at' => (bool) $step->allows_completed_at,
+                    'allows_notes' => (bool) $step->allows_notes,
+                    'allows_comments' => (bool) $step->allows_comments,
+                    'allows_status' => (bool) $step->allows_status,
+                    'default_status' => $step->default_status,
+                    'statuses' => $step->statuses->map(function ($status) {
+                        return [
+                            'id' => $status->id,
+                            'status_code' => $status->status_code,
+                            'status_label' => $status->status_label,
+                            'sort_order' => $status->sort_order,
+                            'is_default' => (bool) $status->is_default,
+                        ];
+                    })->values(),
+                ];
+            })->values(),
         ]);
     }
 
@@ -363,6 +502,14 @@ class CandidateController extends Controller
      */
     public function update(Request $request, Candidate $candidate): RedirectResponse
     {
+        $candidate->load('workflow.steps');
+
+        if (!$candidate->workflow) {
+            return back()->withErrors([
+                'workflow' => 'This candidate does not have an associated workflow.',
+            ]);
+        }
+
         $data = $request->validate([
             'person_id' => ['required', 'exists:people,id'],
             'position_id' => ['required', 'exists:positions,id'],
@@ -382,6 +529,10 @@ class CandidateController extends Controller
             'step_events.*.notes' => ['nullable', 'string', 'max:2500'],
             'step_events.*.comments' => ['nullable', 'string', 'max:2500'],
         ]);
+
+        $allowedStepIds = $candidate->workflow->steps->pluck('id')->map(fn ($id) => (int) $id)->all();
+
+        $this->validateStepEventsBelongToWorkflow($data['step_events'] ?? [], $allowedStepIds);
 
         $candidate->update([
             'person_id' => $data['person_id'],
@@ -638,48 +789,6 @@ class CandidateController extends Controller
     }
 
     /**
-     * Build workflow steps with statuses for the UI.
-     */
-    private function getWorkflowSteps()
-    {
-        return WorkflowStep::query()
-            ->with([
-                'statuses' => function ($query) {
-                    $query->where('is_active', true)->orderBy('sort_order');
-                },
-            ])
-            ->where('is_active', true)
-            ->orderBy('step_order')
-            ->get()
-            ->map(function ($step) {
-                return [
-                    'id' => $step->id,
-                    'code' => $step->code,
-                    'name' => $step->name,
-                    'step_order' => $step->step_order,
-                    'is_active' => (bool) $step->is_active,
-                    'allows_requested_at' => (bool) $step->allows_requested_at,
-                    'allows_scheduled_at' => (bool) $step->allows_scheduled_at,
-                    'allows_completed_at' => (bool) $step->allows_completed_at,
-                    'allows_notes' => (bool) $step->allows_notes,
-                    'allows_comments' => (bool) $step->allows_comments,
-                    'allows_status' => (bool) $step->allows_status,
-                    'default_status' => $step->default_status,
-                    'statuses' => $step->statuses->map(function ($status) {
-                        return [
-                            'id' => $status->id,
-                            'status_code' => $status->status_code,
-                            'status_label' => $status->status_label,
-                            'sort_order' => $status->sort_order,
-                            'is_default' => (bool) $status->is_default,
-                        ];
-                    })->values(),
-                ];
-            })
-            ->values();
-    }
-
-    /**
      * Candidate status options.
      */
     private function getStatusOptions(): array
@@ -790,5 +899,32 @@ class CandidateController extends Controller
             !empty($event['performed_by_person_id']) ||
             !empty(trim((string) ($event['notes'] ?? ''))) ||
             !empty(trim((string) ($event['comments'] ?? '')));
+    }
+
+    /**
+     * Ensure submitted step events belong to the expected workflow.
+     */
+    private function validateStepEventsBelongToWorkflow(array $stepEvents, array $allowedStepIds): void
+    {
+        $allowedStepIds = array_map('intval', $allowedStepIds);
+        $errors = [];
+
+        foreach ($stepEvents as $index => $event) {
+            $workflowStepId = isset($event['workflow_step_id'])
+                ? (int) $event['workflow_step_id']
+                : null;
+
+            if (!$workflowStepId) {
+                continue;
+            }
+
+            if (!in_array($workflowStepId, $allowedStepIds, true)) {
+                $errors["step_events.{$index}.workflow_step_id"] = 'This workflow step does not belong to the assigned workflow.';
+            }
+        }
+
+        if (!empty($errors)) {
+            throw ValidationException::withMessages($errors);
+        }
     }
 }

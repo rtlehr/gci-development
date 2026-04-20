@@ -12,6 +12,7 @@ class Candidate extends Model
         'candidate_code',
         'person_id',
         'position_id',
+        'workflow_id',
         'status',
         'candidate_fbr',
         'submitted_at',
@@ -33,6 +34,11 @@ class Candidate extends Model
     public function position(): BelongsTo
     {
         return $this->belongsTo(Position::class);
+    }
+
+    public function workflow(): BelongsTo
+    {
+        return $this->belongsTo(Workflow::class);
     }
 
     public function submittedBy(): BelongsTo

@@ -151,6 +151,55 @@
 
             <div class="rounded-2xl border bg-white p-6 shadow-sm">
                 <h2 class="mb-4 text-lg font-semibold text-gray-900">
+                    Workflow
+                </h2>
+
+                <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
+                    <div v-if="can('view_admin')">
+                        <label class="mb-1 block text-sm font-medium text-gray-700">
+                            Selected Workflow
+                        </label>
+                        <select
+                            v-model="selectedWorkflowId"
+                            @change="changeWorkflow"
+                            class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
+                        >
+                            <option
+                                v-for="item in workflows"
+                                :key="item.id"
+                                :value="item.id"
+                            >
+                                {{ item.name }}{{ item.is_primary ? ' (Primary)' : '' }}
+                            </option>
+                        </select>
+                    </div>
+
+                    <div v-else>
+                        <label class="mb-1 block text-sm font-medium text-gray-700">
+                            Selected Workflow
+                        </label>
+                        <div class="rounded-lg border border-gray-300 bg-gray-50 px-3 py-2 text-sm">
+                            {{ workflow?.name || '—' }}
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="mb-1 block text-sm font-medium text-gray-700">
+                            Workflow Code
+                        </label>
+                        <div class="rounded-lg border border-gray-300 bg-gray-50 px-3 py-2 text-sm">
+                            {{ workflow?.code || '—' }}
+                        </div>
+                    </div>
+                </div>
+
+                <div v-if="form.errors.workflow_id" class="mt-3 text-sm text-red-600">
+                    {{ form.errors.workflow_id }}
+                </div>
+            </div>
+
+            <div class="rounded-2xl border bg-white p-6 shadow-sm">
+                <h2 class="mb-4 text-lg font-semibold text-gray-900">
                     Workflow Steps
                 </h2>
 
@@ -182,18 +231,42 @@
 </template>
 
 <script setup>
-import { useForm, Link } from '@inertiajs/vue3'
+import { ref } from 'vue'
+import { Link, router, useForm } from '@inertiajs/vue3'
+import { useAuth } from '@/composables/useAuth'
 import CandidateWorkflowEditor from '@/components/forms/CandidateWorkflowEditor.vue'
 
+const { can } = useAuth()
+
 const props = defineProps({
-    people: Array,
-    positions: Array,
-    workflowSteps: Array,
+    people: {
+        type: Array,
+        default: () => [],
+    },
+    positions: {
+        type: Array,
+        default: () => [],
+    },
+    workflows: {
+        type: Array,
+        default: () => [],
+    },
+    workflow: {
+        type: Object,
+        required: true,
+    },
+    workflowSteps: {
+        type: Array,
+        default: () => [],
+    },
 })
+
+const selectedWorkflowId = ref(props.workflow?.id ?? '')
 
 const form = useForm({
     person_id: '',
     position_id: '',
+    workflow_id: props.workflow?.id ?? '',
     status: 'submitted',
     candidate_fbr: '',
     submitted_at: '',
@@ -202,7 +275,21 @@ const form = useForm({
     step_events: [],
 })
 
+function changeWorkflow() {
+    router.get(
+        '/candidates/create',
+        {
+            workflow_id: selectedWorkflowId.value,
+        },
+        {
+            preserveState: false,
+            replace: true,
+        }
+    )
+}
+
 function submit() {
+    form.workflow_id = selectedWorkflowId.value
     form.post('/candidates')
 }
 </script>
