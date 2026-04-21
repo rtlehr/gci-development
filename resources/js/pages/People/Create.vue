@@ -1,9 +1,9 @@
 <template>
-    <div class="p-6 max-w-6xl space-y-6">
+    <div class="max-w-6xl space-y-6 p-6">
         <div class="flex items-center justify-between">
             <div>
                 <h1 class="text-2xl font-semibold">Create Person</h1>
-                <p class="text-sm text-muted-foreground mt-1">
+                <p class="mt-1 text-sm text-muted-foreground">
                     Add a new person record.
                 </p>
             </div>
@@ -23,7 +23,7 @@
                 </CardHeader>
 
                 <CardContent class="space-y-6">
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
                         <div class="space-y-2">
                             <Label for="person_code">
                                 AIN Number <span class="text-red-500">*</span>
@@ -106,8 +106,8 @@
                             <Label for="email">Email</Label>
                             <Input
                                 id="email"
-                                type="email"
                                 v-model="form.email"
+                                type="email"
                                 :class="form.errors.email ? 'border-red-500' : ''"
                             />
                             <p v-if="form.errors.email" class="text-sm text-red-500">
@@ -176,9 +176,7 @@ import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 
 const phoneNumbersRef = ref(null)
-
 const attachmentsRef = ref(null)
-
 const addressesRef = ref(null)
 
 const createEmptyPhoneNumber = (isPrimary = false) => ({
@@ -266,23 +264,27 @@ function submit() {
 
     if (hasError) return
 
-    form.transform((data) => {
-        const transformed = {
-            ...data,
-            attachment_meta: data.attachments.map((attachment, index) => ({
-                category: attachment.category ?? '',
-                description: attachment.description ?? '',
-                is_primary: attachment.is_primary ? 1 : 0,
-                sort_order: index,
-            })),
-            new_attachments: data.attachments.map((attachment) => attachment.file).filter(Boolean),
-        }
+    form
+        .transform((data) => {
+            const transformed = {
+                ...data,
+                attachment_meta: data.attachments.map((attachment, index) => ({
+                    category: attachment.category ?? '',
+                    description: attachment.description ?? '',
+                    is_primary: attachment.is_primary ? 1 : 0,
+                    sort_order: index,
+                })),
+                new_attachments: data.attachments
+                    .map((attachment) => attachment.file)
+                    .filter(Boolean),
+            }
 
-        delete transformed.attachments
+            delete transformed.attachments
 
-        return transformed
-    }).post('/people', {
-        forceFormData: true,
-    })
+            return transformed
+        })
+        .post('/people', {
+            forceFormData: true,
+        })
 }
 </script>

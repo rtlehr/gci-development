@@ -22,6 +22,7 @@ class DatabaseSeeder extends Seeder
             RoleSeeder::class,
             WorkflowStepSeeder::class,
             WorkflowStepStatusSeeder::class,
+            PageHelpSeeder::class,
         ]);
 
         // User::factory(10)->create();

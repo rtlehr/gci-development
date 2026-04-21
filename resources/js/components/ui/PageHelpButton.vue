@@ -1,23 +1,21 @@
-<template>
-    <button
-        @click="openHelp"
-        title="Help"
-    >
-        <HelpCircle class="h-4 w-4 text-black" />
-    </button>
-</template>
-
-<script setup>
+<script setup lang="ts">
+import { inject } from 'vue'
 import { HelpCircle } from 'lucide-vue-next'
 
-defineProps({
-    helpKey: {
-        type: String,
-        default: '',
-    },
-})
+const props = defineProps<{
+    helpKey?: string
+}>()
 
-const openHelp = () => {
-    window.open('about:blank', '_blank')
-}
+const toggleHelpPanel = inject<(key?: string) => void>('toggleHelpPanel')
 </script>
+
+<template>
+    <button
+        type="button"
+        @click="toggleHelpPanel?.(helpKey)"
+        class="cursor-pointer"
+        title="Help"
+    >
+        <HelpCircle class="h-4 w-4" />
+    </button>
+</template>
