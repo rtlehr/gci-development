@@ -68,6 +68,12 @@ const allMainNavItems: NavItem[] = [
         icon: ArrowLeftRight,
         permission: 'view_admin',
     },
+    {
+        title: 'Add Help Page',
+        href: '/admin/page-help',
+        icon: ArrowLeftRight,
+        permission: 'view_admin',
+    },
 ]
 
 const mainNavItems = computed(() =>

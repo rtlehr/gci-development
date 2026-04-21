@@ -1,6 +1,16 @@
 <script setup lang="ts">
-import { ref, watch } from 'vue'
+import { ref, watch, computed  } from 'vue'
 import { X } from 'lucide-vue-next'
+import { useAuth } from '@/composables/useAuth'
+import { Link } from '@inertiajs/vue3'
+
+const { can } = useAuth()
+
+const createHelpUrl = computed(() => {
+    if (!props.helpKey) return '/admin/page-help/create'
+
+    return `/admin/page-help/create?help_key=${encodeURIComponent(props.helpKey)}`
+})
 
 const props = defineProps<{
     open: boolean
@@ -12,7 +22,14 @@ defineEmits<{
 }>()
 
 const title = ref('Page Help')
-const contentHtml = ref('<p>Help content has not been added for this page yet.</p>')
+
+const EMPTY_HTML = '<p>Help content has not been added for this page yet.</p>'
+const contentHtml = ref(EMPTY_HTML)
+
+const isEmpty = computed(() => {
+    return !contentHtml.value || contentHtml.value === EMPTY_HTML
+})
+
 const loading = ref(false)
 
 const loadHelp = async () => {
@@ -80,6 +97,22 @@ watch(
                 Loading help...
             </div>
 
+            <!-- EMPTY STATE -->
+            <div v-else-if="isEmpty" class="space-y-3 text-sm">
+                <div class="text-muted-foreground italic">
+                    There is no help for this screen.
+                </div>
+
+                <Link
+                    v-if="can('view_admin')"
+                    :href="createHelpUrl"
+                    class="text-blue-600 underline"
+                >
+                    Would you like to create it?
+                </Link>
+            </div>
+
+            <!-- NORMAL CONTENT -->
             <div
                 v-else
                 class="text-sm leading-6
@@ -90,10 +123,11 @@ watch(
                     [&_ul]:mb-4 [&_ul]:list-disc [&_ul]:pl-6
                     [&_ol]:mb-4 [&_ol]:list-decimal [&_ol]:pl-6
                     [&_li]:mb-1
-                    [&_a]:text-blue-600 [&_a]:underline"
+                "
                 v-html="contentHtml"
             ></div>
-
         </div>
+
+
     </aside>
 </template>

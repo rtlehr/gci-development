@@ -96,9 +96,17 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
+import { usePage } from '@inertiajs/vue3'
+
+const page = usePage()
+
+const initialHelpKey =
+    page.props?.ziggy?.query?.help_key ||
+    new URLSearchParams(window.location.search).get('help_key') ||
+    ''
 
 const form = useForm({
-    help_key: '',
+    help_key: initialHelpKey,
     title: '',
     content_html: '',
     is_active: true,
