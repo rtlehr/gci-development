@@ -6,6 +6,8 @@ import {
     CircleUserRound,
     ClipboardMinus,
     ArrowLeftRight,
+    LifeBuoy,
+    HelpCircle,
 } from 'lucide-vue-next'
 
 import AppLogo from '@/components/AppLogo.vue'
@@ -65,13 +67,13 @@ const allMainNavItems: NavItem[] = [
     {
         title: 'View Tickets',
         href: '/admin/tickets',
-        icon: ArrowLeftRight,
+        icon: LifeBuoy,
         permission: 'view_admin',
     },
     {
         title: 'Add Help Page',
         href: '/admin/page-help',
-        icon: ArrowLeftRight,
+        icon: HelpCircle ,
         permission: 'view_admin',
     },
 ]

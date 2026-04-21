@@ -6,7 +6,7 @@ use App\Http\Controllers\PageHelpController;
 
 use App\Http\Controllers\PageHelpAdminController;
 
-Route::get('/page-help/{helpKey}', [PageHelpController::class, 'show'])
+Route::get('/page-help/{helpKey}', [PageHelpController::class, 'show'])  
     ->where('helpKey', '.*')
     ->name('page-help.show');
 
