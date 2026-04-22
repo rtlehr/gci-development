@@ -74,7 +74,7 @@ watch(
 <template>
     <aside
         v-if="open"
-        class="flex h-full w-[380px] min-w-[380px] max-w-[380px] flex-col border-l bg-background"
+        class="flex h-full w-[520px] min-w-[520px] max-w-[520px] flex-col border-l bg-background"
     >
         <div class="flex items-center justify-between border-b px-4 py-3">
             <div>

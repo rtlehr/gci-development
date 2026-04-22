@@ -47,8 +47,8 @@ provide('currentHelpKey', currentHelpKey)
 </script>
 
 <template>
-    <div class="flex h-screen w-full overflow-hidden">
-        <div class="min-w-0 flex-1 overflow-hidden">
+    <div class="flex min-h-screen w-full">
+        <div class="min-w-0 flex-1">
             <AppSidebarLayout :breadcrumbs="breadcrumbs ?? []">
                 <FlashMessages />
                 <slot />
