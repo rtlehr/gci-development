@@ -2,137 +2,138 @@
 
 namespace Database\Seeders;
 
+use App\Models\Workflow;
+use App\Models\WorkflowStep;
 use Illuminate\Database\Seeder;
-use Illuminate\Support\Facades\DB;
 
 class WorkflowStepSeeder extends Seeder
 {
-    /**
-     * Run the database seeds.
-     */
     public function run(): void
     {
-        DB::table('workflow_steps')->insert([
+        $workflow = Workflow::firstOrCreate(
+            ['code' => 'default'],
+            [
+                'name' => 'Default Workflow',
+            ]
+        );
+
+        $steps = [
             [
                 'code' => 'resume_review',
                 'name' => 'Resume Review',
                 'step_order' => 1,
-                'is_active' => true,
+                'default_status' => null,
+                'allows_status' => false,
                 'allows_requested_at' => false,
                 'allows_scheduled_at' => false,
                 'allows_completed_at' => true,
                 'allows_notes' => true,
                 'allows_comments' => false,
-                'allows_status' => false,
-                'default_status' => null,
-                'created_at' => now(),
-                'updated_at' => now(),
+                'is_active' => true,
             ],
             [
                 'code' => 'interview',
                 'name' => 'Interview',
                 'step_order' => 2,
-                'is_active' => true,
+                'default_status' => 'requested',
+                'allows_status' => true,
                 'allows_requested_at' => true,
                 'allows_scheduled_at' => true,
                 'allows_completed_at' => true,
                 'allows_notes' => true,
                 'allows_comments' => false,
-                'allows_status' => true,
-                'default_status' => 'requested',
-                'created_at' => now(),
-                'updated_at' => now(),
+                'is_active' => true,
             ],
             [
                 'code' => 'tech_screen',
                 'name' => 'Tech Screen',
                 'step_order' => 3,
-                'is_active' => true,
+                'default_status' => 'requested',
+                'allows_status' => true,
                 'allows_requested_at' => true,
                 'allows_scheduled_at' => true,
                 'allows_completed_at' => true,
                 'allows_notes' => true,
                 'allows_comments' => false,
-                'allows_status' => true,
-                'default_status' => 'requested',
-                'created_at' => now(),
-                'updated_at' => now(),
+                'is_active' => true,
             ],
             [
                 'code' => 'offer_sent',
                 'name' => 'Offer Sent',
                 'step_order' => 4,
-                'is_active' => true,
+                'default_status' => null,
+                'allows_status' => false,
                 'allows_requested_at' => false,
                 'allows_scheduled_at' => false,
                 'allows_completed_at' => true,
                 'allows_notes' => false,
                 'allows_comments' => true,
-                'allows_status' => false,
-                'default_status' => null,
-                'created_at' => now(),
-                'updated_at' => now(),
+                'is_active' => true,
             ],
             [
                 'code' => 'offer_signed',
                 'name' => 'Offer Signed',
                 'step_order' => 5,
-                'is_active' => true,
+                'default_status' => null,
+                'allows_status' => false,
                 'allows_requested_at' => false,
                 'allows_scheduled_at' => false,
                 'allows_completed_at' => true,
                 'allows_notes' => false,
                 'allows_comments' => true,
-                'allows_status' => false,
-                'default_status' => null,
-                'created_at' => now(),
-                'updated_at' => now(),
+                'is_active' => true,
             ],
             [
                 'code' => 'subcontract_signed',
                 'name' => 'Subcontract Signed',
                 'step_order' => 6,
-                'is_active' => true,
+                'default_status' => null,
+                'allows_status' => false,
                 'allows_requested_at' => false,
                 'allows_scheduled_at' => false,
                 'allows_completed_at' => true,
                 'allows_notes' => false,
                 'allows_comments' => true,
-                'allows_status' => false,
-                'default_status' => null,
-                'created_at' => now(),
-                'updated_at' => now(),
+                'is_active' => true,
             ],
             [
                 'code' => 'crossover',
                 'name' => 'Crossover',
                 'step_order' => 7,
-                'is_active' => true,
+                'default_status' => 'submitted',
+                'allows_status' => true,
                 'allows_requested_at' => true,
                 'allows_scheduled_at' => false,
                 'allows_completed_at' => true,
                 'allows_notes' => false,
                 'allows_comments' => false,
-                'allows_status' => true,
-                'default_status' => 'submitted',
-                'created_at' => now(),
-                'updated_at' => now(),
+                'is_active' => true,
             ],
             [
                 'code' => 'security_scrub',
                 'name' => 'Security Scrub',
                 'step_order' => 8,
-                'is_active' => true,
+                'default_status' => null,
+                'allows_status' => false,
                 'allows_requested_at' => true,
                 'allows_scheduled_at' => false,
                 'allows_completed_at' => true,
                 'allows_notes' => false,
                 'allows_comments' => false,
-                'allows_status' => false,
-                'default_status' => null,
-                'created_at' => now(),
-                'updated_at' => now(),
+                'is_active' => true,
             ],
-        ]);
+        ];
+
+        foreach ($steps as $step) {
+            WorkflowStep::updateOrCreate(
+                [
+                    'workflow_id' => $workflow->id,
+                    'code' => $step['code'],
+                ],
+                array_merge($step, [
+                    'workflow_id' => $workflow->id,
+                ])
+            );
+        }
     }
 }
