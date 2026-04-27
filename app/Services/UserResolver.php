@@ -10,10 +10,21 @@ use RuntimeException;
 class UserResolver
 {
     /**
-     * Get the person_code from config/devuser.php
+     * Get the active person_code.
+     *
+     * In development/debug mode, allow a tester-selected person_code
+     * from the session. Otherwise, fall back to config/devuser.php.
      */
     public function getPersonCode(): string|int
     {
+        if (
+            config('app.debug') === true &&
+            config('devuser.enabled') === true &&
+            session()->has('dev_person_code')
+        ) {
+            return session('dev_person_code');
+        }
+
         $personCode = config('devuser.person_code');
 
         if (blank($personCode)) {

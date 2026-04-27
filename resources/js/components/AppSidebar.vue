@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Link } from '@inertiajs/vue3'
+import { Link, usePage } from '@inertiajs/vue3'
 import { computed } from 'vue'
 import {
     LayoutGrid,
@@ -8,7 +8,7 @@ import {
     ArrowLeftRight,
     LifeBuoy,
     HelpCircle,
-    Users
+    Users,
 } from 'lucide-vue-next'
 
 import AppLogo from '@/components/AppLogo.vue'
@@ -28,8 +28,13 @@ import {
 import { dashboard } from '@/routes'
 import type { NavItem } from '@/types'
 import TicketQuickLink from '@/components/TicketQuickLink.vue'
+import DevUserSwitcher from '@/components/dev/DevUserSwitcher.vue'
 
-const { can } = useAuth()
+const page = usePage()
+
+const { can, user } = useAuth()
+
+const devDebug = computed(() => page.props.dev?.debug === true)
 
 const allMainNavItems: NavItem[] = [
     {
@@ -74,13 +79,13 @@ const allMainNavItems: NavItem[] = [
     {
         title: 'Add Help Page',
         href: '/admin/page-help',
-        icon: HelpCircle ,
+        icon: HelpCircle,
         permission: 'view_admin',
     },
     {
         title: 'Candidates',
         href: '/candidates',
-        icon: Users ,
+        icon: Users,
         permission: 'view_admin',
     },
 ]
@@ -92,13 +97,28 @@ const mainNavItems = computed(() =>
         }
 
         return can(item.permission)
-    })
+    }),
 )
 </script>
 
 <template>
     <Sidebar collapsible="icon" variant="inset">
+
+        <div
+            v-if="devDebug && user"
+            class="rounded-md border border-yellow-300 bg-yellow-50 px-3 py-2 text-xs text-yellow-800"
+        >
+            <div class="font-semibold">Impersonating</div>
+            <div>
+                {{ user.username }} 
+                <span v-if="user.person_code">
+                    ({{ user.person_code }})
+                </span>
+            </div>
+        </div>
+
         <SidebarHeader>
+
             <SidebarMenu>
                 <SidebarMenuItem>
                     <SidebarMenuButton size="lg" as-child>
@@ -115,7 +135,11 @@ const mainNavItems = computed(() =>
         </SidebarContent>
 
         <SidebarFooter>
+
+            <DevUserSwitcher />
+
             <TicketQuickLink />
+
         </SidebarFooter>
     </Sidebar>
 

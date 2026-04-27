@@ -1,7 +1,9 @@
 <?php
 
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
+use App\Models\Person;
 
 Route::get('/', function () {
     return Inertia::render('Dashboard');
@@ -10,6 +12,32 @@ Route::get('/', function () {
 Route::get('/dashboard', function () {
     return Inertia::render('Dashboard');
 })->name('dashboard');
+
+Route::post('/dev/switch-user', function (Request $request) {
+    abort_unless(config('app.debug') === true, 403);
+    abort_unless(config('devuser.enabled') === true, 403);
+
+    $validated = $request->validate([
+        'person_code' => ['required', 'exists:people,person_code'],
+    ]);
+
+    session([
+        'dev_person_code' => $validated['person_code'],
+    ]);
+
+    return redirect('/')
+        ->with('success', 'Test user switched.');
+})->name('dev.switch-user');
+
+Route::post('/dev/clear-user', function () {
+    abort_unless(config('app.debug') === true, 403);
+    abort_unless(config('devuser.enabled') === true, 403);
+
+    session()->forget('dev_person_code');
+
+    return redirect('/')
+        ->with('success', 'Test user reset.');
+})->name('dev.clear-user');
 
 require __DIR__.'/people.php';
 require __DIR__.'/position.php';

@@ -10,6 +10,7 @@ import { toUrl } from '@/lib/utils';
 import type { NavItem } from '@/types';
 
 
+
 type Props = {
     items: NavItem[];
     class?: string;
@@ -23,6 +24,7 @@ defineProps<Props>();
         :class="`group-data-[collapsible=icon]:p-0 ${$props.class || ''}`"
     >
         <SidebarGroupContent>
+
             <SidebarMenu>
                 <SidebarMenuItem v-for="item in items" :key="item.title">
                     <SidebarMenuButton
