@@ -136,9 +136,9 @@ const mainNavItems = computed(() =>
 
         <SidebarFooter>
 
-            <DevUserSwitcher />
-
             <TicketQuickLink />
+            
+            <DevUserSwitcher />
 
         </SidebarFooter>
     </Sidebar>
