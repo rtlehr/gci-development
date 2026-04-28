@@ -14,6 +14,14 @@ class PermissionSeeder extends Seeder
     {
         $permissions = [
             [
+                'name' => 'view_owner',
+                'group_name' => 'Owner',
+                'label' => 'View Owner',
+                'description' => 'Can access the owner area.',
+                'is_system' => true,
+                'is_locked' => true,
+            ],
+            [
                 'name' => 'view_admin',
                 'group_name' => 'Admin',
                 'label' => 'View Admin',
@@ -42,6 +50,22 @@ class PermissionSeeder extends Seeder
                 'group_name' => 'Positions',
                 'label' => 'Edit Positions',
                 'description' => 'Can create and edit positions.',
+                'is_system' => false,
+                'is_locked' => false,
+            ],
+            [
+                'name' => 'create_candidates',
+                'group_name' => 'candidates',
+                'label' => 'Create Candidates',
+                'description' => 'Can create and edit candidates.',
+                'is_system' => false,
+                'is_locked' => false,
+            ],
+            [
+                'name' => 'crud_all',
+                'group_name' => 'CRUD',
+                'label' => 'CRUD All',
+                'description' => 'Can perform all CRUD operations on all entities.',
                 'is_system' => false,
                 'is_locked' => false,
             ],

@@ -14,6 +14,7 @@ class DatabaseSeeder extends Seeder
             WorkflowStepSeeder::class,
             PageHelpSeeder::class,
             AdminUserSeeder::class,
+            PositionSeeder::class,
         ]);
     }
 }

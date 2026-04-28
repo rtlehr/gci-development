@@ -1,3 +1,5 @@
+<?php
+
 // database/seeders/PositionSeeder.php
 
 namespace Database\Seeders;
@@ -11,7 +13,7 @@ class PositionSeeder extends Seeder
     {
         $positions = [
             [
-                'position_code' => 'ZN-001',
+                'position_code' => 'TEST-001',
                 'status' => 'open',
                 'labor_category' => 'Software Engineer',
                 'job_title' => 'Frontend Developer',
