@@ -47,6 +47,8 @@ class HandleInertiaRequests extends Middleware
             'dev' => [
                 'debug' => config('app.debug') === true,
 
+                'isImpersonating' => session()->has('dev_person_code'),
+
                 'testUsers' => fn () => config('app.debug') === true
                     ? Person::query()
                         ->whereNotNull('user_id')

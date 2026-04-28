@@ -9,6 +9,7 @@ import {
     LifeBuoy,
     HelpCircle,
     Users,
+    Group,
 } from 'lucide-vue-next'
 
 import AppLogo from '@/components/AppLogo.vue'
@@ -31,6 +32,8 @@ import TicketQuickLink from '@/components/TicketQuickLink.vue'
 import DevUserSwitcher from '@/components/dev/DevUserSwitcher.vue'
 
 const page = usePage()
+
+const isImpersonating = computed(() => page.props.dev?.isImpersonating === true)
 
 const { can, user } = useAuth()
 
@@ -77,15 +80,15 @@ const allMainNavItems: NavItem[] = [
         permission: 'view_admin',
     },
     {
-        title: 'Add Help Page',
-        href: '/admin/page-help',
-        icon: HelpCircle,
+        title: 'Groups',
+        href: '/admin/groups',
+        icon: Group,
         permission: 'view_admin',
     },
     {
-        title: 'Candidates',
-        href: '/candidates',
-        icon: Users,
+        title: 'Add Help Page',
+        href: '/admin/page-help',
+        icon: HelpCircle,
         permission: 'view_admin',
     },
 ]
@@ -105,7 +108,7 @@ const mainNavItems = computed(() =>
     <Sidebar collapsible="icon" variant="inset">
 
         <div
-            v-if="devDebug && user"
+            v-if="devDebug && isImpersonating && user"
             class="rounded-md border border-yellow-300 bg-yellow-50 px-3 py-2 text-xs text-yellow-800"
         >
             <div class="font-semibold">Impersonating</div>

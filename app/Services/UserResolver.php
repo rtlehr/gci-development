@@ -17,6 +17,7 @@ class UserResolver
      */
     public function getPersonCode(): string|int
     {
+        // 1. Dev override (only in debug)
         if (
             config('app.debug') === true &&
             config('devuser.enabled') === true &&
@@ -25,10 +26,11 @@ class UserResolver
             return session('dev_person_code');
         }
 
+        // 2. Default dev user (current setup)
         $personCode = config('devuser.person_code');
 
         if (blank($personCode)) {
-            throw new RuntimeException('No person_code is configured in config/devuser.php.');
+            throw new RuntimeException('No person_code is configured.');
         }
 
         return $personCode;

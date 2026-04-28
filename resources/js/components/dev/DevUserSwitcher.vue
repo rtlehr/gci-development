@@ -6,7 +6,7 @@
 
         <select
             class="w-full rounded-md border bg-background px-3 py-2 text-sm"
-            :value="currentPersonCode"
+            :value="''"
             @change="switchUser"
         >
             <option value="">Select test user...</option>
@@ -25,7 +25,7 @@
             class="text-xs underline text-muted-foreground hover:text-foreground"
             @click="clearUser"
         >
-            Reset to default dev user
+            Return to your user
         </button>
     </div>
 </template>
@@ -37,7 +37,16 @@ import { router, usePage } from '@inertiajs/vue3'
 const page = usePage()
 
 const devDebug = computed(() => page.props.dev?.debug === true)
-const testUsers = computed(() => page.props.dev?.testUsers ?? [])
+
+const rawTestUsers = computed(() => page.props.dev?.testUsers ?? [])
+
+const testUsers = computed(() => {
+    const current = currentPersonCode.value
+
+    return rawTestUsers.value.filter(
+        (user) => user.person_code !== current
+    )
+})
 
 const currentPersonCode = computed(() => {
     return page.props.auth?.user?.person_code ?? ''
