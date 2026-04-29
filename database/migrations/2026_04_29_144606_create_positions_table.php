@@ -19,7 +19,10 @@ return new class extends Migration
             $table->string('job_title');
             $table->unsignedTinyInteger('level')->nullable(); // 1-5
             $table->string('project_team_name')->nullable();
-            $table->string('organization_name')->nullable();
+            $table->foreignId('organization_id')
+                ->nullable()
+                ->constrained('organizations')
+                ->nullOnDelete();
             $table->string('customer_lead_name')->nullable();
             $table->date('customer_created_at')->nullable();
             $table->date('closed_at')->nullable();

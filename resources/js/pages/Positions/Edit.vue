@@ -18,20 +18,12 @@
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div class="space-y-2">
                         <Label for="position_code">Position Code</Label>
-                        <Input
-                            id="position_code"
-                            v-model="form.position_code"
-                            :class="form.errors.position_code ? 'border-red-500' : ''"
-                        />
-                        <p v-if="form.errors.position_code" class="text-sm text-red-500">
-                            {{ form.errors.position_code }}
-                        </p>
+                        <Input id="position_code" v-model="form.position_code" :class="form.errors.position_code ? 'border-red-500' : ''" />
+                        <p v-if="form.errors.position_code" class="text-sm text-red-500">{{ form.errors.position_code }}</p>
                     </div>
 
                     <div class="space-y-2">
-                        <Label for="status">
-                            Status <span class="text-red-500">*</span>
-                        </Label>
+                        <Label for="status">Status <span class="text-red-500">*</span></Label>
                         <select
                             id="status"
                             v-model="form.status"
@@ -45,97 +37,51 @@
                             <option value="In Process">In Process</option>
                             <option value="Closed">Closed</option>
                         </select>
-                        <p v-if="form.errors.status" class="text-sm text-red-500">
-                            {{ form.errors.status }}
-                        </p>
+                        <p v-if="form.errors.status" class="text-sm text-red-500">{{ form.errors.status }}</p>
                     </div>
 
                     <div class="space-y-2">
-                        <Label for="job_title">
-                            Job Title <span class="text-red-500">*</span>
-                        </Label>
-                        <Input
-                            id="job_title"
-                            v-model="form.job_title"
-                            :class="form.errors.job_title ? 'border-red-500' : ''"
-                        />
-                        <p v-if="form.errors.job_title" class="text-sm text-red-500">
-                            {{ form.errors.job_title }}
-                        </p>
+                        <Label for="job_title">Job Title <span class="text-red-500">*</span></Label>
+                        <Input id="job_title" v-model="form.job_title" :class="form.errors.job_title ? 'border-red-500' : ''" />
+                        <p v-if="form.errors.job_title" class="text-sm text-red-500">{{ form.errors.job_title }}</p>
                     </div>
 
                     <div class="space-y-2">
                         <Label for="labor_category">Labor Category</Label>
-                        <Input
-                            id="labor_category"
-                            v-model="form.labor_category"
-                            :class="form.errors.labor_category ? 'border-red-500' : ''"
-                        />
-                        <p v-if="form.errors.labor_category" class="text-sm text-red-500">
-                            {{ form.errors.labor_category }}
-                        </p>
+                        <Input id="labor_category" v-model="form.labor_category" :class="form.errors.labor_category ? 'border-red-500' : ''" />
+                        <p v-if="form.errors.labor_category" class="text-sm text-red-500">{{ form.errors.labor_category }}</p>
                     </div>
 
                     <div class="space-y-2">
                         <Label for="level">Level</Label>
-                        <Input
-                            id="level"
-                            type="number"
-                            v-model="form.level"
-                            :class="form.errors.level ? 'border-red-500' : ''"
-                        />
-                        <p v-if="form.errors.level" class="text-sm text-red-500">
-                            {{ form.errors.level }}
-                        </p>
+                        <Input id="level" type="number" v-model="form.level" :class="form.errors.level ? 'border-red-500' : ''" />
+                        <p v-if="form.errors.level" class="text-sm text-red-500">{{ form.errors.level }}</p>
                     </div>
 
                     <div class="space-y-2">
                         <Label for="project_team_name">Project Team Name</Label>
-                        <Input
-                            id="project_team_name"
-                            v-model="form.project_team_name"
-                            :class="form.errors.project_team_name ? 'border-red-500' : ''"
-                        />
-                        <p v-if="form.errors.project_team_name" class="text-sm text-red-500">
-                            {{ form.errors.project_team_name }}
-                        </p>
+                        <Input id="project_team_name" v-model="form.project_team_name" :class="form.errors.project_team_name ? 'border-red-500' : ''" />
+                        <p v-if="form.errors.project_team_name" class="text-sm text-red-500">{{ form.errors.project_team_name }}</p>
                     </div>
 
-                    <div class="space-y-2">
-                        <Label for="organization_name">Organization Name</Label>
-                        <Input
-                            id="organization_name"
-                            v-model="form.organization_name"
-                            :class="form.errors.organization_name ? 'border-red-500' : ''"
-                        />
-                        <p v-if="form.errors.organization_name" class="text-sm text-red-500">
-                            {{ form.errors.organization_name }}
-                        </p>
-                    </div>
+                    <OrganizationSelect
+                        v-model="form.organization_id"
+                        :organizations="props.organizations"
+                        label="Organization"
+                        id="organization_id"
+                        :error="form.errors.organization_id"
+                    />
 
                     <div class="space-y-2">
                         <Label for="customer_lead_name">Customer Lead Name</Label>
-                        <Input
-                            id="customer_lead_name"
-                            v-model="form.customer_lead_name"
-                            :class="form.errors.customer_lead_name ? 'border-red-500' : ''"
-                        />
-                        <p v-if="form.errors.customer_lead_name" class="text-sm text-red-500">
-                            {{ form.errors.customer_lead_name }}
-                        </p>
+                        <Input id="customer_lead_name" v-model="form.customer_lead_name" :class="form.errors.customer_lead_name ? 'border-red-500' : ''" />
+                        <p v-if="form.errors.customer_lead_name" class="text-sm text-red-500">{{ form.errors.customer_lead_name }}</p>
                     </div>
 
                     <div class="space-y-2">
                         <Label for="customer_created_at">Customer Created At</Label>
-                        <Input
-                            id="customer_created_at"
-                            type="date"
-                            v-model="form.customer_created_at"
-                            :class="form.errors.customer_created_at ? 'border-red-500' : ''"
-                        />
-                        <p v-if="form.errors.customer_created_at" class="text-sm text-red-500">
-                            {{ form.errors.customer_created_at }}
-                        </p>
+                        <Input id="customer_created_at" type="date" v-model="form.customer_created_at" :class="form.errors.customer_created_at ? 'border-red-500' : ''" />
+                        <p v-if="form.errors.customer_created_at" class="text-sm text-red-500">{{ form.errors.customer_created_at }}</p>
                     </div>
 
                     <div class="space-y-2">
@@ -143,16 +89,8 @@
                             Closed At
                             <span v-if="form.status === 'Closed'" class="text-red-500">*</span>
                         </Label>
-                        <Input
-                            id="closed_at"
-                            type="date"
-                            v-model="form.closed_at"
-                            :disabled="form.status !== 'Closed'"
-                            :class="form.errors.closed_at ? 'border-red-500' : ''"
-                        />
-                        <p v-if="form.errors.closed_at" class="text-sm text-red-500">
-                            {{ form.errors.closed_at }}
-                        </p>
+                        <Input id="closed_at" type="date" v-model="form.closed_at" :disabled="form.status !== 'Closed'" :class="form.errors.closed_at ? 'border-red-500' : ''" />
+                        <p v-if="form.errors.closed_at" class="text-sm text-red-500">{{ form.errors.closed_at }}</p>
                     </div>
                 </div>
 
@@ -161,28 +99,14 @@
                         Closed Reason
                         <span v-if="form.status === 'Closed'" class="text-red-500">*</span>
                     </Label>
-                    <Input
-                        id="closed_reason"
-                        v-model="form.closed_reason"
-                        :disabled="form.status !== 'Closed'"
-                        :class="form.errors.closed_reason ? 'border-red-500' : ''"
-                    />
-                    <p v-if="form.errors.closed_reason" class="text-sm text-red-500">
-                        {{ form.errors.closed_reason }}
-                    </p>
+                    <Input id="closed_reason" v-model="form.closed_reason" :disabled="form.status !== 'Closed'" :class="form.errors.closed_reason ? 'border-red-500' : ''" />
+                    <p v-if="form.errors.closed_reason" class="text-sm text-red-500">{{ form.errors.closed_reason }}</p>
                 </div>
 
                 <div class="space-y-2">
                     <Label for="notes">Notes</Label>
-                    <Textarea
-                        id="notes"
-                        v-model="form.notes"
-                        rows="5"
-                        :class="form.errors.notes ? 'border-red-500' : ''"
-                    />
-                    <p v-if="form.errors.notes" class="text-sm text-red-500">
-                        {{ form.errors.notes }}
-                    </p>
+                    <Textarea id="notes" v-model="form.notes" rows="5" :class="form.errors.notes ? 'border-red-500' : ''" />
+                    <p v-if="form.errors.notes" class="text-sm text-red-500">{{ form.errors.notes }}</p>
                 </div>
 
                 <div class="flex gap-3">
@@ -206,11 +130,16 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
+import OrganizationSelect from '@/components/OrganizationSelect.vue'
 
 const props = defineProps({
     position: {
         type: Object,
         required: true,
+    },
+    organizations: {
+        type: Array,
+        default: () => [],
     },
 })
 
@@ -238,7 +167,7 @@ const form = useForm({
     job_title: props.position.job_title ?? '',
     level: props.position.level ?? '',
     project_team_name: props.position.project_team_name ?? '',
-    organization_name: props.position.organization_name ?? '',
+    organization_id: props.position.organization_id ?? null,
     customer_lead_name: props.position.customer_lead_name ?? '',
     customer_created_at: formatDateForInput(props.position.customer_created_at),
     closed_at: formatDateForInput(props.position.closed_at),

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use Inertia\Inertia;
 use App\Models\Position;
 use App\Models\UserListPreference;
 use App\Services\ListEngine;
@@ -11,6 +12,7 @@ use App\Services\ListExportService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Response;
 use Symfony\Component\HttpFoundation\StreamedResponse;
+use App\Models\Organization;
 
 class PositionsController extends Controller
 {
@@ -50,8 +52,14 @@ class PositionsController extends Controller
     }
 
     public function create()
-    {
-        return inertia('Positions/Create');
+    {   
+        $organizations = Organization::orderBy('full_path')
+            ->get(['id', 'name', 'full_path', 'depth']);
+
+        return Inertia::render('Positions/Create', [
+            'organizations' => $organizations,
+        ]);
+
     }
 
     public function store(Request $request)
@@ -63,7 +71,7 @@ class PositionsController extends Controller
             'job_title' => ['required', 'string', 'max:255'],
             'level' => ['nullable', 'integer'],
             'project_team_name' => ['nullable', 'string', 'max:255'],
-            'organization_name' => ['nullable', 'string', 'max:255'],
+            'organization_id' => ['nullable', 'exists:organizations,id'],
             'customer_lead_name' => ['nullable', 'string', 'max:255'],
             'customer_created_at' => ['nullable', 'date'],
             'closed_at' => ['nullable', 'date', 'required_if:status,Closed'],
@@ -92,8 +100,12 @@ class PositionsController extends Controller
     {
         $position = Position::findOrFail($id);
 
+        $organizations = Organization::orderBy('full_path')
+            ->get(['id', 'name', 'full_path', 'depth']);
+
         return inertia('Positions/Edit', [
             'position' => $position,
+            'organizations' => $organizations,
         ]);
     }
 
@@ -108,7 +120,7 @@ class PositionsController extends Controller
             'job_title' => ['required', 'string', 'max:255'],
             'level' => ['nullable', 'integer'],
             'project_team_name' => ['nullable', 'string', 'max:255'],
-            'organization_name' => ['nullable', 'string', 'max:255'],
+            'organization_id' => ['nullable', 'exists:organizations,id'],
             'customer_lead_name' => ['nullable', 'string', 'max:255'],
             'customer_created_at' => ['nullable', 'date'],
             'closed_at' => ['nullable', 'date', 'required_if:status,Closed'],

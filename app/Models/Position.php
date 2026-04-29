@@ -18,7 +18,7 @@ class Position extends Model
         'job_title',
         'level',
         'project_team_name',
-        'organization_name',
+        'organization_id',
         'customer_lead_name',
         'customer_created_at',
         'closed_at',
@@ -48,4 +48,10 @@ class Position extends Model
     {
         return $this->hasOne(PositionAssignment::class)->whereNull('end_date');
     }
+
+    public function organization()
+    {
+        return $this->belongsTo(Organization::class);
+    }
+
 }

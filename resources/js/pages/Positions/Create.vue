@@ -102,15 +102,13 @@
                     </div>
 
                     <div class="space-y-2">
-                        <Label for="organization_name">Organization Name</Label>
-                        <Input
-                            id="organization_name"
-                            v-model="form.organization_name"
-                            :class="form.errors.organization_name ? 'border-red-500' : ''"
+                        <OrganizationSelect
+                            v-model="form.organization_id"
+                            :organizations="props.organizations"
+                            label="Organization"
+                            id="organization_id"
+                            :error="form.errors.organization_id"
                         />
-                        <p v-if="form.errors.organization_name" class="text-sm text-red-500">
-                            {{ form.errors.organization_name }}
-                        </p>
                     </div>
 
                     <div class="space-y-2">
@@ -206,6 +204,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
+import OrganizationSelect from '@/components/OrganizationSelect.vue'
 
 function getTodayDate() {
     const d = new Date()
@@ -214,6 +213,13 @@ function getTodayDate() {
     return local.toISOString().split('T')[0]
 }
 
+const props = defineProps({
+    organizations: {
+        type: Array,
+        default: () => [],
+    },
+})
+
 const form = useForm({
     position_code: '',
     status: 'Open',
@@ -221,7 +227,7 @@ const form = useForm({
     job_title: '',
     level: '',
     project_team_name: '',
-    organization_name: '',
+    organization_id: null,
     customer_lead_name: '',
     customer_created_at: getTodayDate(),
     closed_at: '',
