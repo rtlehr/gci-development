@@ -14,7 +14,10 @@ return new class extends Migration
             $table->string('ticket_number')->unique();
 
             $table->string('title');
-            $table->foreignId('submitted_by_user_id')->constrained('users')->cascadeOnDelete();
+
+            $table->foreignId('submitted_by_user_id')
+                ->constrained('users')
+                ->cascadeOnDelete();
 
             $table->string('request_type');   // bug, improvement
             $table->string('importance');     // show_stopper, asap, nice_to_have
@@ -23,7 +26,13 @@ return new class extends Migration
             $table->text('description');
             $table->text('source_url')->nullable();
 
-            $table->foreignId('assigned_to_user_id')->nullable()->constrained('users')->nullOnDelete();
+            // ✅ moved here
+            $table->string('screenshot_path')->nullable();
+
+            $table->foreignId('assigned_to_user_id')
+                ->nullable()
+                ->constrained('users')
+                ->nullOnDelete();
 
             $table->string('status')->default('new'); // new, in_progress, on_hold, complete, canceled
             $table->text('resolution_notes')->nullable();

@@ -13,10 +13,14 @@ return new class extends Migration
     {
         Schema::create('page_help', function (Blueprint $table) {
             $table->id();
+
             $table->string('help_key')->unique();
             $table->string('title');
-            $table->longText('content')->nullable();
+
+            $table->longText('content_html')->nullable();
+
             $table->boolean('is_active')->default(true);
+
             $table->timestamps();
         });
     }

@@ -17,12 +17,18 @@ return new class extends Migration
                 ->nullOnDelete();
 
             $table->string('name');
+            $table->string('full_path')->nullable();
+            $table->string('path_ids')->nullable();
+            $table->unsignedInteger('depth')->default(0);
+
             $table->string('status')->default('active');
             $table->text('notes')->nullable();
 
             $table->timestamps();
 
             $table->index(['parent_id', 'name']);
+            $table->index('full_path');
+            $table->index('path_ids');
         });
     }
 

@@ -10,10 +10,14 @@ class WorkflowStepSeeder extends Seeder
 {
     public function run(): void
     {
-        $workflow = Workflow::firstOrCreate(
-            ['code' => 'default'],
+        // ✅ Create or update the default workflow
+        $workflow = Workflow::updateOrCreate(
+            ['code' => 'default_candidate_workflow'],
             [
-                'name' => 'Default Workflow',
+                'name' => 'Default Candidate Workflow',
+                'description' => 'Default workflow for candidate processing.',
+                'is_active' => true,
+                'is_primary' => true,
             ]
         );
 

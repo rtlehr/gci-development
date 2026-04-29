@@ -13,7 +13,7 @@ class PageHelpSeeder extends Seeder
             ['help_key' => 'people.create'],
             [
                 'title' => 'Create Person',
-                'content' => "Use this page to create a new person record.\n\nComplete the required fields first.\nAdd phone numbers and addresses if needed.\nReview the information before saving.",
+                'content_html' => "Use this page to create a new person record.\n\nComplete the required fields first.\nAdd phone numbers and addresses if needed.\nReview the information before saving.",
                 'is_active' => true,
             ]
         );
@@ -22,7 +22,7 @@ class PageHelpSeeder extends Seeder
             ['help_key' => 'people.edit'],
             [
                 'title' => 'Edit Person',
-                'content' => "Use this page to update an existing person.\n\nReview all important information before saving changes.",
+                'content_html' => "Use this page to update an existing person.\n\nReview all important information before saving changes.",
                 'is_active' => true,
             ]
         );

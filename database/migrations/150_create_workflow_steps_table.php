@@ -14,7 +14,11 @@ return new class extends Migration
         Schema::create('workflow_steps', function (Blueprint $table) {
             $table->id();
 
-            $table->string('code')->unique();
+            $table->foreignId('workflow_id')
+                ->constrained('workflows')
+                ->cascadeOnDelete();
+
+            $table->string('code');
             // resume_review, interview, tech_screen, offer_sent, offer_signed, etc.
 
             $table->string('name');
@@ -33,8 +37,11 @@ return new class extends Migration
 
             $table->timestamps();
 
+            $table->unique(['workflow_id', 'code'], 'workflow_steps_workflow_id_code_unique');
+
             $table->index('step_order');
             $table->index('is_active');
+            $table->index(['workflow_id', 'step_order']);
         });
     }
 

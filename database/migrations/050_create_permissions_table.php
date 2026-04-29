@@ -13,9 +13,15 @@ return new class extends Migration
     {
         Schema::create('permissions', function (Blueprint $table) {
             $table->id();
+
             $table->string('name')->unique();
+            $table->string('group_name')->nullable();
             $table->string('label')->nullable();
             $table->text('description')->nullable();
+
+            $table->boolean('is_system')->default(false);
+            $table->boolean('is_locked')->default(false);
+
             $table->timestamps();
         });
     }

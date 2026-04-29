@@ -16,8 +16,18 @@ return new class extends Migration
 
             $table->string('candidate_code')->nullable()->unique();
 
-            $table->foreignId('person_id')->constrained('people')->cascadeOnDelete();
-            $table->foreignId('position_id')->constrained('positions')->cascadeOnDelete();
+            $table->foreignId('person_id')
+                ->constrained('people')
+                ->cascadeOnDelete();
+
+            $table->foreignId('position_id')
+                ->constrained('positions')
+                ->cascadeOnDelete();
+
+            $table->foreignId('workflow_id')
+                ->nullable()
+                ->constrained('workflows')
+                ->nullOnDelete();
 
             $table->string('status')->default('submitted');
             // submitted, selected, approved, assigned, rejected, closed, etc.
@@ -25,13 +35,18 @@ return new class extends Migration
             $table->decimal('candidate_fbr', 10, 2)->nullable();
 
             $table->timestamp('submitted_at')->nullable();
-            $table->foreignId('submitted_by_person_id')->nullable()->constrained('people')->nullOnDelete();
+
+            $table->foreignId('submitted_by_person_id')
+                ->nullable()
+                ->constrained('people')
+                ->nullOnDelete();
 
             $table->date('scheduled_start_date')->nullable();
 
             $table->timestamps();
 
             $table->index('status');
+            $table->index('workflow_id');
             $table->index(['person_id', 'position_id']);
         });
     }
