@@ -15,6 +15,7 @@ class DatabaseSeeder extends Seeder
             PageHelpSeeder::class,
             AdminUserSeeder::class,
             PositionSeeder::class,
+            OrganizationSeeder::class,
         ]);
     }
 }

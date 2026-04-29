@@ -51,3 +51,4 @@ require __DIR__.'/Candidate.php';
 require __DIR__.'/Workflow.php';
 require __DIR__.'/page-help.php';
 require __DIR__.'/Groups.php';
+require __DIR__.'/Organizations.php';
