@@ -1,15 +1,18 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
-
 use App\Http\Controllers\OrganizationController;
 
-Route::resource('organizations', OrganizationController::class)
-    ->middleware('permission:view_admin');
+Route::middleware('permission:view_admin')->group(function () {
+    Route::post('/admin/organizations/preferences', [OrganizationController::class, 'savePreferences'])
+        ->name('admin.organizations.preferences.save');
 
-Route::post('/organizations/preferences', [OrganizationController::class, 'savePreferences']);
+    Route::delete('/admin/organizations/preferences', [OrganizationController::class, 'resetPreferences'])
+        ->name('admin.organizations.preferences.reset');
 
-Route::delete('/organizations/preferences', [OrganizationController::class, 'resetPreferences']);
+    Route::get('/admin/organizations/export/csv', [OrganizationController::class, 'exportCsv'])
+        ->name('admin.organizations.export.csv');
 
-Route::get('/organizations/export/csv', [OrganizationController::class, 'exportCsv']);
-
+    Route::resource('admin/organizations', OrganizationController::class)
+        ->names('admin.organizations');
+});

@@ -17,7 +17,7 @@
                     Export CSV
                 </Button>
 
-                <Link href="/organizations/create" v-if="can(Permissions.ADMIN)">
+                <Link href="/admin/organizations/create" v-if="can(Permissions.ADMIN)">
                     <Button>Add Organization</Button>
                 </Link>
             </div>
@@ -183,7 +183,7 @@
                                     <DropdownMenuSeparator />
 
                                     <DropdownMenuItem as-child v-if="can(Permissions.ADMIN)">
-                                        <Link :href="`/organizations/${organization.id}/edit`">
+                                        <Link :href="`/admin/organizations/${organization.id}/edit`">
                                             Edit
                                         </Link>
                                     </DropdownMenuItem>
@@ -393,7 +393,7 @@ const pagesToShow = computed(() => {
 })
 
 function applyFilters() {
-    router.get('/organizations', {
+    router.get('/admin/organizations', {
         search: filterForm.search,
         sort: props.sort,
         direction: props.direction,
@@ -406,7 +406,7 @@ function applyFilters() {
 function resetFilters() {
     filterForm.search = ''
 
-    router.get('/organizations', {
+    router.get('/admin/organizations', {
         sort: props.sort,
         direction: props.direction,
     }, {
@@ -422,7 +422,7 @@ function sortBy(column) {
         nextDirection = 'desc'
     }
 
-    router.get('/organizations', {
+    router.get('/admin/organizations', {
         search: filterForm.search,
         sort: column,
         direction: nextDirection,
@@ -438,7 +438,7 @@ function getSortIcon(column) {
 }
 
 function goToPage(page) {
-    router.get('/organizations', {
+    router.get('/admin/organizations', {
         page,
         search: filterForm.search,
         sort: props.sort,
@@ -470,7 +470,7 @@ function moveColumnRight(index) {
 }
 
 function saveColumnPreferences() {
-    router.post('/organizations/preferences', {
+    router.post('/admin/organizations/preferences', {
         visible_columns: settingsForm.visibleColumns,
         column_order: settingsForm.columnOrder,
     }, {
@@ -484,7 +484,7 @@ function resetColumnSettingsLocally() {
 }
 
 function resetPreferencesOnServer() {
-    router.delete('/organizations/preferences', {
+    router.delete('/admin/organizations/preferences', {
         preserveScroll: true,
     })
 }
@@ -497,7 +497,7 @@ function openDeleteDialog(id) {
 function confirmDelete() {
     if (!organizationToDelete.value) return
 
-    router.delete(`/organizations/${organizationToDelete.value}`, {
+    router.delete(`/admin/organizations/${organizationToDelete.value}`, {
         preserveScroll: true,
         onFinish: () => {
             deleteDialogOpen.value = false
@@ -531,6 +531,6 @@ function exportCsv() {
         params.append('column_order[]', col)
     })
 
-    window.location.href = `/organizations/export/csv?${params.toString()}`
+    window.location.href = `/admin/organizations/export/csv?${params.toString()}`
 }
 </script>

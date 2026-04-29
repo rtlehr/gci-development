@@ -15,7 +15,7 @@ const form = useForm({
 })
 
 const submit = () => {
-    form.put(`/organizations/${props.organization.id}`)
+    form.put(`/admin/organizations/${props.organization.id}`)
 }
 </script>
 
@@ -68,7 +68,7 @@ const submit = () => {
                     {{ form.processing ? 'Saving...' : 'Save Changes' }}
                 </Button>
 
-                <Link href="/organizations">
+                <Link href="/admin/organizations">
                     <Button type="button" variant="outline">
                         Cancel
                     </Button>

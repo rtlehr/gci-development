@@ -14,7 +14,7 @@ const form = useForm({
 })
 
 const submit = () => {
-    form.post('/organizations')
+    form.post('/admin/organizations')
 }
 </script>
 
@@ -67,7 +67,7 @@ const submit = () => {
                     {{ form.processing ? 'Saving...' : 'Save' }}
                 </Button>
 
-                <Link href="/organizations">
+                <Link href="/admin/organizations">
                     <Button type="button" variant="outline">
                         Cancel
                     </Button>

@@ -128,7 +128,7 @@ class OrganizationController extends Controller
         $organization->rebuildHierarchyFields();
 
         return redirect()
-            ->route('organizations.index')
+            ->route('admin.organizations.index')
             ->with('success', 'Organization created.');
     }
 
@@ -177,7 +177,7 @@ class OrganizationController extends Controller
         $organization->rebuildDescendantHierarchyFields();
 
         return redirect()
-            ->route('organizations.index')
+            ->route('admin.organizations.index')
             ->with('success', 'Organization updated.');
     }
 

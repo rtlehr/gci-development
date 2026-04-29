@@ -10,6 +10,7 @@ import {
     HelpCircle,
     Group,
     BookUser,
+    Building2,
 } from 'lucide-vue-next'
 
 import AppLogo from '@/components/AppLogo.vue'
@@ -90,6 +91,12 @@ const allMainNavCategories: NavCategory[] = [
                 title: 'View Tickets',
                 href: '/admin/tickets',
                 icon: LifeBuoy,
+                permission: 'view_admin',
+            },
+            {
+                title: 'Organizations',
+                href: '/admin/organizations',
+                icon: Building2,
                 permission: 'view_admin',
             },
         ],
