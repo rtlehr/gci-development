@@ -12,7 +12,7 @@
                     Export CSV
                 </Button>
 
-                <Link href="/people/create" v-if="can('view_admin')">
+                <Link href="/people/create" v-if="can(Permissions.ADMIN)">
                     <Button>Add Person</Button>
                 </Link>
             </div>
@@ -186,16 +186,16 @@
                                         </Link>
                                     </DropdownMenuItem>
 
-                                    <DropdownMenuItem as-child v-if="can('view_admin')">
+                                    <DropdownMenuItem as-child v-if="can(Permissions.ADMIN)">
                                         <Link :href="`/people/${person.id}/edit`">
                                             Edit
                                         </Link>
                                     </DropdownMenuItem>
 
-                                    <DropdownMenuSeparator v-if="can('view_admin')" />
+                                    <DropdownMenuSeparator v-if="can(Permissions.ADMIN)" />
 
                                     <DropdownMenuItem
-                                        v-if="can('view_admin')"
+                                        v-if="can(Permissions.ADMIN)"
                                         @click="openDeleteDialog(person.id)"
                                         class="text-red-600 focus:text-red-600"
                                     >
@@ -318,6 +318,9 @@ import {
     TableHeader,
     TableRow,
 } from '@/components/ui/table'
+
+import { Permissions } from '@/constants/permissions'
+
 
 const { can } = useAuth()
 

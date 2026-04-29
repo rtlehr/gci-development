@@ -10,6 +10,7 @@ import {
     HelpCircle,
     Users,
     Group,
+    BookUser,
 } from 'lucide-vue-next'
 
 import AppLogo from '@/components/AppLogo.vue'
@@ -74,21 +75,27 @@ const allMainNavItems: NavItem[] = [
         permission: 'view_admin',
     },
     {
-        title: 'View Tickets',
-        href: '/admin/tickets',
-        icon: LifeBuoy,
-        permission: 'view_admin',
-    },
-    {
         title: 'Groups',
         href: '/admin/groups',
         icon: Group,
         permission: 'view_admin',
     },
     {
+        title: 'Candidates',
+        href: '/candidates',
+        icon: BookUser,
+        permission: 'create_candidates',
+    },
+    {
         title: 'Add Help Page',
         href: '/admin/page-help',
         icon: HelpCircle,
+        permission: 'view_admin',
+    },
+    {
+        title: 'View Tickets',
+        href: '/admin/tickets',
+        icon: LifeBuoy,
         permission: 'view_admin',
     },
 ]

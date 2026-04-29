@@ -28,7 +28,7 @@ class TicketController extends Controller
                 'email' => $user->email,
                 'person_code' => $person->person_code ?? null,
             ],
-            'sourceUrl' => $request->input('source_url', url()->previous()),
+            'sourceUrl' => $request->query('source_url', ''),
         ]);
     }
 

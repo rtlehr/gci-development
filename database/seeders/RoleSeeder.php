@@ -19,7 +19,6 @@ class RoleSeeder extends Seeder
                     'view_owner',
                     'view_admin',
                     'view_owner',
-                    'special_export_access',
                     'edit_people',
                     'edit_positions',
                     'create_candidates',
@@ -33,7 +32,6 @@ class RoleSeeder extends Seeder
                 'permissions' => [
                     'view_admin',
                     'view_owner',
-                    'special_export_access',
                     'edit_people',
                     'edit_positions',
                     'create_candidates',

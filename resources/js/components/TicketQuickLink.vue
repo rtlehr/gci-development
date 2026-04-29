@@ -1,12 +1,26 @@
 <script setup lang="ts">
-import { Link } from '@inertiajs/vue3'
+import { Link, usePage } from '@inertiajs/vue3'
 import { LifeBuoy } from 'lucide-vue-next'
-import { onMounted, ref } from 'vue'
+import { computed } from 'vue'
 
-const href = ref('/tickets/create')
+const page = usePage()
 
-onMounted(() => {
-    href.value = `/tickets/create?source_url=${encodeURIComponent(window.location.href)}`
+const href = computed(() => {
+    const currentPath = page.url
+    const origin = window.location.origin
+    const currentFullUrl = `${origin}${currentPath}`
+
+    // Prevent nesting source_url if already on ticket create page
+    if (currentPath.startsWith('/tickets/create')) {
+        const url = new URL(currentFullUrl)
+        const existingSourceUrl = url.searchParams.get('source_url')
+
+        return existingSourceUrl
+            ? `/tickets/create?source_url=${encodeURIComponent(existingSourceUrl)}`
+            : '/tickets/create'
+    }
+
+    return `/tickets/create?source_url=${encodeURIComponent(currentFullUrl)}`
 })
 </script>
 

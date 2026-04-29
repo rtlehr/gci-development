@@ -15,7 +15,7 @@ class PermissionSeeder extends Seeder
         $permissions = [
             [
                 'name' => 'view_owner',
-                'group_name' => 'Owner',
+                'group_name' => 'Admin',
                 'label' => 'View Owner',
                 'description' => 'Can access the owner area.',
                 'is_system' => true,
@@ -28,14 +28,6 @@ class PermissionSeeder extends Seeder
                 'description' => 'Can access the admin area.',
                 'is_system' => true,
                 'is_locked' => true,
-            ],
-            [
-                'name' => 'special_export_access',
-                'group_name' => 'Admin',
-                'label' => 'Special Export Access',
-                'description' => 'Can use protected export features.',
-                'is_system' => false,
-                'is_locked' => false,
             ],
             [
                 'name' => 'edit_people',
