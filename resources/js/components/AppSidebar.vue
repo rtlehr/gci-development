@@ -11,6 +11,7 @@ import {
     Group,
     BookUser,
     Building2,
+    Boxes,
 } from 'lucide-vue-next'
 
 import AppLogo from '@/components/AppLogo.vue'
@@ -90,7 +91,7 @@ const allMainNavCategories: NavCategory[] = [
             {
                 title: 'Add Teams',
                 href: '/admin/teams',
-                icon: Group,
+                icon: Boxes,
                 permission: 'view_admin',
             },
             {
