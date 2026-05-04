@@ -55,6 +55,22 @@ function markAllRead() {
         },
     );
 }
+
+function viewItem(alert: HeaderAlert) {
+    router.patch(
+        `/alerts/${alert.id}/read`,
+        {},
+        {
+            preserveScroll: true,
+            onSuccess: () => {
+                if (alert.action_url) {
+                    router.visit(alert.action_url);
+                }
+            },
+        },
+    );
+}
+
 </script>
 
 <template>
@@ -125,13 +141,15 @@ function markAllRead() {
                         </button>
                     </div>
 
-                    <Link
+                    <button
                         v-if="alert.action_url"
-                        :href="alert.action_url"
+                        type="button"
                         class="text-xs text-primary underline"
+                        @click.stop="viewItem(alert)"
                     >
                         View item
-                    </Link>
+                    </button>
+
                 </DropdownMenuItem>
             </template>
         </DropdownMenuContent>

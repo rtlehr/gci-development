@@ -3,14 +3,16 @@
 namespace App\Http\Controllers;
 
 use App\Models\Alert;
+use App\Services\UserResolver;
 use Illuminate\Http\RedirectResponse;
-use Illuminate\Http\Request;
 
 class AlertController extends Controller
 {
-    public function markRead(Alert $alert): RedirectResponse
+    public function markRead(Alert $alert, UserResolver $userResolver): RedirectResponse
     {
-        abort_unless($alert->user_id === auth()->id(), 403);
+        $currentUserId = $userResolver->resolveUserId();
+
+        abort_unless((int) $alert->user_id === (int) $currentUserId, 403);
 
         $alert->update([
             'read_at' => now(),
@@ -19,9 +21,11 @@ class AlertController extends Controller
         return back();
     }
 
-    public function markAllRead(): RedirectResponse
+    public function markAllRead(UserResolver $userResolver): RedirectResponse
     {
-        Alert::where('user_id', auth()->id())
+        $currentUserId = $userResolver->resolveUserId();
+
+        Alert::where('user_id', $currentUserId)
             ->whereNull('read_at')
             ->update([
                 'read_at' => now(),

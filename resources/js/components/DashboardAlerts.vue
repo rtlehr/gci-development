@@ -28,6 +28,22 @@ function markAllRead() {
         preserveScroll: true,
     })
 }
+
+function viewItem(alert: Alert) {
+    router.patch(
+        `/alerts/${alert.id}/read`,
+        {},
+        {
+            preserveScroll: true,
+            onSuccess: () => {
+                if (alert.action_url) {
+                    router.visit(alert.action_url);
+                }
+            },
+        },
+    );
+}
+
 </script>
 
 <template>
@@ -86,12 +102,14 @@ function markAllRead() {
                 </div>
 
                 <div v-if="alert.action_url">
-                    <Link
-                        :href="alert.action_url"
+                    <button
+                        v-if="alert.action_url"
+                        type="button"
                         class="text-sm underline text-primary"
+                        @click="viewItem(alert)"
                     >
                         View item
-                    </Link>
+                    </button>
                 </div>
             </div>
         </div>
