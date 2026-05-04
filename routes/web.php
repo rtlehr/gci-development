@@ -6,10 +6,11 @@ use App\Models\Alert;
 use App\Services\UserResolver;
 use Inertia\Inertia;
 use App\Models\Person;
+use App\Models\Ticket;
 
 Route::get('/', function (UserResolver $userResolver) {
 
-    $user = $userResolver->resolveUser(); // 👈 THIS is the fix
+    $user = $userResolver->resolveUser();
 
     return Inertia::render('Dashboard', [
         'alerts' => Alert::where('user_id', $user->id)
@@ -17,12 +18,28 @@ Route::get('/', function (UserResolver $userResolver) {
             ->latest()
             ->limit(10)
             ->get(),
+
+        'assignedTickets' => Ticket::query()
+            ->where('assigned_to_user_id', $user->id)
+            ->whereNotIn('status', ['complete', 'canceled'])
+            ->latest()
+            ->limit(10)
+            ->get([
+                'id',
+                'ticket_number',
+                'title',
+                'request_type',
+                'importance',
+                'category',
+                'status',
+                'created_at',
+            ]),
     ]);
 })->name('home');
 
 Route::get('/dashboard', function (UserResolver $userResolver) {
 
-    $user = $userResolver->resolveUser(); // 👈 THIS is the fix
+    $user = $userResolver->resolveUser();
 
     return Inertia::render('Dashboard', [
         'alerts' => Alert::where('user_id', $user->id)
@@ -30,6 +47,22 @@ Route::get('/dashboard', function (UserResolver $userResolver) {
             ->latest()
             ->limit(10)
             ->get(),
+
+        'assignedTickets' => Ticket::query()
+            ->where('assigned_to_user_id', $user->id)
+            ->whereNotIn('status', ['complete', 'canceled'])
+            ->latest()
+            ->limit(10)
+            ->get([
+                'id',
+                'ticket_number',
+                'title',
+                'request_type',
+                'importance',
+                'category',
+                'status',
+                'created_at',
+            ]),
     ]);
 })->name('dashboard');
 

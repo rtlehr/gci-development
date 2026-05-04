@@ -3,14 +3,21 @@ import { Head } from '@inertiajs/vue3';
 import DashboardAlerts from '@/components/DashboardAlerts.vue';
 import PermissionBlock from '@/components/PermissionBlock.vue';
 import PlaceholderPattern from '@/components/PlaceholderPattern.vue';
+import TicketsAssignedToMe from '@/components/TicketsAssignedToMe.vue';
 import { useAuth } from '@/composables/useAuth';
 import { dashboard } from '@/routes';
 
 const { username, role, permissions } = useAuth();
 
-defineProps<{
-    alerts: any[]
-}>()
+withDefaults(
+    defineProps<{
+        alerts: any[]
+        assignedTickets?: any[]
+    }>(),
+    {
+        assignedTickets: () => [],
+    },
+)
 
 defineOptions({
     layout: {
@@ -51,10 +58,9 @@ defineOptions({
                 fallback="This section is for users with the view_admin permission."
             >
                 <div
-                    class="relative aspect-video overflow-hidden rounded-xl border border-sidebar-border/70 p-4 dark:border-sidebar-border"
+                    class="relative overflow-hidden rounded-xl border border-sidebar-border/70 p-4 dark:border-sidebar-border"
                 >
-                    <p class="mb-2">This section is for anyone with the view_admin permission.</p>
-                    <PlaceholderPattern />
+                    <TicketsAssignedToMe :tickets="assignedTickets" />
                 </div>
             </PermissionBlock>
         </div>
@@ -63,7 +69,6 @@ defineOptions({
             class="relative min-h-[100vh] flex-1 rounded-xl border border-sidebar-border/70 dark:border-sidebar-border md:min-h-min"
         >
             <DashboardAlerts :alerts="alerts" />
-
         </div>
     </div>
 </template>
