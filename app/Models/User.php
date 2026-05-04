@@ -42,6 +42,11 @@ class User extends Authenticatable
         return $this->hasOne(\App\Models\Person::class);
     }
 
+    public function alerts()
+    {
+        return $this->hasMany(\App\Models\Alert::class);
+    }
+
     public function permissions(): BelongsToMany
     {
         return $this->belongsToMany(Permission::class);

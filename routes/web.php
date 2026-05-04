@@ -2,15 +2,35 @@
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
+use App\Models\Alert;
+use App\Services\UserResolver;
 use Inertia\Inertia;
 use App\Models\Person;
 
-Route::get('/', function () {
-    return Inertia::render('Dashboard');
+Route::get('/', function (UserResolver $userResolver) {
+
+    $user = $userResolver->resolveUser(); // 👈 THIS is the fix
+
+    return Inertia::render('Dashboard', [
+        'alerts' => Alert::where('user_id', $user->id)
+            ->whereNull('read_at')
+            ->latest()
+            ->limit(10)
+            ->get(),
+    ]);
 })->name('home');
 
-Route::get('/dashboard', function () {
-    return Inertia::render('Dashboard');
+Route::get('/dashboard', function (UserResolver $userResolver) {
+
+    $user = $userResolver->resolveUser(); // 👈 THIS is the fix
+
+    return Inertia::render('Dashboard', [
+        'alerts' => Alert::where('user_id', $user->id)
+            ->whereNull('read_at')
+            ->latest()
+            ->limit(10)
+            ->get(),
+    ]);
 })->name('dashboard');
 
 Route::post('/dev/switch-user', function (Request $request) {
@@ -52,3 +72,4 @@ require __DIR__.'/Workflow.php';
 require __DIR__.'/page-help.php';
 require __DIR__.'/Groups.php';
 require __DIR__.'/Organizations.php';
+require __DIR__.'/Alerts.php';

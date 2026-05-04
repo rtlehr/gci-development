@@ -37,4 +37,10 @@ class Ticket extends Model
     {
         return $this->hasMany(TicketActivity::class)->latest();
     }
+
+    public function assignedToUser()
+    {
+        return $this->belongsTo(User::class, 'assigned_to_user_id');
+    }
+    
 }

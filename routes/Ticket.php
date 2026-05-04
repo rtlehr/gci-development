@@ -34,6 +34,10 @@ Route::put('/admin/tickets/{ticket}', [TicketAdminController::class, 'update'])
     ->name('admin.tickets.update')
     ->middleware('permission:view_admin');
 
+Route::patch('/admin/tickets/{ticket}/assign', [TicketController::class, 'assign'])
+    ->name('admin.tickets.assign')
+    ->middleware('permission:view_admin');
+
 Route::post('/admin/tickets/{ticket}/comments', [TicketAdminController::class, 'addComment'])
     ->name('admin.tickets.comments.store')
     ->middleware('permission:view_admin');

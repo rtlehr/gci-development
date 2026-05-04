@@ -6,6 +6,7 @@ use App\Models\Ticket;
 use App\Models\TicketActivity;
 use App\Models\User;
 use App\Models\UserListPreference;
+use App\Services\AlertService;
 use App\Services\ListEngine;
 use App\Services\ListExportService;
 use App\Services\UserResolver;
@@ -29,33 +30,33 @@ class TicketAdminController extends Controller
             definition: $definition,
             userId: $userId,
             query: Ticket::query()
-            ->leftJoin('users as submitted_users', 'submitted_users.id', '=', 'tickets.submitted_by_user_id')
-            ->leftJoin('people as submitted_people', 'submitted_people.user_id', '=', 'submitted_users.id')
-            ->leftJoin('users as assigned_users', 'assigned_users.id', '=', 'tickets.assigned_to_user_id')
-            ->leftJoin('people as assigned_people', 'assigned_people.user_id', '=', 'assigned_users.id')
-            ->with([
-                'submittedBy.person',
-                'assignedTo.person',
-            ])
-            ->select('tickets.*')
-            ->selectRaw("
-                TRIM(
-                    CONCAT(
-                        COALESCE(submitted_people.first_name, ''),
-                        ' ',
-                        COALESCE(submitted_people.last_name, '')
-                    )
-                ) as submitted_by_name
-            ")
-            ->selectRaw("
-                TRIM(
-                    CONCAT(
-                        COALESCE(assigned_people.first_name, ''),
-                        ' ',
-                        COALESCE(assigned_people.last_name, '')
-                    )
-                ) as assigned_to_name
-            "),
+                ->leftJoin('users as submitted_users', 'submitted_users.id', '=', 'tickets.submitted_by_user_id')
+                ->leftJoin('people as submitted_people', 'submitted_people.user_id', '=', 'submitted_users.id')
+                ->leftJoin('users as assigned_users', 'assigned_users.id', '=', 'tickets.assigned_to_user_id')
+                ->leftJoin('people as assigned_people', 'assigned_people.user_id', '=', 'assigned_users.id')
+                ->with([
+                    'submittedBy.person',
+                    'assignedTo.person',
+                ])
+                ->select('tickets.*')
+                ->selectRaw("
+                    TRIM(
+                        CONCAT(
+                            COALESCE(submitted_people.first_name, ''),
+                            ' ',
+                            COALESCE(submitted_people.last_name, '')
+                        )
+                    ) as submitted_by_name
+                ")
+                ->selectRaw("
+                    TRIM(
+                        CONCAT(
+                            COALESCE(assigned_people.first_name, ''),
+                            ' ',
+                            COALESCE(assigned_people.last_name, '')
+                        )
+                    ) as assigned_to_name
+                "),
             filterCallback: function ($query, $request) {
                 $search = $request->input('search', '');
                 $status = $request->input('status', '');
@@ -165,8 +166,12 @@ class TicketAdminController extends Controller
         ]);
     }
 
-    public function update(Request $request, Ticket $ticket, UserResolver $userResolver)
-    {
+    public function update(
+        Request $request,
+        Ticket $ticket,
+        UserResolver $userResolver,
+        AlertService $alertService
+    ) {
         $validated = $request->validate([
             'status' => ['required', 'in:new,in_progress,on_hold,complete,canceled'],
             'importance' => ['required', 'in:show_stopper,asap,nice_to_have'],
@@ -243,6 +248,14 @@ class TicketAdminController extends Controller
                 'old_value' => $oldAssignedName,
                 'new_value' => $newAssignedName,
             ]);
+
+            if ($newAssignedUser) {
+                $alertService->ticketAssigned(
+                    user: $newAssignedUser,
+                    ticketId: $ticket->ticket_number,
+                    actionUrl: route('admin.tickets.show', $ticket)
+                );
+            }
         }
 
         if (($originalResolutionNotes ?? '') !== ($ticket->resolution_notes ?? '')) {

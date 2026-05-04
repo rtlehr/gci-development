@@ -1,11 +1,16 @@
 <script setup lang="ts">
 import { Head } from '@inertiajs/vue3';
+import DashboardAlerts from '@/components/DashboardAlerts.vue';
 import PermissionBlock from '@/components/PermissionBlock.vue';
 import PlaceholderPattern from '@/components/PlaceholderPattern.vue';
 import { useAuth } from '@/composables/useAuth';
 import { dashboard } from '@/routes';
 
 const { username, role, permissions } = useAuth();
+
+defineProps<{
+    alerts: any[]
+}>()
 
 defineOptions({
     layout: {
@@ -57,7 +62,8 @@ defineOptions({
         <div
             class="relative min-h-[100vh] flex-1 rounded-xl border border-sidebar-border/70 dark:border-sidebar-border md:min-h-min"
         >
-            <PlaceholderPattern />
+            <DashboardAlerts :alerts="alerts" />
+
         </div>
     </div>
 </template>

@@ -4,6 +4,7 @@ namespace Database\Seeders;
 
 use App\Models\User;
 use App\Models\Person;
+use App\Models\Alert;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
@@ -13,6 +14,7 @@ class AdminUserSeeder extends Seeder
     public function run(): void
     {
         DB::transaction(function () {
+
             $seedUsers = [
                 [
                     'email' => 'owner@example.com',
@@ -77,6 +79,7 @@ class AdminUserSeeder extends Seeder
             ];
 
             foreach ($seedUsers as $seedUser) {
+
                 $user = User::updateOrCreate(
                     ['email' => $seedUser['email']],
                     [
@@ -85,7 +88,7 @@ class AdminUserSeeder extends Seeder
                     ]
                 );
 
-                Person::updateOrCreate(
+                $person = Person::updateOrCreate(
                     ['person_code' => $seedUser['person_code']],
                     [
                         'user_id' => $user->id,
@@ -111,6 +114,58 @@ class AdminUserSeeder extends Seeder
                         'created_at' => now(),
                         'updated_at' => now(),
                     ]);
+                }
+
+                // ✅ CREATE MULTIPLE ALERTS FOR COTR + PMO
+                if (in_array($seedUser['email'], ['cotr@example.com', 'pmo@example.com'])) {
+
+                    $alerts = [
+                        [
+                            'title' => 'New Assignment Available',
+                            'message' => 'You have been assigned a new item that requires your attention.',
+                            'type' => 'assignment',
+                            'priority' => 'normal',
+                        ],
+                        [
+                            'title' => 'Action Required',
+                            'message' => 'Please review and take action on a pending request.',
+                            'type' => 'workflow',
+                            'priority' => 'high',
+                        ],
+                        [
+                            'title' => 'Reminder',
+                            'message' => 'You have outstanding items that have not been completed.',
+                            'type' => 'reminder',
+                            'priority' => 'low',
+                        ],
+                    ];
+
+                    foreach ($alerts as $alertData) {
+
+                        // Prevent duplicates on reseed
+                        $exists = Alert::where('user_id', $user->id)
+                            ->where('title', $alertData['title'])
+                            ->exists();
+
+                        if (! $exists) {
+                            Alert::create([
+                                'user_id' => $user->id,
+                                'person_id' => $person->id,
+                                'type' => $alertData['type'],
+                                'priority' => $alertData['priority'],
+                                'title' => $alertData['title'],
+                                'message' => $alertData['message'],
+                                'action_url' => '/',
+                                'source_type' => 'seed',
+                                'source_id' => null,
+                                'metadata' => [
+                                    'seeded' => true,
+                                ],
+                                'created_at' => now(),
+                                'updated_at' => now(),
+                            ]);
+                        }
+                    }
                 }
             }
         });
