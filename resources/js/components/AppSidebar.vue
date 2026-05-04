@@ -88,6 +88,12 @@ const allMainNavCategories: NavCategory[] = [
                 permission: 'view_admin',
             },
             {
+                title: 'Add Teams',
+                href: '/admin/teams',
+                icon: Group,
+                permission: 'view_admin',
+            },
+            {
                 title: 'View Tickets',
                 href: '/admin/tickets',
                 icon: LifeBuoy,

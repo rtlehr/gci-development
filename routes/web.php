@@ -106,3 +106,4 @@ require __DIR__.'/page-help.php';
 require __DIR__.'/Groups.php';
 require __DIR__.'/Organizations.php';
 require __DIR__.'/Alerts.php';
+require __DIR__.'/Teams.php';
