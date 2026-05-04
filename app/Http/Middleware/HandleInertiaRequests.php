@@ -6,6 +6,8 @@ use App\Support\CurrentUser;
 use Illuminate\Http\Request;
 use Inertia\Middleware;
 use App\Models\Person;
+use App\Models\Alert;
+use App\Services\UserResolver;
 
 class HandleInertiaRequests extends Middleware
 {
@@ -37,8 +39,43 @@ class HandleInertiaRequests extends Middleware
      */
     public function share(Request $request): array
     {
+        $shared = parent::share($request);
+
+        $alertCount = 0;
+        $recentAlerts = [];
+
+        try {
+            $user = app(UserResolver::class)->resolveUser();
+
+            $alertCount = Alert::where('user_id', $user->id)
+                ->whereNull('read_at')
+                ->count();
+
+            $recentAlerts = Alert::where('user_id', $user->id)
+                ->whereNull('read_at')
+                ->latest()
+                ->limit(5)
+                ->get([
+                    'id',
+                    'title',
+                    'message',
+                    'type',
+                    'priority',
+                    'action_url',
+                    'created_at',
+                ]);
+        } catch (\Throwable $e) {
+            $alertCount = 0;
+            $recentAlerts = [];
+        }
+
         return [
-            ...parent::share($request),
+            ...$shared,
+
+            'headerAlerts' => [
+                'count' => $alertCount,
+                'recent' => $recentAlerts,
+            ],
 
             'auth' => [
                 'user' => CurrentUser::user($request),
