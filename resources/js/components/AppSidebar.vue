@@ -94,17 +94,18 @@ const allMainNavCategories: NavCategory[] = [
                 permission: 'view_admin',
             },
             {
-                title: 'View Tickets',
-                href: '/admin/tickets',
-                icon: LifeBuoy,
-                permission: 'view_admin',
-            },
-            {
                 title: 'Organizations',
                 href: '/admin/organizations',
                 icon: Building2,
                 permission: 'view_admin',
             },
+            {
+                title: 'View Tickets',
+                href: '/admin/tickets',
+                icon: LifeBuoy,
+                permission: 'view_admin',
+            },
+            
         ],
     },
     {
