@@ -18,11 +18,18 @@ class RoleSeeder extends Seeder
                 'permissions' => [
                     'view_owner',
                     'view_admin',
-                    'view_owner',
-                    'edit_people',
-                    'edit_positions',
+                    'create_people',
+                    'read_people',
+                    'update_people',
+                    'delete_people',
+                    'create_positions',
+                    'read_positions',
+                    'update_positions',
+                    'delete_positions',
                     'create_candidates',
-                    'crud_all'
+                    'read_candidates',
+                    'update_candidates',
+                    'delete_candidates'
                 ],
             ],
             [
@@ -31,11 +38,18 @@ class RoleSeeder extends Seeder
                 'description' => 'Full administrative access.',
                 'permissions' => [
                     'view_admin',
-                    'view_owner',
-                    'edit_people',
-                    'edit_positions',
+                    'create_people',
+                    'read_people',
+                    'update_people',
+                    'delete_people',
+                    'create_positions',
+                    'read_positions',
+                    'update_positions',
+                    'delete_positions',
                     'create_candidates',
-                    'crud_all'
+                    'read_candidates',
+                    'update_candidates',
+                    'delete_candidates'
                 ],
             ],
             [
@@ -43,10 +57,18 @@ class RoleSeeder extends Seeder
                 'label' => 'COTR',
                 'description' => 'Can edit all people, positions and candidates.',
                 'permissions' => [
-                    'edit_people',
-                    'edit_positions',
+                    'create_people',
+                    'read_people',
+                    'update_people',
+                    'delete_people',
+                    'create_positions',
+                    'read_positions',
+                    'update_positions',
+                    'delete_positions',
                     'create_candidates',
-                    'crud_all',
+                    'read_candidates',
+                    'update_candidates',
+                    'delete_candidates'
                 ],
             ],
             [
@@ -54,9 +76,18 @@ class RoleSeeder extends Seeder
                 'label' => 'PMO',
                 'description' => 'Can edit their people, positions and candidates.',
                 'permissions' => [
-                    'edit_people',
-                    'edit_positions',
+                    'create_people',
+                    'read_people',
+                    'update_people',
+                    'delete_people',
+                    'create_positions',
+                    'read_positions',
+                    'update_positions',
+                    'delete_positions',
                     'create_candidates',
+                    'read_candidates',
+                    'update_candidates',
+                    'delete_candidates'
                 ],
             ],
             [
