@@ -29,7 +29,11 @@ class RoleSeeder extends Seeder
                     'create_candidates',
                     'read_candidates',
                     'update_candidates',
-                    'delete_candidates'
+                    'delete_candidates',
+                    'create_tickets',
+                    'read_tickets',
+                    'update_tickets',
+                    'delete_tickets'
                 ],
             ],
             [
@@ -49,7 +53,11 @@ class RoleSeeder extends Seeder
                     'create_candidates',
                     'read_candidates',
                     'update_candidates',
-                    'delete_candidates'
+                    'delete_candidates',
+                    'create_tickets',
+                    'read_tickets',
+                    'update_tickets',
+                    'delete_tickets'
                 ],
             ],
             [
@@ -68,7 +76,9 @@ class RoleSeeder extends Seeder
                     'create_candidates',
                     'read_candidates',
                     'update_candidates',
-                    'delete_candidates'
+                    'delete_candidates',
+                    'create_tickets',
+                    'read_tickets'
                 ],
             ],
             [
@@ -87,14 +97,19 @@ class RoleSeeder extends Seeder
                     'create_candidates',
                     'read_candidates',
                     'update_candidates',
-                    'delete_candidates'
+                    'delete_candidates',
+                    'create_tickets',
+                    'read_tickets'
                 ],
             ],
             [
                 'name' => 'candidate',
                 'label' => 'Candidate',
                 'description' => 'People who are candidates for positions',
-                'permissions' => [],
+                'permissions' => [
+                    'create_tickets',
+                    'read_tickets'
+                ],
             ],
         ];
 
