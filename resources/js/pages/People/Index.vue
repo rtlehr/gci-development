@@ -12,7 +12,7 @@
                     Export CSV
                 </Button>
 
-                <Link href="/people/create" v-if="can(Permissions.ADMIN)">
+                <Link href="/people/create" v-if="can(Permissions.PEOPLE_CREATE)">
                     <Button>Add Person</Button>
                 </Link>
             </div>
@@ -169,7 +169,9 @@
                         </TableCell>
 
                         <TableCell class="text-right">
+
                             <DropdownMenu>
+                                
                                 <DropdownMenuTrigger as-child>
                                     <Button variant="ghost" size="icon">
                                         <MoreHorizontal class="h-4 w-4" />
@@ -178,24 +180,25 @@
 
                                 <DropdownMenuContent align="end">
                                     <DropdownMenuLabel>Actions</DropdownMenuLabel>
+
                                     <DropdownMenuSeparator />
 
-                                    <DropdownMenuItem as-child>
+                                    <DropdownMenuItem as-child v-if="can(Permissions.PEOPLE_READ)">
                                         <Link :href="`/people/${person.id}`">
                                             View
                                         </Link>
                                     </DropdownMenuItem>
 
-                                    <DropdownMenuItem as-child v-if="can(Permissions.ADMIN)">
+                                    <DropdownMenuItem as-child v-if="can(Permissions.PEOPLE_UPDATE)">
                                         <Link :href="`/people/${person.id}/edit`">
                                             Edit
                                         </Link>
                                     </DropdownMenuItem>
 
-                                    <DropdownMenuSeparator v-if="can(Permissions.ADMIN)" />
+                                    <DropdownMenuSeparator />
 
                                     <DropdownMenuItem
-                                        v-if="can(Permissions.ADMIN)"
+                                        v-if="can(Permissions.PEOPLE_DELETE)"
                                         @click="openDeleteDialog(person.id)"
                                         class="text-red-600 focus:text-red-600"
                                     >

@@ -17,7 +17,7 @@ Route::get('/people/export/csv', [PeopleController::class, 'exportCsv'])
 
 Route::get('/people/create', [PeopleController::class, 'create'])
     ->name('people.create')
-    ->middleware('permission:view_admin');
+    ->middleware('permission:create_people');
 
 Route::post('/people', [PeopleController::class, 'store'])
     ->name('people.store')
