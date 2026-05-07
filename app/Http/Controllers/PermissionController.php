@@ -206,4 +206,36 @@ class PermissionController extends Controller
             }
         );
     }
+
+    public function editPermissions(User $user)
+    {
+        return Inertia::render('Admin/Users/Permissions', [
+            'user' => $user,
+            
+            'roles' => Role::with('permissions')
+                ->orderBy('name')
+                ->get(),
+
+            'selectedRoles' => $user->roles()
+                ->pluck('roles.id')
+                ->toArray(),
+
+            'permissionGroups' => Permission::orderBy('group_name')
+                ->orderBy('name')
+                ->get()
+                ->groupBy('group_name')
+                ->map(function ($permissions, $group) {
+                    return [
+                        'group' => $group ?: 'Other',
+                        'permissions' => $permissions->values(),
+                    ];
+                })
+                ->values(),
+
+            'selectedPermissions' => $user->permissions()
+                ->pluck('permissions.id')
+                ->toArray(),
+        ]);
+    }
+
 }

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Permission;
 use App\Models\Role;
 use App\Models\User;
 use App\Models\UserListPreference;
@@ -74,10 +75,21 @@ class UserPermissionController extends Controller
         $user->load(['permissions', 'roles']);
 
         $roles = Role::query()
+            ->with([
+                'permissions' => function ($query) {
+                    $query->select(
+                        'permissions.id',
+                        'permissions.name',
+                        'permissions.group_name',
+                        'permissions.label',
+                        'permissions.description'
+                    );
+                },
+            ])
             ->orderBy('name')
             ->get(['id', 'name', 'label', 'description']);
 
-        $permissionGroups = \App\Models\Permission::query()
+        $permissionGroups = Permission::query()
             ->orderBy('group_name')
             ->orderBy('name')
             ->get(['id', 'name', 'group_name', 'label', 'description'])

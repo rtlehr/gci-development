@@ -2,9 +2,10 @@
 
 namespace Database\Seeders;
 
-use App\Models\User;
-use App\Models\Person;
 use App\Models\Alert;
+use App\Models\Person;
+use App\Models\Role;
+use App\Models\User;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
@@ -26,7 +27,7 @@ class AdminUserSeeder extends Seeder
                     'last_name' => 'User',
                     'company_name' => 'Internal',
                     'notes' => 'Default seeded owner account.',
-                    'role_id' => 1,
+                    'role_name' => 'owner',
                 ],
                 [
                     'email' => 'admin@example.com',
@@ -38,7 +39,7 @@ class AdminUserSeeder extends Seeder
                     'last_name' => 'User',
                     'company_name' => 'Internal',
                     'notes' => 'Default seeded administrator account.',
-                    'role_id' => 2,
+                    'role_name' => 'admin',
                 ],
                 [
                     'email' => 'cotr@example.com',
@@ -50,7 +51,7 @@ class AdminUserSeeder extends Seeder
                     'last_name' => 'User',
                     'company_name' => 'Internal',
                     'notes' => 'Default seeded COTR account.',
-                    'role_id' => 3,
+                    'role_name' => 'cotr',
                 ],
                 [
                     'email' => 'pmo@example.com',
@@ -62,7 +63,7 @@ class AdminUserSeeder extends Seeder
                     'last_name' => 'User',
                     'company_name' => 'Internal',
                     'notes' => 'Default seeded PMO account.',
-                    'role_id' => 4,
+                    'role_name' => 'pmo',
                 ],
                 [
                     'email' => 'candidate@example.com',
@@ -74,7 +75,7 @@ class AdminUserSeeder extends Seeder
                     'last_name' => 'User',
                     'company_name' => 'Internal',
                     'notes' => 'Default seeded Candidate account.',
-                    'role_id' => 5,
+                    'role_name' => 'candidate',
                 ],
             ];
 
@@ -88,20 +89,6 @@ class AdminUserSeeder extends Seeder
                     ]
                 );
 
-                $person = Person::updateOrCreate(
-                    ['person_code' => $seedUser['person_code']],
-                    [
-                        'user_id' => $user->id,
-                        'first_name' => $seedUser['first_name'],
-                        'preferred_name' => $seedUser['preferred_name'],
-                        'last_name' => $seedUser['last_name'],
-                        'company_name' => $seedUser['company_name'],
-                        'email' => $seedUser['email'],
-                        'employment_status' => 'Active',
-                        'notes' => $seedUser['notes'],
-                    ]
-                );
-                
                 $person = Person::updateOrCreate(
                     ['person_code' => $seedUser['person_code']],
                     [
@@ -150,21 +137,12 @@ class AdminUserSeeder extends Seeder
                     ]
                 );
 
-                $exists = DB::table('role_user')
-                    ->where('user_id', $user->id)
-                    ->where('role_id', $seedUser['role_id'])
-                    ->exists();
+                $role = Role::where('name', $seedUser['role_name'])->first();
 
-                if (! $exists) {
-                    DB::table('role_user')->insert([
-                        'user_id' => $user->id,
-                        'role_id' => $seedUser['role_id'],
-                        'created_at' => now(),
-                        'updated_at' => now(),
-                    ]);
+                if ($role) {
+                    $user->roles()->syncWithoutDetaching([$role->id]);
                 }
 
-                // ✅ CREATE MULTIPLE ALERTS FOR COTR + PMO
                 if (in_array($seedUser['email'], ['cotr@example.com', 'pmo@example.com'])) {
 
                     $alerts = [
@@ -189,8 +167,6 @@ class AdminUserSeeder extends Seeder
                     ];
 
                     foreach ($alerts as $alertData) {
-
-                        // Prevent duplicates on reseed
                         $exists = Alert::where('user_id', $user->id)
                             ->where('title', $alertData['title'])
                             ->exists();
