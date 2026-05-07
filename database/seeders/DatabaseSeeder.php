@@ -17,6 +17,8 @@ class DatabaseSeeder extends Seeder
             PositionSeeder::class,
             OrganizationSeeder::class,
             CandidateSeeder::class,
+            TeamSeeder::class,
+            GroupSeeder::class,
         ]);
     }
 }

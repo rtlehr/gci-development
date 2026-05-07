@@ -131,6 +131,14 @@
                 </CardContent>
             </Card>
 
+            <AssignmentsEditor
+                v-model:group-ids="form.group_ids"
+                v-model:team-ids="form.team_ids"
+                :groups="groups"
+                :teams="teams"
+                :errors="form.errors"
+            />
+
             <PhoneNumbersEditor
                 ref="phoneNumbersRef"
                 v-model="form.phone_numbers"
@@ -168,12 +176,24 @@ import { Link, useForm } from '@inertiajs/vue3'
 import { ref } from 'vue'
 import AttachmentUploader from '@/components/attachments/AttachmentUploader.vue'
 import AddressesEditor from '@/components/forms/AddressesEditor.vue'
+import AssignmentsEditor from '@/components/forms/AssignmentsEditor.vue'
 import PhoneNumbersEditor from '@/components/forms/PhoneNumbersEditor.vue'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
+
+const props = defineProps({
+    groups: {
+        type: Array,
+        default: () => [],
+    },
+    teams: {
+        type: Array,
+        default: () => [],
+    },
+})
 
 const phoneNumbersRef = ref(null)
 const attachmentsRef = ref(null)
@@ -208,10 +228,15 @@ const form = useForm({
     email: '',
     employment_status: '',
     notes: '',
+    group_ids: [],
+    team_ids: [],
     phone_numbers: [createEmptyPhoneNumber(true)],
     addresses: [createEmptyAddress(true)],
     attachments: [],
 })
+
+const groups = props.groups
+const teams = props.teams
 
 function validateAttachments() {
     let hasError = false

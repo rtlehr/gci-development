@@ -10,6 +10,8 @@ use App\Models\User;
 use App\Models\PersonPhoneNumber;
 use App\Models\Address;
 use App\Models\Attachment;
+use App\Models\Group;
+use App\Models\Team;
 
 class Person extends Model
 {
@@ -68,6 +70,18 @@ class Person extends Model
     public function attachments()
     {
         return $this->morphMany(Attachment::class, 'attachable');
+    }
+
+    public function groups()
+    {
+        return $this->belongsToMany(Group::class, 'person_group')
+            ->withTimestamps();
+    }
+
+    public function teams()
+    {
+        return $this->belongsToMany(Team::class, 'person_team')
+            ->withTimestamps();
     }
     
 }

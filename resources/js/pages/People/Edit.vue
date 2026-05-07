@@ -132,6 +132,14 @@
                 </CardContent>
             </Card>
 
+            <AssignmentsEditor
+                v-model:group-ids="form.group_ids"
+                v-model:team-ids="form.team_ids"
+                :groups="groups"
+                :teams="teams"
+                :errors="form.errors"
+            />
+
             <PhoneNumbersEditor
                 ref="phoneNumbersRef"
                 v-model="form.phone_numbers"
@@ -167,28 +175,33 @@
 
 <script setup>
 import { Link, useForm } from '@inertiajs/vue3'
-import { computed } from 'vue'
 import { ref } from 'vue'
 import AttachmentUploader from '@/components/attachments/AttachmentUploader.vue'
 import AddressesEditor from '@/components/forms/AddressesEditor.vue'
+import AssignmentsEditor from '@/components/forms/AssignmentsEditor.vue'
 import PhoneNumbersEditor from '@/components/forms/PhoneNumbersEditor.vue'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
-import { Permissions } from '@/constants/permissions'
 
 const attachmentsRef = ref(null)
-
 const phoneNumbersRef = ref(null)
-
 const addressesRef = ref(null)
 
 const props = defineProps({
     person: {
         type: Object,
         required: true,
+    },
+    groups: {
+        type: Array,
+        default: () => [],
+    },
+    teams: {
+        type: Array,
+        default: () => [],
     },
 })
 
@@ -212,13 +225,6 @@ const createEmptyAddress = (isPrimary = false) => ({
     country: 'USA',
     is_primary: isPrimary,
     notes: '',
-})
-
-const createEmptyAttachment = () => ({
-    file: null,
-    category: '',
-    description: '',
-    is_primary: false,
 })
 
 const existingPhoneNumbers = (props.person.phone_numbers ?? props.person.phoneNumbers ?? []).map((phone, index) => ({
@@ -273,6 +279,9 @@ const existingAttachmentsSeed = (props.person.attachments_for_ui ?? props.person
     marked_for_removal: false,
 }))
 
+const existingGroupIds = (props.person.groups ?? []).map((group) => group.id)
+const existingTeamIds = (props.person.teams ?? []).map((team) => team.id)
+
 const form = useForm({
     person_code: props.person.person_code ?? '',
     first_name: props.person.first_name ?? '',
@@ -282,12 +291,17 @@ const form = useForm({
     email: props.person.email ?? '',
     employment_status: props.person.employment_status ?? '',
     notes: props.person.notes ?? '',
+    group_ids: existingGroupIds,
+    team_ids: existingTeamIds,
     phone_numbers: normalizedPhoneNumbers,
     addresses: normalizedAddresses,
     attachments: [],
     existing_attachments: existingAttachmentsSeed,
     remove_attachment_ids: [],
 })
+
+const groups = props.groups
+const teams = props.teams
 
 function validateAttachments() {
     let hasError = false
@@ -337,6 +351,7 @@ function submit() {
     if (attachmentsRef.value && !attachmentsRef.value.validate()) {
         hasError = true
     }
+    
 
     if (hasError) return
 

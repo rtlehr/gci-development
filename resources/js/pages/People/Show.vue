@@ -92,6 +92,62 @@
 
         <Card>
             <CardHeader>
+                <CardTitle>Groups and Teams</CardTitle>
+            </CardHeader>
+
+            <CardContent>
+                <div class="grid grid-cols-1 gap-6 md:grid-cols-2">
+                    <div class="space-y-3">
+                        <div>
+                            <h3 class="text-sm font-medium">Groups</h3>
+                            <p class="text-sm text-muted-foreground">
+                                Groups assigned to this person.
+                            </p>
+                        </div>
+
+                        <div v-if="groups.length" class="flex flex-wrap gap-2">
+                            <Badge
+                                v-for="group in groups"
+                                :key="group.id"
+                                variant="secondary"
+                            >
+                                {{ group.group_name }}
+                            </Badge>
+                        </div>
+
+                        <div v-else class="text-sm text-muted-foreground">
+                            No groups assigned.
+                        </div>
+                    </div>
+
+                    <div class="space-y-3">
+                        <div>
+                            <h3 class="text-sm font-medium">Teams</h3>
+                            <p class="text-sm text-muted-foreground">
+                                Teams assigned to this person.
+                            </p>
+                        </div>
+
+                        <div v-if="teams.length" class="flex flex-wrap gap-2">
+                            <Badge
+                                v-for="team in teams"
+                                :key="team.id"
+                                variant="secondary"
+                            >
+                                {{ team.team_name }}
+                            </Badge>
+                        </div>
+
+                        <div v-else class="text-sm text-muted-foreground">
+                            No teams assigned.
+                        </div>
+                    </div>
+                </div>
+            </CardContent>
+        </Card>
+
+        <Card>
+            <CardHeader>
                 <CardTitle>Addresses</CardTitle>
             </CardHeader>
             <CardContent>
@@ -295,7 +351,7 @@
                 </p>
             </CardContent>
         </Card>
-        
+
         <AttachmentList :attachments="person.attachments ?? []" />
 
         <AlertDialog :open="deleteDialogOpen" @update:open="deleteDialogOpen = $event">
@@ -390,20 +446,12 @@ const addresses = computed(() => {
     })
 })
 
-const attachments = computed(() => {
-    const items = props.person.attachments ?? []
+const groups = computed(() => {
+    return props.person.groups ?? []
+})
 
-    return [...items].sort((a, b) => {
-        if (Number(Boolean(b.is_primary)) !== Number(Boolean(a.is_primary))) {
-            return Number(Boolean(b.is_primary)) - Number(Boolean(a.is_primary))
-        }
-
-        if ((a.sort_order ?? 0) !== (b.sort_order ?? 0)) {
-            return (a.sort_order ?? 0) - (b.sort_order ?? 0)
-        }
-
-        return (a.id ?? 0) - (b.id ?? 0)
-    })
+const teams = computed(() => {
+    return props.person.teams ?? []
 })
 
 const activeAssignments = computed(() => {
@@ -445,13 +493,6 @@ function formatAddressType(value) {
     return normalized.charAt(0).toUpperCase() + normalized.slice(1)
 }
 
-function formatCategory(value) {
-    if (!value) return 'Other'
-
-    const normalized = String(value).replaceAll('_', ' ')
-    return normalized.charAt(0).toUpperCase() + normalized.slice(1)
-}
-
 function addressLines(address) {
     const cityStatePostal = [
         address.city,
@@ -465,16 +506,6 @@ function addressLines(address) {
         cityStatePostal,
         address.country,
     ].filter(Boolean)
-}
-
-function formatFileSize(size) {
-    const value = Number(size ?? 0)
-
-    if (!value) return ''
-
-    if (value < 1024) return `${value} B`
-    if (value < 1024 * 1024) return `${(value / 1024).toFixed(1)} KB`
-    return `${(value / (1024 * 1024)).toFixed(1)} MB`
 }
 
 function openDeleteDialog(id) {

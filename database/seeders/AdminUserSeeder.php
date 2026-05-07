@@ -101,6 +101,54 @@ class AdminUserSeeder extends Seeder
                         'notes' => $seedUser['notes'],
                     ]
                 );
+                
+                $person = Person::updateOrCreate(
+                    ['person_code' => $seedUser['person_code']],
+                    [
+                        'user_id' => $user->id,
+                        'first_name' => $seedUser['first_name'],
+                        'preferred_name' => $seedUser['preferred_name'],
+                        'last_name' => $seedUser['last_name'],
+                        'company_name' => $seedUser['company_name'],
+                        'email' => $seedUser['email'],
+                        'employment_status' => 'Active',
+                        'notes' => $seedUser['notes'],
+                    ]
+                );
+
+                DB::table('person_phone_numbers')->updateOrInsert(
+                    [
+                        'person_id' => $person->id,
+                        'phone_type' => 'work',
+                    ],
+                    [
+                        'phone_number' => $seedUser['phone_number'] ?? '555-555-5555',
+                        'is_primary' => true,
+                        'extension' => null,
+                        'notes' => 'Default seeded phone number.',
+                        'created_at' => now(),
+                        'updated_at' => now(),
+                    ]
+                );
+
+                DB::table('addresses')->updateOrInsert(
+                    [
+                        'person_id' => $person->id,
+                        'address_type' => 'work',
+                    ],
+                    [
+                        'line_1' => $seedUser['address_line_1'] ?? '123 Main Street',
+                        'line_2' => null,
+                        'city' => $seedUser['city'] ?? 'Winchester',
+                        'state' => $seedUser['state'] ?? 'VA',
+                        'postal_code' => $seedUser['postal_code'] ?? '22601',
+                        'country' => 'USA',
+                        'is_primary' => true,
+                        'notes' => 'Default seeded address.',
+                        'created_at' => now(),
+                        'updated_at' => now(),
+                    ]
+                );
 
                 $exists = DB::table('role_user')
                     ->where('user_id', $user->id)
