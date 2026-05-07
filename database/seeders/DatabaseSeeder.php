@@ -16,6 +16,7 @@ class DatabaseSeeder extends Seeder
             AdminUserSeeder::class,
             PositionSeeder::class,
             OrganizationSeeder::class,
+            CandidateSeeder::class,
         ]);
     }
 }

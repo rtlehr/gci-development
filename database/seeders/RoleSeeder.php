@@ -88,11 +88,7 @@ class RoleSeeder extends Seeder
                     'read_candidates',
                     'update_candidates',
                     'delete_candidates',
-                    'access_tickets',
                     'create_tickets',
-                    'read_tickets',
-                    'update_tickets',
-                    'delete_tickets'
                 ],
             ],
             [
@@ -115,11 +111,7 @@ class RoleSeeder extends Seeder
                     'read_candidates',
                     'update_candidates',
                     'delete_candidates',
-                    'access_tickets',
                     'create_tickets',
-                    'read_tickets',
-                    'update_tickets',
-                    'delete_tickets'
                 ],
             ],
             [
@@ -127,8 +119,7 @@ class RoleSeeder extends Seeder
                 'label' => 'Candidate',
                 'description' => 'People who are candidates for positions',
                 'permissions' => [
-                    'create_tickets',
-                    'read_tickets'
+                    'create_tickets'
                 ],
             ],
         ];

@@ -4,16 +4,20 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\PeopleController;
 
 Route::get('/people', [PeopleController::class, 'index'])
-    ->name('people.index');
+    ->name('people.index')
+    ->middleware('permission:access_people');
 
 Route::post('/people/preferences', [PeopleController::class, 'savePreferences'])   
-    ->name('people.preferences.save');
+    ->name('people.preferences.save')
+    ->middleware('permission:access_people');
 
 Route::delete('/people/preferences', [PeopleController::class, 'resetPreferences'])
-    ->name('people.preferences.reset');
+    ->name('people.preferences.reset')
+    ->middleware('permission:access_people');
 
 Route::get('/people/export/csv', [PeopleController::class, 'exportCsv'])
-    ->name('people.export.csv');
+    ->name('people.export.csv')
+    ->middleware('permission:access_people');
 
 Route::get('/people/create', [PeopleController::class, 'create'])
     ->name('people.create')
@@ -21,19 +25,20 @@ Route::get('/people/create', [PeopleController::class, 'create'])
 
 Route::post('/people', [PeopleController::class, 'store'])
     ->name('people.store')
-    ->middleware('permission:view_admin');
+    ->middleware('permission:create_people');
 
 Route::get('/people/{id}', [PeopleController::class, 'show'])
-    ->name('people.show');
+    ->name('people.show')
+    ->middleware('permission:read_people');
 
 Route::get('/people/{id}/edit', [PeopleController::class, 'edit'])
     ->name('people.edit')
-    ->middleware('permission:view_admin');
+    ->middleware('permission:update_people');
 
 Route::put('/people/{id}', [PeopleController::class, 'update'])
     ->name('people.update')
-    ->middleware('permission:view_admin');
+    ->middleware('permission:update_people');
 
 Route::delete('/people/{id}', [PeopleController::class, 'destroy'])
     ->name('people.destroy')
-    ->middleware('permission:view_admin');
+    ->middleware('permission:delete_people');

@@ -145,7 +145,16 @@
                             </div>
                         </TableHead>
 
-                        <TableHead class="text-right">Actions</TableHead>
+                        <TableHead
+                            class="text-right"
+                            v-if="
+                                can(Permissions.PEOPLE_READ) ||
+                                can(Permissions.PEOPLE_UPDATE) ||
+                                can(Permissions.PEOPLE_DELETE)
+                            "
+                        >
+                            Actions
+                        </TableHead>
                     </TableRow>
                 </TableHeader>
 
@@ -168,10 +177,16 @@
                             {{ formatCell(person, col.key) }}
                         </TableCell>
 
-                        <TableCell class="text-right">
-
+                        <TableCell
+                            class="text-right"
+                            v-if="
+                                can(Permissions.PEOPLE_READ) ||
+                                can(Permissions.PEOPLE_UPDATE) ||
+                                can(Permissions.PEOPLE_DELETE)
+                            "
+                        >
                             <DropdownMenu>
-                                
+
                                 <DropdownMenuTrigger as-child>
                                     <Button variant="ghost" size="icon">
                                         <MoreHorizontal class="h-4 w-4" />
@@ -205,6 +220,7 @@
                                         Delete
                                     </DropdownMenuItem>
                                 </DropdownMenuContent>
+
                             </DropdownMenu>
                         </TableCell>
                     </TableRow>

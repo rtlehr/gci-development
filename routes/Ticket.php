@@ -5,39 +5,41 @@ use App\Http\Controllers\TicketController;
 use App\Http\Controllers\TicketAdminController;
 
 Route::get('/tickets/create', [TicketController::class, 'create'])
-    ->name('tickets.create');
+    ->name('tickets.create')
+    ->middleware('permission:create_tickets');
 
 Route::post('/tickets', [TicketController::class, 'store'])
-    ->name('tickets.store');
+    ->name('tickets.store')
+    ->middleware('permission:create_tickets');
 
 Route::get('/admin/tickets', [TicketAdminController::class, 'index'])
     ->name('admin.tickets.index')
-    ->middleware('permission:view_admin');
+    ->middleware('permission:access_tickets');
 
 Route::post('/admin/tickets/preferences', [TicketAdminController::class, 'savePreferences'])
     ->name('admin.tickets.preferences.save')
-    ->middleware('permission:view_admin');
+    ->middleware('permission:access_tickets');
 
 Route::delete('/admin/tickets/preferences', [TicketAdminController::class, 'resetPreferences'])
     ->name('admin.tickets.preferences.reset')
-    ->middleware('permission:view_admin');
+    ->middleware('permission:access_tickets');
 
 Route::get('/admin/tickets/export/csv', [TicketAdminController::class, 'exportCsv'])
     ->name('admin.tickets.export.csv')
-    ->middleware('permission:view_admin');
+    ->middleware('permission:access_tickets');
 
 Route::get('/admin/tickets/{ticket}', [TicketAdminController::class, 'show'])
     ->name('admin.tickets.show')
-    ->middleware('permission:view_admin');
+    ->middleware('permission:read_tickets');
 
 Route::put('/admin/tickets/{ticket}', [TicketAdminController::class, 'update'])
     ->name('admin.tickets.update')
-    ->middleware('permission:view_admin');
+    ->middleware('permission:update_tickets');
 
 Route::patch('/admin/tickets/{ticket}/assign', [TicketController::class, 'assign'])
     ->name('admin.tickets.assign')
-    ->middleware('permission:view_admin');
+    ->middleware('permission:update_tickets');
 
 Route::post('/admin/tickets/{ticket}/comments', [TicketAdminController::class, 'addComment'])
     ->name('admin.tickets.comments.store')
-    ->middleware('permission:view_admin');
+    ->middleware('permission:update_tickets');

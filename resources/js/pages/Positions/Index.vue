@@ -12,7 +12,7 @@
                     Export CSV
                 </Button>
 
-                <Link href="/positions/create" v-if="can('view_admin')">
+                <Link href="/positions/create" v-if="can(Permissions.POSITIONS_CREATE)">
                     <Button>Create Position</Button>
                 </Link>
             </div>
@@ -161,7 +161,16 @@
                             </div>
                         </TableHead>
 
-                        <TableHead class="text-right">Actions</TableHead>
+                        <TableHead
+                            class="text-right"
+                            v-if="
+                                can(Permissions.POSITIONS_READ) ||
+                                can(Permissions.POSITIONS_UPDATE) ||
+                                can(Permissions.POSITIONS_DELETE)
+                            "
+                        >
+                            Actions
+                        </TableHead>
                     </TableRow>
                 </TableHeader>
 
@@ -192,7 +201,14 @@
                             </template>
                         </TableCell>
 
-                        <TableCell class="text-right">
+                        <TableCell
+                            class="text-right"
+                            v-if="
+                                can(Permissions.POSITIONS_READ) ||
+                                can(Permissions.POSITIONS_UPDATE) ||
+                                can(Permissions.POSITIONS_DELETE)
+                            "
+                        >
                             <DropdownMenu>
                                 <DropdownMenuTrigger as-child>
                                     <Button variant="ghost" size="icon">
@@ -204,13 +220,13 @@
                                     <DropdownMenuLabel>Actions</DropdownMenuLabel>
                                     <DropdownMenuSeparator />
 
-                                    <DropdownMenuItem as-child>
+                                    <DropdownMenuItem as-child v-if="can(Permissions.POSITIONS_READ)">
                                         <Link :href="`/positions/${position.id}`">
                                             View
                                         </Link>
                                     </DropdownMenuItem>
 
-                                    <DropdownMenuItem as-child  v-if="can('view_admin')">
+                                    <DropdownMenuItem as-child v-if="can(Permissions.POSITIONS_UPDATE)">
                                         <Link :href="`/positions/${position.id}/edit`">
                                             Edit
                                         </Link>
@@ -219,7 +235,7 @@
                                     <DropdownMenuSeparator />
 
                                     <DropdownMenuItem
-                                         v-if="can('view_admin')"
+                                         v-if="can(Permissions.POSITIONS_DELETE)"
                                         @click="openDeleteDialog(position.id)"
                                         class="text-red-600 focus:text-red-600"
                                     >
@@ -343,6 +359,8 @@ import {
     TableHeader,
     TableRow,
 } from '@/components/ui/table'
+
+import { Permissions } from '@/constants/permissions'
 
 const props = defineProps({
     positions: {

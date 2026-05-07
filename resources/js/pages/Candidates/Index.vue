@@ -12,7 +12,7 @@
                     Export CSV
                 </Button>
 
-                <Link href="/candidates/create" v-if="can('create_candidates') || can('view_admin')">
+                <Link href="/candidates/create" v-if="can(Permissions.CANDIDATES_CREATE)">
                     <Button>Create Candidate</Button>
                 </Link>
             </div>
@@ -163,7 +163,16 @@
                             </div>
                         </TableHead>
 
-                        <TableHead class="text-right">Actions</TableHead>
+                        <TableHead
+                            class="text-right"
+                            v-if="
+                                can(Permissions.CANDIDATES_READ) ||
+                                can(Permissions.CANDIDATES_UPDATE) ||
+                                can(Permissions.CANDIDATES_DELETE)
+                            "
+                        >
+                            Actions
+                        </TableHead>
                     </TableRow>
                 </TableHeader>
 
@@ -186,7 +195,11 @@
                             {{ formatCell(candidate, col.key) }}
                         </TableCell>
 
-                        <TableCell class="text-right">
+                        <TableCell class="text-right" v-if="
+                                can(Permissions.CANDIDATES_READ) ||
+                                can(Permissions.CANDIDATES_UPDATE) ||
+                                can(Permissions.CANDIDATES_DELETE)
+                            ">
                             <DropdownMenu>
                                 <DropdownMenuTrigger as-child>
                                     <Button variant="ghost" size="icon">
@@ -198,7 +211,7 @@
                                     <DropdownMenuLabel>Actions</DropdownMenuLabel>
                                     <DropdownMenuSeparator />
 
-                                    <DropdownMenuItem as-child>
+                                    <DropdownMenuItem as-child v-if="can(Permissions.CANDIDATES_READ)">
                                         <Link :href="`/candidates/${candidate.id}`">
                                             View
                                         </Link>
@@ -206,7 +219,7 @@
 
                                     <DropdownMenuItem
                                         as-child
-                                        v-if="can('edit_candidates') || can('view_admin')"
+                                        v-if="can(Permissions.CANDIDATES_UPDATE)"
                                     >
                                         <Link :href="`/candidates/${candidate.id}/edit`">
                                             Edit
@@ -214,11 +227,11 @@
                                     </DropdownMenuItem>
 
                                     <DropdownMenuSeparator
-                                        v-if="can('delete_candidates') || can('view_admin')"
+                                        v-if="can(Permissions.CANDIDATES_DELETE)"
                                     />
 
                                     <DropdownMenuItem
-                                        v-if="can('delete_candidates') || can('view_admin')"
+                                        v-if="can(Permissions.CANDIDATES_DELETE)"
                                         @click="openDeleteDialog(candidate.id)"
                                         class="text-red-600 focus:text-red-600"
                                     >
@@ -341,6 +354,8 @@ import {
     TableHeader,
     TableRow,
 } from '@/components/ui/table'
+
+import { Permissions } from '@/constants/permissions'
 
 const { can } = useAuth()
 
