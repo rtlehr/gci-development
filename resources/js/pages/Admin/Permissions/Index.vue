@@ -43,6 +43,8 @@ import {
     TableRow,
 } from '@/components/ui/table'
 
+// Backend-provided table data, filters,
+// sorting state, and column configuration.
 const props = defineProps({
     permissions: {
         type: Object,
@@ -81,20 +83,26 @@ const props = defineProps({
     },
 })
 
+// Controls visibility of the column settings panel.
 const showColumnSettings = ref(false)
 
+// Local reactive filter state used by the search form.
 const filterForm = reactive({
     search: props.filters?.search ?? '',
 })
 
+// Local editable column configuration state.
 const settingsForm = reactive({
     visibleColumns: [...props.visibleColumns],
     columnOrder: [...props.columnOrder],
 })
 
+// Delete confirmation dialog state and selected permission ID.
 const deleteDialogOpen = ref(false)
 const permissionToDelete = ref(null)
 
+// Returns the active/visible table columns
+// in the correct user-defined order.
 const activeColumns = computed(() => {
     return settingsForm.columnOrder
         .filter((key) => settingsForm.visibleColumns.includes(key))
@@ -102,12 +110,16 @@ const activeColumns = computed(() => {
         .filter(Boolean)
 })
 
+// Returns all column definitions
+// in the current display order.
 const orderedColumnDefinitions = computed(() => {
     return settingsForm.columnOrder
         .map((key) => props.columns.find((col) => col.key === key))
         .filter(Boolean)
 })
 
+// Generates a compact pagination range
+// centered around the current page.
 const pagesToShow = computed(() => {
     const current = props.permissions.current_page ?? 1
     const last = props.permissions.last_page ?? 1
@@ -123,6 +135,10 @@ const pagesToShow = computed(() => {
     return pages
 })
 
+/**
+ * Applies the current search filter
+ * while preserving sorting state.
+ */
 function applyFilters() {
     router.get('/admin/permissions', {
         search: filterForm.search,
@@ -134,6 +150,10 @@ function applyFilters() {
     })
 }
 
+/**
+ * Clears the active search filter
+ * and reloads the default results.
+ */
 function resetFilters() {
     filterForm.search = ''
 
@@ -146,6 +166,12 @@ function resetFilters() {
     })
 }
 
+/**
+ * Updates table sorting.
+ * Clicking the same column toggles asc/desc.
+ *
+ * @param {string} column
+ */
 function sortBy(column) {
     let nextDirection = 'asc'
 
@@ -163,11 +189,24 @@ function sortBy(column) {
     })
 }
 
+/**
+ * Returns the correct sorting icon component
+ * for the specified column.
+ *
+ * @param {string} column
+ * @returns {Component}
+ */
 function getSortIcon(column) {
     if (props.sort !== column) return ArrowUpDown
     return props.direction === 'asc' ? ArrowUp : ArrowDown
 }
 
+/**
+ * Navigates to a different pagination page
+ * while preserving filters and sorting.
+ *
+ * @param {number} page
+ */
 function goToPage(page) {
     router.get('/admin/permissions', {
         page,
@@ -180,24 +219,48 @@ function goToPage(page) {
     })
 }
 
+/**
+ * Returns the display label for a column key.
+ *
+ * @param {string} key
+ * @returns {string}
+ */
 function getColumnLabel(key) {
     return props.columns.find((col) => col.key === key)?.label ?? key
 }
 
+/**
+ * Moves a column one position left
+ * in the display order.
+ *
+ * @param {number} index
+ */
 function moveColumnLeft(index) {
     if (index <= 0) return
+
     const temp = settingsForm.columnOrder[index - 1]
     settingsForm.columnOrder[index - 1] = settingsForm.columnOrder[index]
     settingsForm.columnOrder[index] = temp
 }
 
+/**
+ * Moves a column one position right
+ * in the display order.
+ *
+ * @param {number} index
+ */
 function moveColumnRight(index) {
     if (index >= settingsForm.columnOrder.length - 1) return
+
     const temp = settingsForm.columnOrder[index + 1]
     settingsForm.columnOrder[index + 1] = settingsForm.columnOrder[index]
     settingsForm.columnOrder[index] = temp
 }
 
+/**
+ * Saves the current visible columns
+ * and column ordering preferences.
+ */
 function saveColumnPreferences() {
     router.post('/admin/permissions/preferences', {
         visible_columns: settingsForm.visibleColumns,
@@ -207,22 +270,40 @@ function saveColumnPreferences() {
     })
 }
 
+/**
+ * Resets local unsaved column settings
+ * back to the backend-provided defaults.
+ */
 function resetColumnSettingsLocally() {
     settingsForm.visibleColumns = [...props.visibleColumns]
     settingsForm.columnOrder = [...props.columnOrder]
 }
 
+/**
+ * Removes saved user preferences
+ * and restores application defaults.
+ */
 function resetPreferencesOnServer() {
     router.delete('/admin/permissions/preferences', {
         preserveScroll: true,
     })
 }
 
+/**
+ * Opens the delete confirmation dialog
+ * for the selected permission.
+ *
+ * @param {number|string} id
+ */
 function openDeleteDialog(id) {
     permissionToDelete.value = id
     deleteDialogOpen.value = true
 }
 
+/**
+ * Deletes the selected permission
+ * and resets dialog state afterward.
+ */
 function confirmDelete() {
     if (!permissionToDelete.value) return
 
@@ -235,12 +316,27 @@ function confirmDelete() {
     })
 }
 
+/**
+ * Formats table cell values for display.
+ * Empty values are replaced with a placeholder.
+ *
+ * @param {Object} row
+ * @param {string} key
+ * @returns {string}
+ */
 function formatCell(row, key) {
     const value = row[key]
+
     if (!value) return '—'
+
     return value
 }
 
+/**
+ * Builds the CSV export URL using the current
+ * filters and column settings, then redirects
+ * the browser to the export endpoint.
+ */
 function exportCsv() {
     const params = new URLSearchParams()
 

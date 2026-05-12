@@ -98,13 +98,19 @@ import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { usePage } from '@inertiajs/vue3'
 
+// Provides access to current Inertia page props,
+// including query data when available from Ziggy.
 const page = usePage()
 
+// Pre-fills the help key from the current URL query string.
+// First checks Ziggy/Inertia props, then falls back to the browser URL.
 const initialHelpKey =
     page.props?.ziggy?.query?.help_key ||
     new URLSearchParams(window.location.search).get('help_key') ||
     ''
 
+// Reactive Inertia form state.
+// Tracks field values, validation errors, and processing status.
 const form = useForm({
     help_key: initialHelpKey,
     title: '',
@@ -112,6 +118,10 @@ const form = useForm({
     is_active: true,
 })
 
+/**
+ * Submits the new help page record
+ * to the backend create endpoint.
+ */
 function submit() {
     form.post('/admin/page-help')
 }

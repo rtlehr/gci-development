@@ -88,6 +88,7 @@ import {
     TableRow,
 } from '@/components/ui/table'
 
+// Backend-provided help page list and current filter state.
 const props = defineProps({
     helpPages: {
         type: Object,
@@ -101,10 +102,15 @@ const props = defineProps({
     },
 })
 
+// Local filter form state.
+// Initialized from backend filters so the search input reflects the current URL/query state.
 const filterForm = reactive({
     search: props.filters?.search ?? '',
 })
 
+/**
+ * Applies the current search filter and reloads the help page list.
+ */
 function applyFilters() {
     router.get('/admin/page-help', {
         search: filterForm.search,
@@ -114,6 +120,9 @@ function applyFilters() {
     })
 }
 
+/**
+ * Clears the search filter and reloads the default help page list.
+ */
 function resetFilters() {
     filterForm.search = ''
 
@@ -123,6 +132,11 @@ function resetFilters() {
     })
 }
 
+/**
+ * Confirms deletion with the user, then deletes the selected help page.
+ *
+ * @param {number|string} id
+ */
 function deleteItem(id) {
     if (!confirm('Delete this help page?')) return
 

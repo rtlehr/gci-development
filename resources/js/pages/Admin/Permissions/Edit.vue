@@ -1,42 +1,3 @@
-<script setup>
-import { Link, useForm } from '@inertiajs/vue3'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import { Textarea } from '@/components/ui/textarea'
-
-const props = defineProps({
-    permission: {
-        type: Object,
-        required: true,
-    },
-})
-
-const form = useForm({
-    name: props.permission.name ?? '',
-    group_name: props.permission.group_name ?? '',
-    label: props.permission.label ?? '',
-    description: props.permission.description ?? '',
-    is_system: !!props.permission.is_system,
-    is_locked: !!props.permission.is_locked,
-})
-
-function submit() {
-    form.clearErrors()
-
-    let hasError = false
-
-    if (!form.name || form.name.trim() === '') {
-        form.setError('name', 'Permission name is required.')
-        hasError = true
-    }
-
-    if (hasError) return
-
-    form.put(`/admin/permissions/${props.permission.id}`)
-}
-</script>
-
 <template>
     <div class="p-6 max-w-4xl space-y-6">
         <div class="flex items-center justify-between">
@@ -161,3 +122,50 @@ function submit() {
         </div>
     </div>
 </template>
+
+<script setup>
+import { Link, useForm } from '@inertiajs/vue3'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { Textarea } from '@/components/ui/textarea'
+
+// Existing permission record passed from the backend.
+const props = defineProps({
+    permission: {
+        type: Object,
+        required: true,
+    },
+})
+
+// Reactive Inertia form state initialized
+// with the existing permission values.
+const form = useForm({
+    name: props.permission.name ?? '',
+    group_name: props.permission.group_name ?? '',
+    label: props.permission.label ?? '',
+    description: props.permission.description ?? '',
+    is_system: !!props.permission.is_system,
+    is_locked: !!props.permission.is_locked,
+})
+
+/**
+ * Performs client-side validation before submitting
+ * the updated permission to the backend update endpoint.
+ */
+function submit() {
+    form.clearErrors()
+
+    let hasError = false
+
+    // Permission name is required before submit.
+    if (!form.name || form.name.trim() === '') {
+        form.setError('name', 'Permission name is required.')
+        hasError = true
+    }
+
+    if (hasError) return
+
+    form.put(`/admin/permissions/${props.permission.id}`)
+}
+</script>

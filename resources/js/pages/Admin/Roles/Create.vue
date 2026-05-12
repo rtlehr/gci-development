@@ -5,6 +5,8 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 
+// Permission groups passed from the backend.
+// Used to organize permissions visually by category/group.
 const props = defineProps({
     permissionGroups: {
         type: Array,
@@ -12,6 +14,8 @@ const props = defineProps({
     },
 })
 
+// Reactive Inertia form state.
+// Tracks form values, validation errors, and submission state.
 const form = useForm({
     name: '',
     label: '',
@@ -19,6 +23,12 @@ const form = useForm({
     permissions: [],
 })
 
+/**
+ * Adds or removes a permission ID
+ * from the selected permissions array.
+ *
+ * @param {number|string} permissionId
+ */
 const togglePermission = (permissionId) => {
     if (form.permissions.includes(permissionId)) {
         form.permissions = form.permissions.filter((id) => id !== permissionId)
@@ -27,11 +37,16 @@ const togglePermission = (permissionId) => {
     }
 }
 
+/**
+ * Performs basic client-side validation
+ * before submitting the new role to the backend.
+ */
 function submit() {
     form.clearErrors()
 
     let hasError = false
 
+    // Role name is required before submit.
     if (!form.name || form.name.trim() === '') {
         form.setError('name', 'Role name is required.')
         hasError = true

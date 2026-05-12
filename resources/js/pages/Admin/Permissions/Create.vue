@@ -1,35 +1,3 @@
-<script setup>
-import { Link, useForm } from '@inertiajs/vue3'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import { Textarea } from '@/components/ui/textarea'
-
-const form = useForm({
-    name: '',
-    group_name: '',
-    label: '',
-    description: '',
-    is_system: false,
-    is_locked: false,
-})
-
-function submit() {
-    form.clearErrors()
-
-    let hasError = false
-
-    if (!form.name || form.name.trim() === '') {
-        form.setError('name', 'Permission name is required.')
-        hasError = true
-    }
-
-    if (hasError) return
-
-    form.post('/admin/permissions')
-}
-</script>
-
 <template>
     <div class="p-6 max-w-4xl space-y-6">
         <div class="flex items-center justify-between">
@@ -154,3 +122,42 @@ function submit() {
         </div>
     </div>
 </template>
+
+<script setup>
+import { Link, useForm } from '@inertiajs/vue3'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { Textarea } from '@/components/ui/textarea'
+
+// Reactive Inertia form state.
+// Tracks field values, validation errors, and submission state.
+const form = useForm({
+    name: '',
+    group_name: '',
+    label: '',
+    description: '',
+    is_system: false,
+    is_locked: false,
+})
+
+/**
+ * Performs client-side validation before submitting
+ * the new permission to the backend create endpoint.
+ */
+function submit() {
+    form.clearErrors()
+
+    let hasError = false
+
+    // Permission name is required before submit.
+    if (!form.name || form.name.trim() === '') {
+        form.setError('name', 'Permission name is required.')
+        hasError = true
+    }
+
+    if (hasError) return
+
+    form.post('/admin/permissions')
+}
+</script>

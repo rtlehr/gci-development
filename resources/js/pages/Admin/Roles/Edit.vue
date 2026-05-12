@@ -5,6 +5,8 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 
+// Existing role data, grouped permissions,
+// and currently selected permission IDs from the backend.
 const props = defineProps({
     role: {
         type: Object,
@@ -20,6 +22,8 @@ const props = defineProps({
     },
 })
 
+// Reactive Inertia form state initialized
+// with the existing role values.
 const form = useForm({
     name: props.role.name ?? '',
     label: props.role.label ?? '',
@@ -27,6 +31,12 @@ const form = useForm({
     permissions: [...props.selectedPermissions],
 })
 
+/**
+ * Adds or removes a permission ID
+ * from the selected permissions array.
+ *
+ * @param {number|string} permissionId
+ */
 const togglePermission = (permissionId) => {
     if (form.permissions.includes(permissionId)) {
         form.permissions = form.permissions.filter((id) => id !== permissionId)
@@ -35,11 +45,16 @@ const togglePermission = (permissionId) => {
     }
 }
 
+/**
+ * Performs basic client-side validation
+ * before submitting the updated role to the backend.
+ */
 function submit() {
     form.clearErrors()
 
     let hasError = false
 
+    // Role name is required before submit.
     if (!form.name || form.name.trim() === '') {
         form.setError('name', 'Role name is required.')
         hasError = true

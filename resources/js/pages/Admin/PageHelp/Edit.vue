@@ -91,6 +91,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 
+// Existing help page record passed from the backend.
 const props = defineProps({
     helpPage: {
         type: Object,
@@ -98,6 +99,8 @@ const props = defineProps({
     },
 })
 
+// Reactive Inertia form state.
+// Starts with the existing help page values and tracks errors/processing.
 const form = useForm({
     help_key: props.helpPage.help_key ?? '',
     title: props.helpPage.title ?? '',
@@ -105,6 +108,10 @@ const form = useForm({
     is_active: props.helpPage.is_active ?? true,
 })
 
+/**
+ * Submits the updated help page data
+ * to the backend update endpoint.
+ */
 function submit() {
     form.put(`/admin/page-help/${props.helpPage.id}`)
 }
