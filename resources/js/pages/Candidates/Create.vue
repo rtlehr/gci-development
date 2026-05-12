@@ -238,6 +238,8 @@ import CandidateWorkflowEditor from '@/components/forms/CandidateWorkflowEditor.
 
 const { can } = useAuth()
 
+// Backend-provided candidate form data,
+// workflow definitions, and workflow steps.
 const props = defineProps({
     people: {
         type: Array,
@@ -261,8 +263,12 @@ const props = defineProps({
     },
 })
 
+// Tracks the currently selected workflow ID.
+// Used when switching workflows dynamically.
 const selectedWorkflowId = ref(props.workflow?.id ?? '')
 
+// Reactive Inertia form state.
+// Stores all candidate and workflow-related form values.
 const form = useForm({
     person_id: '',
     position_id: '',
@@ -275,6 +281,10 @@ const form = useForm({
     step_events: [],
 })
 
+/**
+ * Reloads the create page with a different workflow.
+ * Used to dynamically update workflow steps and fields.
+ */
 function changeWorkflow() {
     router.get(
         '/candidates/create',
@@ -288,8 +298,16 @@ function changeWorkflow() {
     )
 }
 
+/**
+ * Submits the new candidate record
+ * to the backend create endpoint.
+ */
 function submit() {
+
+    // Ensure the selected workflow ID is included
+    // before submitting the form.
     form.workflow_id = selectedWorkflowId.value
+
     form.post('/candidates')
 }
 </script>

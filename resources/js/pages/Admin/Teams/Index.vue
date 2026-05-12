@@ -320,6 +320,8 @@ import {
 
 const { can } = useAuth()
 
+// Backend-provided table data, filters,
+// sorting state, and column configuration.
 const props = defineProps({
     teams: Object,
     columns: Array,
@@ -330,20 +332,26 @@ const props = defineProps({
     direction: String,
 })
 
+// Controls visibility of the column settings panel.
 const showColumnSettings = ref(false)
 
+// Local reactive filter state used by the search form.
 const filterForm = reactive({
     search: props.filters?.search ?? '',
 })
 
+// Local editable column configuration state.
 const settingsForm = reactive({
     visibleColumns: [...(props.visibleColumns ?? [])],
     columnOrder: [...(props.columnOrder ?? [])],
 })
 
+// Delete confirmation dialog state and selected team ID.
 const deleteDialogOpen = ref(false)
 const teamToDelete = ref(null)
 
+// Returns the active/visible table columns
+// in the correct user-defined order.
 const activeColumns = computed(() =>
     settingsForm.columnOrder
         .filter(key => settingsForm.visibleColumns.includes(key))
@@ -351,12 +359,16 @@ const activeColumns = computed(() =>
         .filter(Boolean)
 )
 
+// Returns all column definitions
+// in the current display order.
 const orderedColumnDefinitions = computed(() =>
     settingsForm.columnOrder
         .map(key => props.columns.find(col => col.key === key))
         .filter(Boolean)
 )
 
+// Generates a compact pagination range
+// centered around the current page.
 const pagesToShow = computed(() => {
     const current = props.teams.current_page ?? 1
     const last = props.teams.last_page ?? 1
@@ -367,6 +379,10 @@ const pagesToShow = computed(() => {
     return Array.from({ length: end - start + 1 }, (_, i) => start + i)
 })
 
+/**
+ * Applies the current search filter
+ * while preserving sorting state.
+ */
 function applyFilters() {
     router.get('/admin/teams', {
         search: filterForm.search,
@@ -375,14 +391,28 @@ function applyFilters() {
     }, { preserveState: true, replace: true })
 }
 
+/**
+ * Clears the active search filter
+ * and reloads the default results.
+ */
 function resetFilters() {
     filterForm.search = ''
+
     router.get('/admin/teams', {}, { preserveState: true, replace: true })
 }
 
+/**
+ * Updates table sorting.
+ * Clicking the same column toggles asc/desc.
+ *
+ * @param {string} column
+ */
 function sortBy(column) {
     let next = 'asc'
-    if (props.sort === column && props.direction === 'asc') next = 'desc'
+
+    if (props.sort === column && props.direction === 'asc') {
+        next = 'desc'
+    }
 
     router.get('/admin/teams', {
         search: filterForm.search,
@@ -391,11 +421,25 @@ function sortBy(column) {
     }, { preserveState: true, replace: true })
 }
 
+/**
+ * Returns the correct sorting icon component
+ * for the specified column.
+ *
+ * @param {string} column
+ * @returns {Component}
+ */
 function getSortIcon(column) {
     if (props.sort !== column) return ArrowUpDown
+
     return props.direction === 'asc' ? ArrowUp : ArrowDown
 }
 
+/**
+ * Navigates to a different pagination page
+ * while preserving filters and sorting.
+ *
+ * @param {number} page
+ */
 function goToPage(page) {
     router.get('/admin/teams', {
         page,
@@ -405,22 +449,46 @@ function goToPage(page) {
     }, { preserveState: true, replace: true })
 }
 
+/**
+ * Returns the display label for a column key.
+ *
+ * @param {string} key
+ * @returns {string}
+ */
 function getColumnLabel(key) {
     return props.columns.find(col => col.key === key)?.label ?? key
 }
 
+/**
+ * Moves a column one position left
+ * in the display order.
+ *
+ * @param {number} i
+ */
 function moveColumnLeft(i) {
     if (i === 0) return
+
     [settingsForm.columnOrder[i - 1], settingsForm.columnOrder[i]] =
     [settingsForm.columnOrder[i], settingsForm.columnOrder[i - 1]]
 }
 
+/**
+ * Moves a column one position right
+ * in the display order.
+ *
+ * @param {number} i
+ */
 function moveColumnRight(i) {
     if (i === settingsForm.columnOrder.length - 1) return
+
     [settingsForm.columnOrder[i + 1], settingsForm.columnOrder[i]] =
     [settingsForm.columnOrder[i], settingsForm.columnOrder[i + 1]]
 }
 
+/**
+ * Saves the current visible columns
+ * and column ordering preferences.
+ */
 function saveColumnPreferences() {
     router.post('/admin/teams/preferences', {
         visible_columns: settingsForm.visibleColumns,
@@ -428,20 +496,38 @@ function saveColumnPreferences() {
     })
 }
 
+/**
+ * Resets local unsaved column settings
+ * back to the backend-provided defaults.
+ */
 function resetColumnSettingsLocally() {
     settingsForm.visibleColumns = [...props.visibleColumns]
     settingsForm.columnOrder = [...props.columnOrder]
 }
 
+/**
+ * Removes saved user preferences
+ * and restores application defaults.
+ */
 function resetPreferencesOnServer() {
     router.delete('/admin/teams/preferences')
 }
 
+/**
+ * Opens the delete confirmation dialog
+ * for the selected team.
+ *
+ * @param {number|string} id
+ */
 function openDeleteDialog(id) {
     teamToDelete.value = id
     deleteDialogOpen.value = true
 }
 
+/**
+ * Deletes the selected team
+ * and resets dialog state afterward.
+ */
 function confirmDelete() {
     router.delete(`/admin/teams/${teamToDelete.value}`, {
         onFinish: () => {
@@ -451,14 +537,29 @@ function confirmDelete() {
     })
 }
 
+/**
+ * Formats table cell values for display.
+ * Empty values are replaced with a placeholder.
+ *
+ * @param {Object} row
+ * @param {string} key
+ * @returns {string}
+ */
 function formatCell(row, key) {
     return row[key] ?? '—'
 }
 
+/**
+ * Builds the CSV export URL using the current
+ * filters and column settings, then redirects
+ * the browser to the export endpoint.
+ */
 function exportCsv() {
     const params = new URLSearchParams()
 
-    if (filterForm.search) params.append('search', filterForm.search)
+    if (filterForm.search) {
+        params.append('search', filterForm.search)
+    }
 
     settingsForm.visibleColumns.forEach(col =>
         params.append('visible_columns[]', col)

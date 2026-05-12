@@ -46,14 +46,21 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 
+// Existing team record passed from the backend.
 const props = defineProps({
     team: Object,
 })
 
+// Reactive Inertia form state initialized
+// with the existing team values.
 const form = useForm({
     team_name: props.team.team_name ?? '',
 })
 
+/**
+ * Submits the updated team data
+ * to the backend update endpoint.
+ */
 function submit() {
     form.put(`/admin/teams/${props.team.id}`)
 }

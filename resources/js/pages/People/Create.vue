@@ -174,16 +174,28 @@
 <script setup>
 import { Link, useForm } from '@inertiajs/vue3'
 import { ref } from 'vue'
+
 import AttachmentUploader from '@/components/attachments/AttachmentUploader.vue'
 import AddressesEditor from '@/components/forms/AddressesEditor.vue'
 import AssignmentsEditor from '@/components/forms/AssignmentsEditor.vue'
 import PhoneNumbersEditor from '@/components/forms/PhoneNumbersEditor.vue'
+
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+
+import {
+    Card,
+    CardContent,
+    CardDescription,
+    CardHeader,
+    CardTitle,
+} from '@/components/ui/card'
+
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 
+// Backend-provided group and team lists
+// used by the assignments editor.
 const props = defineProps({
     groups: {
         type: Array,
@@ -195,10 +207,19 @@ const props = defineProps({
     },
 })
 
+// References to child form components.
+// Used to trigger validation methods before submit.
 const phoneNumbersRef = ref(null)
 const attachmentsRef = ref(null)
 const addressesRef = ref(null)
 
+/**
+ * Creates a new empty phone number object
+ * for initializing or adding phone records.
+ *
+ * @param {boolean} isPrimary
+ * @returns {Object}
+ */
 const createEmptyPhoneNumber = (isPrimary = false) => ({
     phone_number: '',
     phone_type: '',
@@ -207,6 +228,13 @@ const createEmptyPhoneNumber = (isPrimary = false) => ({
     notes: '',
 })
 
+/**
+ * Creates a new empty address object
+ * for initializing or adding address records.
+ *
+ * @param {boolean} isPrimary
+ * @returns {Object}
+ */
 const createEmptyAddress = (isPrimary = false) => ({
     address_type: '',
     line_1: '',
@@ -219,6 +247,8 @@ const createEmptyAddress = (isPrimary = false) => ({
     notes: '',
 })
 
+// Reactive Inertia form state.
+// Stores all person-related form data.
 const form = useForm({
     person_code: '',
     first_name: '',
@@ -235,15 +265,29 @@ const form = useForm({
     attachments: [],
 })
 
+// Local references for cleaner template access.
 const groups = props.groups
 const teams = props.teams
 
+/**
+ * Validates uploaded attachments
+ * to ensure required files exist.
+ *
+ * @returns {boolean}
+ */
 function validateAttachments() {
+
     let hasError = false
 
     form.attachments.forEach((attachment, index) => {
+
         if (!attachment.file) {
-            form.setError(`attachments.${index}.file`, 'A file is required.')
+
+            form.setError(
+                `attachments.${index}.file`,
+                'A file is required.'
+            )
+
             hasError = true
         }
     })
@@ -251,26 +295,50 @@ function validateAttachments() {
     return hasError
 }
 
+/**
+ * Validates and submits the new person record.
+ *
+ * Also transforms attachment data into a structure
+ * compatible with multipart/form-data uploads.
+ */
 function submit() {
+
     form.clearErrors()
 
     let hasError = false
 
+    // Basic required field validation.
     if (!form.person_code || form.person_code.trim() === '') {
-        form.setError('person_code', 'Person code is required.')
+
+        form.setError(
+            'person_code',
+            'Person code is required.'
+        )
+
         hasError = true
     }
 
     if (!form.first_name || form.first_name.trim() === '') {
-        form.setError('first_name', 'First name is required.')
+
+        form.setError(
+            'first_name',
+            'First name is required.'
+        )
+
         hasError = true
     }
 
     if (!form.last_name || form.last_name.trim() === '') {
-        form.setError('last_name', 'Last name is required.')
+
+        form.setError(
+            'last_name',
+            'Last name is required.'
+        )
+
         hasError = true
     }
 
+    // Trigger child component validation methods.
     if (phoneNumbersRef.value && !phoneNumbersRef.value.validate()) {
         hasError = true
     }
@@ -287,18 +355,24 @@ function submit() {
         hasError = true
     }
 
+    // Stop submission if any validation failed.
     if (hasError) return
 
     form
         .transform((data) => {
+
+            // Convert attachment data into separate
+            // metadata and file upload arrays.
             const transformed = {
                 ...data,
+
                 attachment_meta: data.attachments.map((attachment, index) => ({
                     category: attachment.category ?? '',
                     description: attachment.description ?? '',
                     is_primary: attachment.is_primary ? 1 : 0,
                     sort_order: index,
                 })),
+
                 new_attachments: data.attachments
                     .map((attachment) => attachment.file)
                     .filter(Boolean),
@@ -308,6 +382,7 @@ function submit() {
 
             return transformed
         })
+
         .post('/people', {
             forceFormData: true,
         })

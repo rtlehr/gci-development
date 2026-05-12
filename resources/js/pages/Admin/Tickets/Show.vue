@@ -6,6 +6,8 @@ import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Badge } from '@/components/ui/badge'
 
+// Ticket record and assignable user list
+// passed from the backend.
 const props = defineProps({
     ticket: {
         type: Object,
@@ -17,30 +19,52 @@ const props = defineProps({
     },
 })
 
+// Reactive form state used to manage
+// ticket updates such as status, assignment,
+// importance, and resolution notes.
 const ticketForm = useForm({
     status: props.ticket.status ?? 'new',
     importance: props.ticket.importance ?? 'nice_to_have',
-    assigned_to_user_id: props.ticket.assigned_to_user_id ? String(props.ticket.assigned_to_user_id) : '',
+    assigned_to_user_id: props.ticket.assigned_to_user_id
+        ? String(props.ticket.assigned_to_user_id)
+        : '',
     resolution_notes: props.ticket.resolution_notes ?? '',
 })
 
+// Reactive form state for adding
+// timeline/activity comments.
 const commentForm = useForm({
     comment: '',
 })
 
+/**
+ * Saves ticket updates to the backend.
+ */
 function saveTicket() {
     ticketForm.put(`/admin/tickets/${props.ticket.id}`)
 }
 
+/**
+ * Adds a new activity comment to the ticket.
+ * Clears the comment field after successful save.
+ */
 function addComment() {
     commentForm.post(`/admin/tickets/${props.ticket.id}/comments`, {
         preserveScroll: true,
+
         onSuccess: () => {
             commentForm.reset()
         },
     })
 }
 
+/**
+ * Builds the display name for the user
+ * who submitted the ticket.
+ *
+ * @param {Object} ticket
+ * @returns {string}
+ */
 function submittedByName(ticket) {
     const first = ticket.submitted_by?.person?.first_name ?? ''
     const last = ticket.submitted_by?.person?.last_name ?? ''
@@ -49,6 +73,13 @@ function submittedByName(ticket) {
     return name || ticket.submitted_by?.name || '—'
 }
 
+/**
+ * Builds the display name for the assigned user.
+ * Returns "Unassigned" if no user is assigned.
+ *
+ * @param {Object} ticket
+ * @returns {string}
+ */
 function assignedToName(ticket) {
     if (!ticket.assigned_to) return 'Unassigned'
 
@@ -59,6 +90,13 @@ function assignedToName(ticket) {
     return name || ticket.assigned_to?.name || '—'
 }
 
+/**
+ * Builds the display name for the user
+ * who performed a ticket activity.
+ *
+ * @param {Object} activity
+ * @returns {string}
+ */
 function activityUserName(activity) {
     const first = activity.changed_by?.person?.first_name ?? ''
     const last = activity.changed_by?.person?.last_name ?? ''
@@ -67,44 +105,91 @@ function activityUserName(activity) {
     return name || activity.changed_by?.name || 'System'
 }
 
+/**
+ * Converts stored status values
+ * into user-friendly display text.
+ *
+ * @param {string} status
+ * @returns {string}
+ */
 function formatStatus(status) {
     if (status === 'new') return 'New'
     if (status === 'in_progress') return 'In Progress'
     if (status === 'on_hold') return 'On Hold'
     if (status === 'complete') return 'Complete'
     if (status === 'canceled') return 'Canceled'
+
     return status || '—'
 }
 
+/**
+ * Converts stored importance values
+ * into user-friendly display text.
+ *
+ * @param {string} importance
+ * @returns {string}
+ */
 function formatImportance(importance) {
     if (importance === 'show_stopper') return 'Show Stopper'
     if (importance === 'asap') return 'Needed ASAP'
     if (importance === 'nice_to_have') return 'Nice to Have'
+
     return importance || '—'
 }
 
+/**
+ * Converts stored request type values
+ * into user-friendly display text.
+ *
+ * @param {string} type
+ * @returns {string}
+ */
 function formatRequestType(type) {
     if (type === 'bug') return 'Bug'
     if (type === 'improvement') return 'Improvement'
+
     return type || '—'
 }
 
+/**
+ * Returns Tailwind badge classes
+ * based on ticket status.
+ *
+ * @param {string} status
+ * @returns {string}
+ */
 function statusBadgeClass(status) {
     if (status === 'new') return 'bg-gray-500 text-white hover:bg-gray-500'
     if (status === 'in_progress') return 'bg-blue-600 text-white hover:bg-blue-600'
     if (status === 'on_hold') return 'bg-yellow-500 text-black hover:bg-yellow-500'
     if (status === 'complete') return 'bg-green-600 text-white hover:bg-green-600'
     if (status === 'canceled') return 'bg-red-600 text-white hover:bg-red-600'
+
     return 'bg-gray-200 text-gray-800 hover:bg-gray-200'
 }
 
+/**
+ * Returns Tailwind badge classes
+ * based on ticket importance level.
+ *
+ * @param {string} importance
+ * @returns {string}
+ */
 function importanceBadgeClass(importance) {
     if (importance === 'show_stopper') return 'bg-red-600 text-white hover:bg-red-600'
     if (importance === 'asap') return 'bg-orange-500 text-white hover:bg-orange-500'
     if (importance === 'nice_to_have') return 'bg-gray-500 text-white hover:bg-gray-500'
+
     return 'bg-gray-200 text-gray-800 hover:bg-gray-200'
 }
 
+/**
+ * Builds a readable activity description
+ * based on the activity event type.
+ *
+ * @param {Object} activity
+ * @returns {string}
+ */
 function activityDescription(activity) {
     if (activity.event_type === 'created') {
         return 'created this ticket.'
@@ -133,6 +218,13 @@ function activityDescription(activity) {
     return activity.event_type
 }
 
+/**
+ * Formats a date/time value into
+ * a readable localized timestamp.
+ *
+ * @param {string} value
+ * @returns {string}
+ */
 function formatDateTime(value) {
     if (!value) return '—'
 
@@ -147,6 +239,8 @@ function formatDateTime(value) {
     }).format(date)
 }
 
+// Computed source URL value used by the template.
+// Returns a placeholder if no source URL exists.
 const sourceUrl = computed(() => props.ticket.source_url || '—')
 </script>
 

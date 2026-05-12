@@ -3,6 +3,7 @@ import { Link, useForm } from '@inertiajs/vue3'
 import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
 
+// Backend-provided user, role, and permission data.
 const props = defineProps({
     user: Object,
     roles: Array,
@@ -11,20 +12,40 @@ const props = defineProps({
     selectedPermissions: Array,
 })
 
+/**
+ * Removes duplicate IDs from an array.
+ *
+ * @param {Array} ids
+ * @returns {Array}
+ */
 const uniqueIds = (ids) => {
     return [...new Set(ids)]
 }
 
+/**
+ * Returns all permission IDs assigned to a role.
+ *
+ * @param {Object} role
+ * @returns {Array<number>}
+ */
 const getRolePermissionIds = (role) => {
     return (role.permissions || []).map((permission) => permission.id)
 }
 
+/**
+ * Builds a combined list of permission IDs
+ * from the currently selected roles.
+ *
+ * @returns {Array<number>}
+ */
 const getRolePermissionIdsFromSelectedRoles = () => {
     return props.roles
         .filter((role) => props.selectedRoles.includes(role.id))
         .flatMap((role) => getRolePermissionIds(role))
 }
 
+// Reactive Inertia form state.
+// Initializes with selected roles and merged permission IDs.
 const form = useForm({
     roles: [...props.selectedRoles],
 
@@ -34,6 +55,13 @@ const form = useForm({
     ]),
 })
 
+/**
+ * Removes roles that no longer fully match
+ * the currently selected permissions.
+ *
+ * If a permission tied to a role is manually removed,
+ * that role is automatically unchecked.
+ */
 const syncRolesFromPermissions = () => {
     form.roles = form.roles.filter((roleId) => {
 
@@ -51,6 +79,19 @@ const syncRolesFromPermissions = () => {
     })
 }
 
+/**
+ * Toggles a role on or off.
+ *
+ * When enabled:
+ * - The role is added
+ * - All role permissions are added
+ *
+ * When disabled:
+ * - The role is removed
+ * - All role permissions are removed
+ *
+ * @param {number|string} roleId
+ */
 const toggleRole = (roleId) => {
 
     const role = props.roles.find((item) => item.id === roleId)
@@ -80,6 +121,14 @@ const toggleRole = (roleId) => {
     }
 }
 
+/**
+ * Toggles an individual permission on or off.
+ *
+ * After permissions are updated, roles are re-validated
+ * to ensure selected roles still match their permission sets.
+ *
+ * @param {number|string} permissionId
+ */
 const togglePermission = (permissionId) => {
 
     if (form.permissions.includes(permissionId)) {
@@ -96,6 +145,10 @@ const togglePermission = (permissionId) => {
     syncRolesFromPermissions()
 }
 
+/**
+ * Submits the updated role and permission assignments
+ * to the backend update endpoint.
+ */
 const submit = () => {
     form.put(`/admin/users/${props.user.id}/permissions`)
 }

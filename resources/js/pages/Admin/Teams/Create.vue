@@ -46,10 +46,16 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 
+// Reactive Inertia form state.
+// Tracks field values, validation errors, and submission state.
 const form = useForm({
     team_name: '',
 })
 
+/**
+ * Submits the new team record
+ * to the backend create endpoint.
+ */
 function submit() {
     form.post('/admin/teams')
 }

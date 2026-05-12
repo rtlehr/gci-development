@@ -385,7 +385,10 @@ import { Link, router } from '@inertiajs/vue3'
 import { MoreHorizontal } from 'lucide-vue-next'
 import { computed, ref } from 'vue'
 import { useAuth } from '@/composables/useAuth'
+
 import DetailItem from '@/components/DetailItem.vue'
+import AttachmentList from '@/components/attachments/AttachmentList.vue'
+
 import {
     AlertDialog,
     AlertDialogAction,
@@ -396,9 +399,11 @@ import {
     AlertDialogHeader,
     AlertDialogTitle,
 } from '@/components/ui/alert-dialog'
+
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -407,6 +412,7 @@ import {
     DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
+
 import {
     Table,
     TableBody,
@@ -416,10 +422,11 @@ import {
     TableRow,
 } from '@/components/ui/table'
 
-import AttachmentList from '@/components/attachments/AttachmentList.vue'
-
 const { can } = useAuth()
 
+// Backend-provided person record
+// including assignments, groups, teams,
+// addresses, phone numbers, and attachments.
 const props = defineProps({
     person: {
         type: Object,
@@ -427,9 +434,13 @@ const props = defineProps({
     },
 })
 
+// Delete confirmation dialog state
+// and selected assignment ID.
 const deleteDialogOpen = ref(false)
 const assignmentToDelete = ref(null)
 
+// Returns phone numbers sorted
+// with primary numbers shown first.
 const phoneNumbers = computed(() => {
     const phones = props.person.phone_numbers ?? props.person.phoneNumbers ?? []
 
@@ -438,6 +449,8 @@ const phoneNumbers = computed(() => {
     })
 })
 
+// Returns addresses sorted
+// with primary addresses shown first.
 const addresses = computed(() => {
     const items = props.person.addresses ?? []
 
@@ -446,59 +459,106 @@ const addresses = computed(() => {
     })
 })
 
+// Returns assigned groups.
 const groups = computed(() => {
     return props.person.groups ?? []
 })
 
+// Returns assigned teams.
 const teams = computed(() => {
     return props.person.teams ?? []
 })
 
+// Filters assignments to show only
+// currently active assignments.
 const activeAssignments = computed(() => {
     if (!props.person.assignments) return []
 
     return props.person.assignments.filter((assignment) => {
         const status = String(assignment.assignment_status || '').toLowerCase()
+
         return status === 'active' || !assignment.end_date
     })
 })
 
+/**
+ * Builds the person's full display name.
+ *
+ * @param {Object} person
+ * @returns {string}
+ */
 function fullName(person) {
     const first = person.first_name ?? ''
     const last = person.last_name ?? ''
+
     return `${first} ${last}`.trim() || 'Person Details'
 }
 
+/**
+ * Formats a date value into a localized
+ * readable date string.
+ *
+ * @param {string} value
+ * @returns {string}
+ */
 function formatDate(value) {
     if (!value) return '—'
 
     const date = new Date(value)
 
-    if (Number.isNaN(date.getTime())) return value
+    if (Number.isNaN(date.getTime())) {
+        return value
+    }
 
     return date.toLocaleDateString()
 }
 
+/**
+ * Converts stored phone type values
+ * into user-friendly display text.
+ *
+ * @param {string} value
+ * @returns {string}
+ */
 function formatPhoneType(value) {
     if (!value) return 'Other'
 
     const normalized = String(value).replaceAll('_', ' ')
+
     return normalized.charAt(0).toUpperCase() + normalized.slice(1)
 }
 
+/**
+ * Converts stored address type values
+ * into user-friendly display text.
+ *
+ * @param {string} value
+ * @returns {string}
+ */
 function formatAddressType(value) {
     if (!value) return 'Other'
 
     const normalized = String(value).replaceAll('_', ' ')
+
     return normalized.charAt(0).toUpperCase() + normalized.slice(1)
 }
 
+/**
+ * Builds formatted address lines
+ * for display in the UI.
+ *
+ * @param {Object} address
+ * @returns {Array<string>}
+ */
 function addressLines(address) {
+
     const cityStatePostal = [
         address.city,
         address.state,
         address.postal_code,
-    ].filter(Boolean).join(', ')
+    ]
+        .filter(Boolean)
+        .join(', ')
 
     return [
         address.line_1,
@@ -508,11 +568,21 @@ function addressLines(address) {
     ].filter(Boolean)
 }
 
+/**
+ * Opens the delete confirmation dialog
+ * for the selected assignment.
+ *
+ * @param {number|string} id
+ */
 function openDeleteDialog(id) {
     assignmentToDelete.value = id
     deleteDialogOpen.value = true
 }
 
+/**
+ * Deletes the selected assignment
+ * and returns the user to the current person page.
+ */
 function confirmDelete() {
     if (!assignmentToDelete.value) return
 
@@ -520,7 +590,9 @@ function confirmDelete() {
         data: {
             return_to: `/people/${props.person.id}`,
         },
+
         preserveScroll: true,
+
         onFinish: () => {
             deleteDialogOpen.value = false
             assignmentToDelete.value = null

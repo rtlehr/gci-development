@@ -21,6 +21,8 @@ import {
     TableRow,
 } from '@/components/ui/table'
 
+// Backend-provided ticket data, filters,
+// sorting state, and column configuration.
 const props = defineProps({
     tickets: {
         type: Object,
@@ -86,8 +88,10 @@ const props = defineProps({
     },
 })
 
+// Controls visibility of the column settings panel.
 const showColumnSettings = ref(false)
 
+// Local reactive filter state used by the search/filter form.
 const filterForm = reactive({
     search: props.filters?.search ?? '',
     status: props.filters?.status ?? '',
@@ -96,11 +100,14 @@ const filterForm = reactive({
     assigned_to_user_id: props.filters?.assigned_to_user_id ?? '',
 })
 
+// Local editable column configuration state.
 const settingsForm = reactive({
     visibleColumns: [...props.visibleColumns],
     columnOrder: [...props.columnOrder],
 })
 
+// Returns the active/visible table columns
+// in the correct user-defined order.
 const activeColumns = computed(() => {
     return settingsForm.columnOrder
         .filter((key) => settingsForm.visibleColumns.includes(key))
@@ -108,12 +115,16 @@ const activeColumns = computed(() => {
         .filter(Boolean)
 })
 
+// Returns all column definitions
+// in the current display order.
 const orderedColumnDefinitions = computed(() => {
     return settingsForm.columnOrder
         .map((key) => props.columns.find((col) => col.key === key))
         .filter(Boolean)
 })
 
+// Generates a compact pagination range
+// centered around the current page.
 const pagesToShow = computed(() => {
     const current = props.tickets.current_page ?? 1
     const last = props.tickets.last_page ?? 1
@@ -122,6 +133,7 @@ const pagesToShow = computed(() => {
     const end = Math.min(current + 2, last)
 
     const pages = []
+
     for (let i = start; i <= end; i++) {
         pages.push(i)
     }
@@ -129,6 +141,10 @@ const pagesToShow = computed(() => {
     return pages
 })
 
+/**
+ * Applies all active filters and reloads the ticket list
+ * while preserving the current sorting state.
+ */
 function applyFilters() {
     router.get('/admin/tickets', {
         search: filterForm.search,
@@ -144,6 +160,10 @@ function applyFilters() {
     })
 }
 
+/**
+ * Clears all active filters and reloads
+ * the default ticket list.
+ */
 function resetFilters() {
     filterForm.search = ''
     filterForm.status = ''
@@ -160,6 +180,12 @@ function resetFilters() {
     })
 }
 
+/**
+ * Updates table sorting.
+ * Clicking the same column toggles asc/desc.
+ *
+ * @param {string} column
+ */
 function sortBy(column) {
     let nextDirection = 'asc'
 
@@ -181,11 +207,24 @@ function sortBy(column) {
     })
 }
 
+/**
+ * Returns the correct sorting icon component
+ * for the specified column.
+ *
+ * @param {string} column
+ * @returns {Component}
+ */
 function getSortIcon(column) {
     if (props.sort !== column) return ArrowUpDown
     return props.direction === 'asc' ? ArrowUp : ArrowDown
 }
 
+/**
+ * Navigates to a different pagination page
+ * while preserving filters and sorting.
+ *
+ * @param {number} page
+ */
 function goToPage(page) {
     router.get('/admin/tickets', {
         page,
@@ -202,24 +241,48 @@ function goToPage(page) {
     })
 }
 
+/**
+ * Returns the display label for a column key.
+ *
+ * @param {string} key
+ * @returns {string}
+ */
 function getColumnLabel(key) {
     return props.columns.find((col) => col.key === key)?.label ?? key
 }
 
+/**
+ * Moves a column one position left
+ * in the display order.
+ *
+ * @param {number} index
+ */
 function moveColumnLeft(index) {
     if (index <= 0) return
+
     const temp = settingsForm.columnOrder[index - 1]
     settingsForm.columnOrder[index - 1] = settingsForm.columnOrder[index]
     settingsForm.columnOrder[index] = temp
 }
 
+/**
+ * Moves a column one position right
+ * in the display order.
+ *
+ * @param {number} index
+ */
 function moveColumnRight(index) {
     if (index >= settingsForm.columnOrder.length - 1) return
+
     const temp = settingsForm.columnOrder[index + 1]
     settingsForm.columnOrder[index + 1] = settingsForm.columnOrder[index]
     settingsForm.columnOrder[index] = temp
 }
 
+/**
+ * Saves the current visible columns
+ * and column ordering preferences.
+ */
 function saveColumnPreferences() {
     router.post('/admin/tickets/preferences', {
         visible_columns: settingsForm.visibleColumns,
@@ -229,87 +292,170 @@ function saveColumnPreferences() {
     })
 }
 
+/**
+ * Resets local unsaved column settings
+ * back to the backend-provided defaults.
+ */
 function resetColumnSettingsLocally() {
     settingsForm.visibleColumns = [...props.visibleColumns]
     settingsForm.columnOrder = [...props.columnOrder]
 }
 
+/**
+ * Removes saved user preferences
+ * and restores application defaults.
+ */
 function resetPreferencesOnServer() {
     router.delete('/admin/tickets/preferences', {
         preserveScroll: true,
     })
 }
 
+/**
+ * Builds the display name for the user
+ * who submitted the ticket.
+ *
+ * @param {Object} ticket
+ * @returns {string}
+ */
 function submittedByName(ticket) {
     const first = ticket.submitted_by?.person?.first_name ?? ''
     const last = ticket.submitted_by?.person?.last_name ?? ''
     const name = `${first} ${last}`.trim()
+
     return name || ticket.submitted_by?.name || '—'
 }
 
+/**
+ * Builds the display name for the assigned user.
+ * Returns "Unassigned" if no user is assigned.
+ *
+ * @param {Object} ticket
+ * @returns {string}
+ */
 function assignedToName(ticket) {
     if (!ticket.assigned_to) return 'Unassigned'
+
     const first = ticket.assigned_to?.person?.first_name ?? ''
     const last = ticket.assigned_to?.person?.last_name ?? ''
     const name = `${first} ${last}`.trim()
+
     return name || ticket.assigned_to?.name || '—'
 }
 
+/**
+ * Formats table cell values for display.
+ * Applies special formatting logic to known ticket fields.
+ *
+ * @param {Object} ticket
+ * @param {string} key
+ * @returns {string}
+ */
 function formatCell(ticket, key) {
     switch (key) {
         case 'submitted_by_name':
             return ticket.submitted_by_name || submittedByName(ticket)
+
         case 'assigned_to_name':
             return ticket.assigned_to_name || assignedToName(ticket)
+
         case 'request_type':
             return formatRequestType(ticket.request_type)
+
         case 'importance':
             return formatImportance(ticket.importance)
+
         case 'status':
             return formatStatus(ticket.status)
+
         default:
             return ticket[key] ?? '—'
     }
 }
 
+/**
+ * Returns Tailwind badge classes
+ * based on ticket status.
+ *
+ * @param {string} status
+ * @returns {string}
+ */
 function statusBadgeClass(status) {
     if (status === 'new') return 'bg-gray-500 text-white'
     if (status === 'in_progress') return 'bg-blue-600 text-white'
     if (status === 'on_hold') return 'bg-yellow-500 text-black'
     if (status === 'complete') return 'bg-green-600 text-white'
     if (status === 'canceled') return 'bg-red-600 text-white'
+
     return 'bg-gray-200 text-gray-800'
 }
 
+/**
+ * Returns Tailwind badge classes
+ * based on ticket importance level.
+ *
+ * @param {string} importance
+ * @returns {string}
+ */
 function importanceBadgeClass(importance) {
     if (importance === 'show_stopper') return 'bg-red-600 text-white'
     if (importance === 'asap') return 'bg-orange-500 text-white'
     if (importance === 'nice_to_have') return 'bg-gray-500 text-white'
+
     return 'bg-gray-200 text-gray-800'
 }
 
+/**
+ * Converts stored status values
+ * into user-friendly display text.
+ *
+ * @param {string} status
+ * @returns {string}
+ */
 function formatStatus(status) {
     if (status === 'new') return 'New'
     if (status === 'in_progress') return 'In Progress'
     if (status === 'on_hold') return 'On Hold'
     if (status === 'complete') return 'Complete'
     if (status === 'canceled') return 'Canceled'
+
     return status || '—'
 }
 
+/**
+ * Converts stored importance values
+ * into user-friendly display text.
+ *
+ * @param {string} importance
+ * @returns {string}
+ */
 function formatImportance(importance) {
     if (importance === 'show_stopper') return 'Show Stopper'
     if (importance === 'asap') return 'Needed ASAP'
     if (importance === 'nice_to_have') return 'Nice to Have'
+
     return importance || '—'
 }
 
+/**
+ * Converts stored request type values
+ * into user-friendly display text.
+ *
+ * @param {string} type
+ * @returns {string}
+ */
 function formatRequestType(type) {
     if (type === 'bug') return 'Bug'
     if (type === 'improvement') return 'Improvement'
+
     return type || '—'
 }
 
+/**
+ * Builds the CSV export URL using the current
+ * filters and column settings, then redirects
+ * the browser to the export endpoint.
+ */
 function exportCsv() {
     const params = new URLSearchParams()
 

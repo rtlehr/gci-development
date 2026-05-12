@@ -186,6 +186,8 @@
 import { useForm, Link } from '@inertiajs/vue3'
 import CandidateWorkflowEditor from '@/components/forms/CandidateWorkflowEditor.vue'
 
+// Backend-provided candidate data,
+// workflow steps, people, and positions.
 const props = defineProps({
     candidate: Object,
     people: Array,
@@ -193,11 +195,23 @@ const props = defineProps({
     workflowSteps: Array,
 })
 
+/**
+ * Normalizes datetime values into a format
+ * compatible with the HTML datetime-local input.
+ *
+ * @param {string|null} value
+ * @returns {string}
+ */
 function normalizeDateTime(value) {
     if (!value) return ''
-    return value.length >= 16 ? value.slice(0, 16) : value
+
+    return value.length >= 16
+        ? value.slice(0, 16)
+        : value
 }
 
+// Reactive Inertia form state initialized
+// with the existing candidate values.
 const form = useForm({
     person_id: props.candidate.person_id ?? '',
     position_id: props.candidate.position_id ?? '',
@@ -209,6 +223,10 @@ const form = useForm({
     step_events: [],
 })
 
+/**
+ * Submits the updated candidate data
+ * to the backend update endpoint.
+ */
 function submit() {
     form.put(`/candidates/${props.candidate.id}`)
 }

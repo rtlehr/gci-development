@@ -176,20 +176,34 @@
 <script setup>
 import { Link, useForm } from '@inertiajs/vue3'
 import { ref } from 'vue'
+
 import AttachmentUploader from '@/components/attachments/AttachmentUploader.vue'
 import AddressesEditor from '@/components/forms/AddressesEditor.vue'
 import AssignmentsEditor from '@/components/forms/AssignmentsEditor.vue'
 import PhoneNumbersEditor from '@/components/forms/PhoneNumbersEditor.vue'
+
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+
+import {
+    Card,
+    CardContent,
+    CardDescription,
+    CardHeader,
+    CardTitle,
+} from '@/components/ui/card'
+
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 
+// References to child form components.
+// Used to trigger validation methods before submit.
 const attachmentsRef = ref(null)
 const phoneNumbersRef = ref(null)
 const addressesRef = ref(null)
 
+// Backend-provided person, group,
+// and team data used by the form.
 const props = defineProps({
     person: {
         type: Object,
@@ -205,6 +219,13 @@ const props = defineProps({
     },
 })
 
+/**
+ * Creates a new empty phone number object
+ * for initializing or adding phone records.
+ *
+ * @param {boolean} isPrimary
+ * @returns {Object}
+ */
 const createEmptyPhoneNumber = (isPrimary = false) => ({
     id: null,
     phone_number: '',
@@ -214,6 +235,13 @@ const createEmptyPhoneNumber = (isPrimary = false) => ({
     notes: '',
 })
 
+/**
+ * Creates a new empty address object
+ * for initializing or adding address records.
+ *
+ * @param {boolean} isPrimary
+ * @returns {Object}
+ */
 const createEmptyAddress = (isPrimary = false) => ({
     id: null,
     address_type: '',
@@ -227,7 +255,13 @@ const createEmptyAddress = (isPrimary = false) => ({
     notes: '',
 })
 
-const existingPhoneNumbers = (props.person.phone_numbers ?? props.person.phoneNumbers ?? []).map((phone, index) => ({
+// Normalized phone number data loaded from the backend.
+// Ensures at least one primary phone exists.
+const existingPhoneNumbers = (
+    props.person.phone_numbers ??
+    props.person.phoneNumbers ??
+    []
+).map((phone, index) => ({
     id: phone.id ?? null,
     phone_number: phone.phone_number ?? '',
     phone_type: phone.phone_type ?? '',
@@ -240,12 +274,15 @@ const existingPhoneNumbers = (props.person.phone_numbers ?? props.person.phoneNu
 const normalizedPhoneNumbers = existingPhoneNumbers.length
     ? existingPhoneNumbers.map((phone, index) => ({
         ...phone,
+
         is_primary: existingPhoneNumbers.some((item) => item.is_primary)
             ? phone.is_primary
             : index === 0,
     }))
     : [createEmptyPhoneNumber(true)]
 
+// Normalized address data loaded from the backend.
+// Ensures at least one primary address exists.
 const existingAddresses = (props.person.addresses ?? []).map((address) => ({
     id: address.id ?? null,
     address_type: address.address_type ?? '',
@@ -262,13 +299,20 @@ const existingAddresses = (props.person.addresses ?? []).map((address) => ({
 const normalizedAddresses = existingAddresses.length
     ? existingAddresses.map((address, index) => ({
         ...address,
+
         is_primary: existingAddresses.some((item) => item.is_primary)
             ? address.is_primary
             : index === 0,
     }))
     : [createEmptyAddress(true)]
 
-const existingAttachmentsSeed = (props.person.attachments_for_ui ?? props.person.attachments ?? []).map((attachment) => ({
+// Existing attachment records formatted
+// for use in the attachment uploader component.
+const existingAttachmentsSeed = (
+    props.person.attachments_for_ui ??
+    props.person.attachments ??
+    []
+).map((attachment) => ({
     id: attachment.id ?? null,
     original_name: attachment.original_name ?? '',
     category: attachment.category ?? '',
@@ -279,9 +323,12 @@ const existingAttachmentsSeed = (props.person.attachments_for_ui ?? props.person
     marked_for_removal: false,
 }))
 
+// Existing group and team assignments.
 const existingGroupIds = (props.person.groups ?? []).map((group) => group.id)
 const existingTeamIds = (props.person.teams ?? []).map((team) => team.id)
 
+// Reactive Inertia form state initialized
+// with the existing person values.
 const form = useForm({
     person_code: props.person.person_code ?? '',
     first_name: props.person.first_name ?? '',
@@ -291,24 +338,41 @@ const form = useForm({
     email: props.person.email ?? '',
     employment_status: props.person.employment_status ?? '',
     notes: props.person.notes ?? '',
+
     group_ids: existingGroupIds,
     team_ids: existingTeamIds,
+
     phone_numbers: normalizedPhoneNumbers,
     addresses: normalizedAddresses,
+
     attachments: [],
     existing_attachments: existingAttachmentsSeed,
     remove_attachment_ids: [],
 })
 
+// Local references for cleaner template access.
 const groups = props.groups
 const teams = props.teams
 
+/**
+ * Validates uploaded attachments
+ * to ensure required files exist.
+ *
+ * @returns {boolean}
+ */
 function validateAttachments() {
+
     let hasError = false
 
     form.attachments.forEach((attachment, index) => {
+
         if (!attachment.file) {
-            form.setError(`attachments.${index}.file`, 'A file is required.')
+
+            form.setError(
+                `attachments.${index}.file`,
+                'A file is required.'
+            )
+
             hasError = true
         }
     })
@@ -316,26 +380,50 @@ function validateAttachments() {
     return hasError
 }
 
+/**
+ * Validates and submits the updated person record.
+ *
+ * Also transforms attachment data into a structure
+ * compatible with multipart/form-data uploads.
+ */
 function submit() {
+
     form.clearErrors()
 
     let hasError = false
 
+    // Basic required field validation.
     if (!form.person_code || form.person_code.trim() === '') {
-        form.setError('person_code', 'Person code is required.')
+
+        form.setError(
+            'person_code',
+            'Person code is required.'
+        )
+
         hasError = true
     }
 
     if (!form.first_name || form.first_name.trim() === '') {
-        form.setError('first_name', 'First name is required.')
+
+        form.setError(
+            'first_name',
+            'First name is required.'
+        )
+
         hasError = true
     }
 
     if (!form.last_name || form.last_name.trim() === '') {
-        form.setError('last_name', 'Last name is required.')
+
+        form.setError(
+            'last_name',
+            'Last name is required.'
+        )
+
         hasError = true
     }
 
+    // Trigger child component validation methods.
     if (phoneNumbersRef.value && !phoneNumbersRef.value.validate()) {
         hasError = true
     }
@@ -351,30 +439,42 @@ function submit() {
     if (attachmentsRef.value && !attachmentsRef.value.validate()) {
         hasError = true
     }
-    
 
+    // Stop submission if any validation failed.
     if (hasError) return
 
-    form.transform((data) => {
-        const transformed = {
-            ...data,
-            _method: 'put',
-            attachment_meta: data.attachments.map((attachment, index) => ({
-                category: attachment.category ?? '',
-                description: attachment.description ?? '',
-                is_primary: attachment.is_primary ? 1 : 0,
-                sort_order: index,
-            })),
-            new_attachments: data.attachments.map((attachment) => attachment.file).filter(Boolean),
-            remove_attachment_ids: data.remove_attachment_ids ?? [],
-        }
+    form
+        .transform((data) => {
 
-        delete transformed.attachments
-        delete transformed.existing_attachments
+            // Convert attachment data into separate
+            // metadata and file upload arrays.
+            const transformed = {
+                ...data,
 
-        return transformed
-    }).post(`/people/${props.person.id}`, {
-        forceFormData: true,
-    })
+                _method: 'put',
+
+                attachment_meta: data.attachments.map((attachment, index) => ({
+                    category: attachment.category ?? '',
+                    description: attachment.description ?? '',
+                    is_primary: attachment.is_primary ? 1 : 0,
+                    sort_order: index,
+                })),
+
+                new_attachments: data.attachments
+                    .map((attachment) => attachment.file)
+                    .filter(Boolean),
+
+                remove_attachment_ids: data.remove_attachment_ids ?? [],
+            }
+
+            delete transformed.attachments
+            delete transformed.existing_attachments
+
+            return transformed
+        })
+
+        .post(`/people/${props.person.id}`, {
+            forceFormData: true,
+        })
 }
 </script>

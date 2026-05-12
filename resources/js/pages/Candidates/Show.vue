@@ -249,6 +249,8 @@ import { Button } from '@/components/ui/button'
 
 const { can } = useAuth()
 
+// Backend-provided candidate record
+// including related workflow steps and linked records.
 const props = defineProps({
     candidate: {
         type: Object,
@@ -256,14 +258,25 @@ const props = defineProps({
     },
 })
 
+// Returns workflow step events sorted
+// by the configured workflow step order.
 const sortedStepEvents = computed(() => {
     return [...(props.candidate.step_events ?? [])].sort((a, b) => {
+
         const aOrder = a.workflow_step?.step_order ?? 9999
         const bOrder = b.workflow_step?.step_order ?? 9999
+
         return aOrder - bOrder
     })
 })
 
+/**
+ * Converts stored status values
+ * into user-friendly display text.
+ *
+ * @param {string} value
+ * @returns {string}
+ */
 function formatStatus(value) {
     if (!value) return '—'
 
@@ -272,29 +285,60 @@ function formatStatus(value) {
         .replace(/\b\w/g, (char) => char.toUpperCase())
 }
 
+/**
+ * Formats a date value into a localized
+ * readable date string.
+ *
+ * @param {string} value
+ * @returns {string}
+ */
 function formatDate(value) {
     if (!value) return '—'
 
     const date = new Date(value)
-    if (Number.isNaN(date.getTime())) return value
+
+    if (Number.isNaN(date.getTime())) {
+        return value
+    }
 
     return date.toLocaleDateString()
 }
 
+/**
+ * Formats a datetime value into a localized
+ * readable date/time string.
+ *
+ * @param {string} value
+ * @returns {string}
+ */
 function formatDateTime(value) {
     if (!value) return '—'
 
     const date = new Date(value)
-    if (Number.isNaN(date.getTime())) return value
+
+    if (Number.isNaN(date.getTime())) {
+        return value
+    }
 
     return date.toLocaleString()
 }
 
+/**
+ * Formats a numeric value as USD currency.
+ *
+ * @param {number|string} value
+ * @returns {string}
+ */
 function formatMoney(value) {
-    if (value === null || value === undefined || value === '') return '—'
+    if (value === null || value === undefined || value === '') {
+        return '—'
+    }
 
     const number = Number(value)
-    if (Number.isNaN(number)) return value
+
+    if (Number.isNaN(number)) {
+        return value
+    }
 
     return new Intl.NumberFormat(undefined, {
         style: 'currency',
@@ -302,25 +346,47 @@ function formatMoney(value) {
     }).format(number)
 }
 
+/**
+ * Returns Tailwind badge classes
+ * based on candidate status.
+ *
+ * @param {string} status
+ * @returns {string}
+ */
 function statusBadgeClass(status) {
+
     switch (status) {
+
         case 'submitted':
             return 'border-slate-300 bg-slate-50 text-slate-700'
+
         case 'selected':
             return 'border-blue-300 bg-blue-50 text-blue-700'
+
         case 'approved':
             return 'border-green-300 bg-green-50 text-green-700'
+
         case 'assigned':
             return 'border-purple-300 bg-purple-50 text-purple-700'
+
         default:
             return 'border-border bg-muted text-foreground'
     }
 }
 
+/**
+ * Determines whether a value contains
+ * non-empty text content.
+ *
+ * @param {string|null} value
+ * @returns {boolean}
+ */
 function hasText(value) {
     return String(value ?? '').trim().length > 0
 }
 
+// Small reusable inline detail display component.
+// Used throughout the page for label/value layouts.
 const DetailItem = {
     props: {
         label: {
@@ -332,10 +398,20 @@ const DetailItem = {
             default: '—',
         },
     },
+
     render() {
         return h('div', { class: 'space-y-1' }, [
-            h('div', { class: 'text-sm font-medium text-muted-foreground' }, this.label),
-            h('div', { class: 'text-sm' }, this.value || '—'),
+            h(
+                'div',
+                { class: 'text-sm font-medium text-muted-foreground' },
+                this.label
+            ),
+
+            h(
+                'div',
+                { class: 'text-sm' },
+                this.value || '—'
+            ),
         ])
     },
 }
