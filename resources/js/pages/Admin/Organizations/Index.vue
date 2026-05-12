@@ -317,6 +317,7 @@ import { Permissions } from '@/constants/permissions'
 
 const { can } = useAuth()
 
+// Backend-provided page data and current table state.
 const props = defineProps({
     organizations: {
         type: Object,
@@ -350,20 +351,25 @@ const props = defineProps({
     },
 })
 
+// Controls whether the column settings panel is visible.
 const showColumnSettings = ref(false)
 
+// Local filter state for the search form.
 const filterForm = reactive({
     search: props.filters?.search ?? '',
 })
 
+// Local editable column preference state.
 const settingsForm = reactive({
     visibleColumns: [...(props.visibleColumns ?? [])],
     columnOrder: [...(props.columnOrder ?? [])],
 })
 
+// Delete dialog state and selected organization ID.
 const deleteDialogOpen = ref(false)
 const organizationToDelete = ref(null)
 
+// Active table columns after applying visibility settings and user-defined order.
 const activeColumns = computed(() => {
     return settingsForm.columnOrder
         .filter((key) => settingsForm.visibleColumns.includes(key))
@@ -371,12 +377,14 @@ const activeColumns = computed(() => {
         .filter(Boolean)
 })
 
+// Full ordered column list used by the column settings panel.
 const orderedColumnDefinitions = computed(() => {
     return settingsForm.columnOrder
         .map((key) => props.columns.find((col) => col.key === key))
         .filter(Boolean)
 })
 
+// Compact pagination range centered around the current page.
 const pagesToShow = computed(() => {
     const current = props.organizations.current_page ?? 1
     const last = props.organizations.last_page ?? 1
@@ -392,6 +400,10 @@ const pagesToShow = computed(() => {
     return pages
 })
 
+/**
+ * Applies the current search value and reloads the list.
+ * Keeps the existing sort column and direction.
+ */
 function applyFilters() {
     router.get('/admin/organizations', {
         search: filterForm.search,
@@ -403,6 +415,10 @@ function applyFilters() {
     })
 }
 
+/**
+ * Clears the search filter and reloads the list.
+ * Keeps the existing sort column and direction.
+ */
 function resetFilters() {
     filterForm.search = ''
 
@@ -415,6 +431,12 @@ function resetFilters() {
     })
 }
 
+/**
+ * Updates the active sort column.
+ * If the same column is clicked while ascending, it switches to descending.
+ *
+ * @param {string} column
+ */
 function sortBy(column) {
     let nextDirection = 'asc'
 
@@ -432,11 +454,22 @@ function sortBy(column) {
     })
 }
 
+/**
+ * Selects the correct sort icon for a column.
+ *
+ * @param {string} column
+ * @returns {Component}
+ */
 function getSortIcon(column) {
     if (props.sort !== column) return ArrowUpDown
     return props.direction === 'asc' ? ArrowUp : ArrowDown
 }
 
+/**
+ * Loads a different pagination page while preserving filters and sorting.
+ *
+ * @param {number} page
+ */
 function goToPage(page) {
     router.get('/admin/organizations', {
         page,
@@ -449,10 +482,21 @@ function goToPage(page) {
     })
 }
 
+/**
+ * Gets the display label for a column key.
+ *
+ * @param {string} key
+ * @returns {string}
+ */
 function getColumnLabel(key) {
     return props.columns.find((col) => col.key === key)?.label ?? key
 }
 
+/**
+ * Moves a column one position left in the display order.
+ *
+ * @param {number} index
+ */
 function moveColumnLeft(index) {
     if (index <= 0) return
 
@@ -461,6 +505,11 @@ function moveColumnLeft(index) {
     settingsForm.columnOrder[index] = temp
 }
 
+/**
+ * Moves a column one position right in the display order.
+ *
+ * @param {number} index
+ */
 function moveColumnRight(index) {
     if (index >= settingsForm.columnOrder.length - 1) return
 
@@ -469,6 +518,9 @@ function moveColumnRight(index) {
     settingsForm.columnOrder[index] = temp
 }
 
+/**
+ * Saves the selected visible columns and column order to the backend.
+ */
 function saveColumnPreferences() {
     router.post('/admin/organizations/preferences', {
         visible_columns: settingsForm.visibleColumns,
@@ -478,22 +530,36 @@ function saveColumnPreferences() {
     })
 }
 
+/**
+ * Resets local unsaved column changes to the values originally provided by the backend.
+ */
 function resetColumnSettingsLocally() {
     settingsForm.visibleColumns = [...(props.visibleColumns ?? [])]
     settingsForm.columnOrder = [...(props.columnOrder ?? [])]
 }
 
+/**
+ * Deletes saved column preferences on the backend and restores application defaults.
+ */
 function resetPreferencesOnServer() {
     router.delete('/admin/organizations/preferences', {
         preserveScroll: true,
     })
 }
 
+/**
+ * Opens the delete confirmation dialog for the selected organization.
+ *
+ * @param {number|string} id
+ */
 function openDeleteDialog(id) {
     organizationToDelete.value = id
     deleteDialogOpen.value = true
 }
 
+/**
+ * Deletes the selected organization and clears dialog state when finished.
+ */
 function confirmDelete() {
     if (!organizationToDelete.value) return
 
@@ -506,6 +572,14 @@ function confirmDelete() {
     })
 }
 
+/**
+ * Formats a table cell value.
+ * Empty values display as an em dash.
+ *
+ * @param {Object} row
+ * @param {string} key
+ * @returns {string}
+ */
 function formatCell(row, key) {
     const value = row[key]
 
@@ -516,6 +590,10 @@ function formatCell(row, key) {
     return value
 }
 
+/**
+ * Builds the CSV export URL using current filters and column settings.
+ * Redirects the browser to the export endpoint.
+ */
 function exportCsv() {
     const params = new URLSearchParams()
 
