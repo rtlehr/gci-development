@@ -103,6 +103,12 @@ const allMainNavCategories: NavCategory[] = [
                 permission: 'view_admin',
             },
             {
+                title: 'Add Workflows',
+                href: '/workflows',
+                icon: LifeBuoy,
+                permission: 'view_admin',
+            },
+            {
                 title: 'View Tickets',
                 href: '/admin/tickets',
                 icon: LifeBuoy,

@@ -200,19 +200,36 @@
 <script setup>
 import { watch } from 'vue'
 import { Link, useForm } from '@inertiajs/vue3'
+
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
+
 import OrganizationSelect from '@/components/OrganizationSelect.vue'
 
+/**
+ * Returns today's date formatted for
+ * use in an HTML date input field.
+ *
+ * Adjusts for local timezone offsets
+ * to avoid UTC date shifting issues.
+ *
+ * @returns {string}
+ */
 function getTodayDate() {
     const d = new Date()
     const offset = d.getTimezoneOffset()
-    const local = new Date(d.getTime() - offset * 60 * 1000)
+
+    const local = new Date(
+        d.getTime() - offset * 60 * 1000
+    )
+
     return local.toISOString().split('T')[0]
 }
 
+// Backend-provided organization list
+// used by the organization selector.
 const props = defineProps({
     organizations: {
         type: Array,
@@ -220,6 +237,8 @@ const props = defineProps({
     },
 })
 
+// Reactive Inertia form state.
+// Stores all position-related form values.
 const form = useForm({
     position_code: '',
     status: 'Open',
@@ -235,8 +254,15 @@ const form = useForm({
     notes: '',
 })
 
+/**
+ * Watches for status changes.
+ *
+ * If the position is no longer marked as "Closed",
+ * the closed date and reason fields are automatically cleared.
+ */
 watch(
     () => form.status,
+
     (newStatus) => {
         if (newStatus !== 'Closed') {
             form.closed_at = ''
@@ -245,33 +271,66 @@ watch(
     }
 )
 
+/**
+ * Validates and submits the new position record
+ * to the backend create endpoint.
+ */
 function submit() {
+
     form.clearErrors()
 
     let hasError = false
 
+    // Required field validation.
     if (!form.job_title || form.job_title.trim() === '') {
-        form.setError('job_title', 'Job title is required.')
+
+        form.setError(
+            'job_title',
+            'Job title is required.'
+        )
+
         hasError = true
     }
 
     if (!form.status || form.status.trim() === '') {
-        form.setError('status', 'Status is required.')
+
+        form.setError(
+            'status',
+            'Status is required.'
+        )
+
         hasError = true
     }
 
+    // Additional validation required when
+    // the position status is "Closed".
     if (form.status === 'Closed') {
+
         if (!form.closed_at) {
-            form.setError('closed_at', 'Closed date is required when status is Closed.')
+
+            form.setError(
+                'closed_at',
+                'Closed date is required when status is Closed.'
+            )
+
             hasError = true
         }
 
-        if (!form.closed_reason || form.closed_reason.trim() === '') {
-            form.setError('closed_reason', 'Closed reason is required when status is Closed.')
+        if (
+            !form.closed_reason ||
+            form.closed_reason.trim() === ''
+        ) {
+
+            form.setError(
+                'closed_reason',
+                'Closed reason is required when status is Closed.'
+            )
+
             hasError = true
         }
     }
 
+    // Stop submission if validation failed.
     if (hasError) return
 
     form.post('/positions')

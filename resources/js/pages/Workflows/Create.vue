@@ -94,6 +94,8 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import WorkflowStepsEditor from '@/components/forms/WorkflowStepsEditor.vue'
 
+// Reactive Inertia form state.
+// Stores workflow details and the dynamic workflow steps collection.
 const form = useForm({
     name: '',
     code: '',
@@ -103,6 +105,11 @@ const form = useForm({
     steps: [],
 })
 
+/**
+ * Submits the new workflow record
+ * and its related workflow steps
+ * to the backend create endpoint.
+ */
 function submit() {
     form.post('/workflows')
 }

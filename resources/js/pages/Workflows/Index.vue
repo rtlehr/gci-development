@@ -231,6 +231,8 @@ import {
     Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from '@/components/ui/table'
 
+// Backend-provided workflow data, filters,
+// sorting state, and column configuration.
 const props = defineProps({
     workflows: { type: Object, required: true },
     columns: { type: Array, default: () => [] },
@@ -241,19 +243,27 @@ const props = defineProps({
     direction: { type: String, default: 'asc' },
 })
 
+// Controls visibility of the column settings panel.
 const showColumnSettings = ref(false)
+
+// Delete confirmation dialog state
+// and selected workflow ID.
 const deleteDialogOpen = ref(false)
 const workflowToDelete = ref(null)
 
+// Local reactive filter state used by the search form.
 const filterForm = reactive({
     search: props.filters?.search ?? '',
 })
 
+// Local editable column configuration state.
 const settingsForm = reactive({
     visibleColumns: [...(props.visibleColumns ?? [])],
     columnOrder: [...(props.columnOrder ?? [])],
 })
 
+// Returns the active/visible table columns
+// in the correct user-defined order.
 const activeColumns = computed(() => {
     return settingsForm.columnOrder
         .filter((key) => settingsForm.visibleColumns.includes(key))
@@ -261,22 +271,35 @@ const activeColumns = computed(() => {
         .filter(Boolean)
 })
 
+// Returns all column definitions
+// in the current display order.
 const orderedColumnDefinitions = computed(() => {
     return settingsForm.columnOrder
         .map((key) => props.columns.find((col) => col.key === key))
         .filter(Boolean)
 })
 
+// Generates a compact pagination range
+// centered around the current page.
 const pagesToShow = computed(() => {
     const current = props.workflows.current_page ?? 1
     const last = props.workflows.last_page ?? 1
     const start = Math.max(current - 2, 1)
     const end = Math.min(current + 2, last)
+
     const pages = []
-    for (let i = start; i <= end; i++) pages.push(i)
+
+    for (let i = start; i <= end; i++) {
+        pages.push(i)
+    }
+
     return pages
 })
 
+/**
+ * Applies the current search filter
+ * while preserving sorting state.
+ */
 function applyFilters() {
     router.get('/workflows', {
         search: filterForm.search,
@@ -288,8 +311,13 @@ function applyFilters() {
     })
 }
 
+/**
+ * Clears the active search filter
+ * and reloads the default workflow list.
+ */
 function resetFilters() {
     filterForm.search = ''
+
     router.get('/workflows', {
         sort: props.sort,
         direction: props.direction,
@@ -299,9 +327,18 @@ function resetFilters() {
     })
 }
 
+/**
+ * Updates table sorting.
+ * Clicking the same column toggles asc/desc.
+ *
+ * @param {string} column
+ */
 function sortBy(column) {
     let nextDirection = 'asc'
-    if (props.sort === column && props.direction === 'asc') nextDirection = 'desc'
+
+    if (props.sort === column && props.direction === 'asc') {
+        nextDirection = 'desc'
+    }
 
     router.get('/workflows', {
         search: filterForm.search,
@@ -313,11 +350,27 @@ function sortBy(column) {
     })
 }
 
+/**
+ * Returns the correct sorting icon component
+ * for the specified column.
+ *
+ * @param {string} column
+ * @returns {Component}
+ */
 function getSortIcon(column) {
     if (props.sort !== column) return ArrowUpDown
-    return props.direction === 'asc' ? ArrowUp : ArrowDown
+
+    return props.direction === 'asc'
+        ? ArrowUp
+        : ArrowDown
 }
 
+/**
+ * Navigates to a different pagination page
+ * while preserving filters and sorting.
+ *
+ * @param {number} page
+ */
 function goToPage(page) {
     router.get('/workflows', {
         page,
@@ -330,24 +383,50 @@ function goToPage(page) {
     })
 }
 
+/**
+ * Returns the display label for a column key.
+ *
+ * @param {string} key
+ * @returns {string}
+ */
 function getColumnLabel(key) {
     return props.columns.find((col) => col.key === key)?.label ?? key
 }
 
+/**
+ * Moves a column one position left
+ * in the display order.
+ *
+ * @param {number} index
+ */
 function moveColumnLeft(index) {
     if (index <= 0) return
+
     const temp = settingsForm.columnOrder[index - 1]
+
     settingsForm.columnOrder[index - 1] = settingsForm.columnOrder[index]
     settingsForm.columnOrder[index] = temp
 }
 
+/**
+ * Moves a column one position right
+ * in the display order.
+ *
+ * @param {number} index
+ */
 function moveColumnRight(index) {
     if (index >= settingsForm.columnOrder.length - 1) return
+
     const temp = settingsForm.columnOrder[index + 1]
+
     settingsForm.columnOrder[index + 1] = settingsForm.columnOrder[index]
     settingsForm.columnOrder[index] = temp
 }
 
+/**
+ * Saves the current visible columns
+ * and column ordering preferences.
+ */
 function saveColumnPreferences() {
     router.post('/workflows/preferences', {
         visible_columns: settingsForm.visibleColumns,
@@ -357,27 +436,46 @@ function saveColumnPreferences() {
     })
 }
 
+/**
+ * Resets local unsaved column settings
+ * back to the backend-provided defaults.
+ */
 function resetColumnSettingsLocally() {
     settingsForm.visibleColumns = [...(props.visibleColumns ?? [])]
     settingsForm.columnOrder = [...(props.columnOrder ?? [])]
 }
 
+/**
+ * Removes saved user preferences
+ * and restores application defaults.
+ */
 function resetPreferencesOnServer() {
     router.delete('/workflows/preferences', {
         preserveScroll: true,
     })
 }
 
+/**
+ * Opens the delete confirmation dialog
+ * for the selected workflow.
+ *
+ * @param {number|string} id
+ */
 function openDeleteDialog(id) {
     workflowToDelete.value = id
     deleteDialogOpen.value = true
 }
 
+/**
+ * Deletes the selected workflow
+ * and resets dialog state afterward.
+ */
 function confirmDelete() {
     if (!workflowToDelete.value) return
 
     router.delete(`/workflows/${workflowToDelete.value}`, {
         preserveScroll: true,
+
         onFinish: () => {
             deleteDialogOpen.value = false
             workflowToDelete.value = null
@@ -385,26 +483,52 @@ function confirmDelete() {
     })
 }
 
+/**
+ * Formats table cell values for display.
+ * Applies special formatting logic to boolean fields.
+ *
+ * @param {Object} row
+ * @param {string} key
+ * @returns {string}
+ */
 function formatCell(row, key) {
-    if (key === 'is_primary') return row.is_primary ? 'Yes' : 'No'
-    if (key === 'is_active') return row.is_active ? 'Yes' : 'No'
+
+    if (key === 'is_primary') {
+        return row.is_primary ? 'Yes' : 'No'
+    }
+
+    if (key === 'is_active') {
+        return row.is_active ? 'Yes' : 'No'
+    }
 
     const value = row[key]
-    if (value === null || value === undefined || value === '') return '—'
+
+    if (value === null || value === undefined || value === '') {
+        return '—'
+    }
+
     return value
 }
 
+/**
+ * Builds the CSV export URL using the current
+ * filters and column settings, then redirects
+ * the browser to the export endpoint.
+ */
 function exportCsv() {
     const params = new URLSearchParams()
 
+    // Current search filter.
     if (filterForm.search) {
         params.append('search', filterForm.search)
     }
 
+    // Current visible columns.
     settingsForm.visibleColumns.forEach((col) => {
         params.append('visible_columns[]', col)
     })
 
+    // Current column order.
     settingsForm.columnOrder.forEach((col) => {
         params.append('column_order[]', col)
     })

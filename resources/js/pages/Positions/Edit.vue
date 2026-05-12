@@ -126,12 +126,16 @@
 <script setup>
 import { watch } from 'vue'
 import { Link, useForm } from '@inertiajs/vue3'
+
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
+
 import OrganizationSelect from '@/components/OrganizationSelect.vue'
 
+// Backend-provided position record
+// and organization list used by the form.
 const props = defineProps({
     position: {
         type: Object,
@@ -143,15 +147,32 @@ const props = defineProps({
     },
 })
 
+/**
+ * Formats a date value for use
+ * in an HTML date input field.
+ *
+ * @param {string|null} value
+ * @returns {string}
+ */
 function formatDateForInput(value) {
     if (!value) return ''
+
     return String(value).slice(0, 10)
 }
 
+/**
+ * Normalizes status values into the exact
+ * display values expected by the select input.
+ *
+ * @param {string|null} status
+ * @returns {string}
+ */
 function normalizeStatus(status) {
     if (!status) return ''
 
-    const value = String(status).trim().toLowerCase()
+    const value = String(status)
+        .trim()
+        .toLowerCase()
 
     if (value === 'open') return 'Open'
     if (value === 'in process') return 'In Process'
@@ -160,6 +181,8 @@ function normalizeStatus(status) {
     return ''
 }
 
+// Reactive Inertia form state initialized
+// with the existing position values.
 const form = useForm({
     position_code: props.position.position_code ?? '',
     status: normalizeStatus(props.position.status),
@@ -175,8 +198,15 @@ const form = useForm({
     notes: props.position.notes ?? '',
 })
 
+/**
+ * Watches for status changes.
+ *
+ * If the position is no longer marked as "Closed",
+ * the closed date and reason fields are automatically cleared.
+ */
 watch(
     () => form.status,
+
     (newStatus) => {
         if (newStatus !== 'Closed') {
             form.closed_at = ''
@@ -185,33 +215,66 @@ watch(
     }
 )
 
+/**
+ * Validates and submits the updated position record
+ * to the backend update endpoint.
+ */
 function submit() {
+
     form.clearErrors()
 
     let hasError = false
 
+    // Required field validation.
     if (!form.job_title || form.job_title.trim() === '') {
-        form.setError('job_title', 'Job title is required.')
+
+        form.setError(
+            'job_title',
+            'Job title is required.'
+        )
+
         hasError = true
     }
 
     if (!form.status || form.status.trim() === '') {
-        form.setError('status', 'Status is required.')
+
+        form.setError(
+            'status',
+            'Status is required.'
+        )
+
         hasError = true
     }
 
+    // Additional validation required when
+    // the position status is "Closed".
     if (form.status === 'Closed') {
+
         if (!form.closed_at) {
-            form.setError('closed_at', 'Closed date is required when status is Closed.')
+
+            form.setError(
+                'closed_at',
+                'Closed date is required when status is Closed.'
+            )
+
             hasError = true
         }
 
-        if (!form.closed_reason || form.closed_reason.trim() === '') {
-            form.setError('closed_reason', 'Closed reason is required when status is Closed.')
+        if (
+            !form.closed_reason ||
+            form.closed_reason.trim() === ''
+        ) {
+
+            form.setError(
+                'closed_reason',
+                'Closed reason is required when status is Closed.'
+            )
+
             hasError = true
         }
     }
 
+    // Stop submission if validation failed.
     if (hasError) return
 
     form.put(`/positions/${props.position.id}`)

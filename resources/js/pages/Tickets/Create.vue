@@ -1,10 +1,13 @@
 <script setup>
 import { Link, useForm } from '@inertiajs/vue3'
+
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 
+// Backend-provided current user data
+// and optional source page URL.
 const props = defineProps({
     currentUser: {
         type: Object,
@@ -16,6 +19,8 @@ const props = defineProps({
     },
 })
 
+// Reactive Inertia form state.
+// Stores all ticket request form values.
 const form = useForm({
     title: '',
     request_type: 'bug',
@@ -26,25 +31,51 @@ const form = useForm({
     screenshot: null,
 })
 
+/**
+ * Stores the selected screenshot file
+ * from the file input element.
+ *
+ * @param {Event} event
+ */
 function handleScreenshotChange(event) {
     form.screenshot = event.target.files[0] || null
 }
 
+/**
+ * Validates and submits the ticket request
+ * to the backend create endpoint.
+ */
 function submit() {
+
     form.clearErrors()
 
     let hasError = false
 
+    // Required field validation.
     if (!form.title || form.title.trim() === '') {
-        form.setError('title', 'Title is required.')
+
+        form.setError(
+            'title',
+            'Title is required.'
+        )
+
         hasError = true
     }
 
-    if (!form.description || form.description.trim() === '') {
-        form.setError('description', 'Explanation of request is required.')
+    if (
+        !form.description ||
+        form.description.trim() === ''
+    ) {
+
+        form.setError(
+            'description',
+            'Explanation of request is required.'
+        )
+
         hasError = true
     }
 
+    // Stop submission if validation failed.
     if (hasError) return
 
     form.post('/tickets')

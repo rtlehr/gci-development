@@ -162,11 +162,14 @@
 
 <script setup>
 import { Link, useForm } from '@inertiajs/vue3'
+
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 
+// Backend-provided people, positions,
+// and optional prefilled assignment values.
 const props = defineProps({
     people: {
         type: Array,
@@ -185,13 +188,28 @@ const props = defineProps({
     },
 })
 
+/**
+ * Returns today's date formatted for
+ * use in an HTML date input field.
+ *
+ * Adjusts for local timezone offsets
+ * to avoid UTC date shifting issues.
+ *
+ * @returns {string}
+ */
 function getTodayDate() {
     const d = new Date()
     const offset = d.getTimezoneOffset()
-    const local = new Date(d.getTime() - offset * 60 * 1000)
+
+    const local = new Date(
+        d.getTime() - offset * 60 * 1000
+    )
+
     return local.toISOString().split('T')[0]
 }
 
+// Reactive Inertia form state.
+// Stores assignment form values.
 const form = useForm({
     person_id: props.prefill?.person_id ?? '',
     position_id: props.prefill?.position_id ?? '',
@@ -202,11 +220,17 @@ const form = useForm({
     notes: '',
 })
 
+/**
+ * Validates and submits the new assignment record
+ * to the backend create endpoint.
+ */
 function submit() {
+
     form.clearErrors()
 
     let hasError = false
 
+    // Required field validation.
     if (!form.person_id) {
         form.setError('person_id', 'Person is required.')
         hasError = true
@@ -227,6 +251,7 @@ function submit() {
         hasError = true
     }
 
+    // Stop submission if validation failed.
     if (hasError) return
 
     form.post('/position-assignments')

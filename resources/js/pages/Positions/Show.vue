@@ -237,9 +237,12 @@ import { computed, ref } from 'vue'
 import { Link, router } from '@inertiajs/vue3'
 import { MoreHorizontal } from 'lucide-vue-next'
 import { useAuth } from '@/composables/useAuth'
+
 import DetailItem from '@/components/DetailItem.vue'
+
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+
 import {
     AlertDialog,
     AlertDialogAction,
@@ -250,6 +253,7 @@ import {
     AlertDialogHeader,
     AlertDialogTitle,
 } from '@/components/ui/alert-dialog'
+
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -258,6 +262,7 @@ import {
     DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
+
 import {
     Table,
     TableBody,
@@ -269,6 +274,8 @@ import {
 
 const { can } = useAuth()
 
+// Backend-provided position record
+// including assignment history and related people.
 const props = defineProps({
     position: {
         type: Object,
@@ -276,28 +283,51 @@ const props = defineProps({
     },
 })
 
+// Delete confirmation dialog state
+// and selected assignment ID.
 const deleteDialogOpen = ref(false)
 const assignmentToDelete = ref(null)
 
+// Filters assignments to show only
+// currently active assignments.
 const activeAssignments = computed(() => {
     if (!props.position.assignments) return []
 
     return props.position.assignments.filter((assignment) => {
-        const status = String(assignment.assignment_status || '').toLowerCase()
+
+        const status = String(
+            assignment.assignment_status || ''
+        ).toLowerCase()
+
         return status === 'active' || !assignment.end_date
     })
 })
 
+/**
+ * Formats a date value into a localized
+ * readable date string.
+ *
+ * @param {string} value
+ * @returns {string}
+ */
 function formatDate(value) {
     if (!value) return '—'
 
     const date = new Date(value)
 
-    if (Number.isNaN(date.getTime())) return value
+    if (Number.isNaN(date.getTime())) {
+        return value
+    }
 
     return date.toLocaleDateString()
 }
 
+/**
+ * Builds the person's full display name.
+ *
+ * @param {Object} person
+ * @returns {string}
+ */
 function fullName(person) {
     if (!person) return '—'
 
@@ -307,11 +337,21 @@ function fullName(person) {
     return `${first} ${last}`.trim() || '—'
 }
 
+/**
+ * Opens the delete confirmation dialog
+ * for the selected assignment.
+ *
+ * @param {number|string} id
+ */
 function openDeleteDialog(id) {
     assignmentToDelete.value = id
     deleteDialogOpen.value = true
 }
 
+/**
+ * Deletes the selected assignment
+ * and returns the user to the current position page.
+ */
 function confirmDelete() {
     if (!assignmentToDelete.value) return
 
@@ -319,7 +359,9 @@ function confirmDelete() {
         data: {
             return_to: `/positions/${props.position.id}`,
         },
+
         preserveScroll: true,
+
         onFinish: () => {
             deleteDialogOpen.value = false
             assignmentToDelete.value = null

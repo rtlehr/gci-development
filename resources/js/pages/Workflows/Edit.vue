@@ -92,6 +92,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import WorkflowStepsEditor from '@/components/forms/WorkflowStepsEditor.vue'
 
+// Existing workflow record passed from the backend.
 const props = defineProps({
     workflow: {
         type: Object,
@@ -99,6 +100,8 @@ const props = defineProps({
     },
 })
 
+// Reactive Inertia form state initialized
+// with the existing workflow values and steps.
 const form = useForm({
     name: props.workflow.name ?? '',
     code: props.workflow.code ?? '',
@@ -108,6 +111,11 @@ const form = useForm({
     steps: props.workflow.steps ?? [],
 })
 
+/**
+ * Submits the updated workflow record
+ * and related workflow steps
+ * to the backend update endpoint.
+ */
 function submit() {
     form.put(`/workflows/${props.workflow.id}`)
 }

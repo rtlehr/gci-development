@@ -362,6 +362,10 @@ import {
 
 import { Permissions } from '@/constants/permissions'
 
+const { can } = useAuth()
+
+// Backend-provided position data, filters,
+// sorting state, and column configuration.
 const props = defineProps({
     positions: {
         type: Object,
@@ -396,23 +400,27 @@ const props = defineProps({
     },
 })
 
-const { can } = useAuth()
-
+// Controls visibility of the column settings panel.
 const showColumnSettings = ref(false)
 
+// Local reactive filter state used by the search form.
 const filterForm = reactive({
     search: props.filters?.search ?? '',
     status: props.filters?.status ?? '',
 })
 
+// Local editable column configuration state.
 const settingsForm = reactive({
     visibleColumns: [...(props.visibleColumns ?? [])],
     columnOrder: [...(props.columnOrder ?? [])],
 })
 
+// Delete confirmation dialog state and selected position ID.
 const deleteDialogOpen = ref(false)
 const positionToDelete = ref(null)
 
+// Returns the active/visible table columns
+// in the correct user-defined order.
 const activeColumns = computed(() => {
     return settingsForm.columnOrder
         .filter((key) => settingsForm.visibleColumns.includes(key))
@@ -420,12 +428,16 @@ const activeColumns = computed(() => {
         .filter(Boolean)
 })
 
+// Returns all column definitions
+// in the current display order.
 const orderedColumnDefinitions = computed(() => {
     return settingsForm.columnOrder
         .map((key) => props.columns.find((col) => col.key === key))
         .filter(Boolean)
 })
 
+// Generates a compact pagination range
+// centered around the current page.
 const pagesToShow = computed(() => {
     const current = props.positions.current_page ?? 1
     const last = props.positions.last_page ?? 1
@@ -434,6 +446,7 @@ const pagesToShow = computed(() => {
     const end = Math.min(current + 2, last)
 
     const pages = []
+
     for (let i = start; i <= end; i++) {
         pages.push(i)
     }
@@ -441,6 +454,10 @@ const pagesToShow = computed(() => {
     return pages
 })
 
+/**
+ * Applies the current search and status filters
+ * while preserving sorting state.
+ */
 function applyFilters() {
     router.get('/positions', {
         search: filterForm.search,
@@ -453,6 +470,10 @@ function applyFilters() {
     })
 }
 
+/**
+ * Clears all active filters
+ * and reloads the default position list.
+ */
 function resetFilters() {
     filterForm.search = ''
     filterForm.status = ''
@@ -466,6 +487,12 @@ function resetFilters() {
     })
 }
 
+/**
+ * Updates table sorting.
+ * Clicking the same column toggles asc/desc.
+ *
+ * @param {string} column
+ */
 function sortBy(column) {
     let nextDirection = 'asc'
 
@@ -484,11 +511,27 @@ function sortBy(column) {
     })
 }
 
+/**
+ * Returns the correct sorting icon component
+ * for the specified column.
+ *
+ * @param {string} column
+ * @returns {Component}
+ */
 function getSortIcon(column) {
     if (props.sort !== column) return ArrowUpDown
-    return props.direction === 'asc' ? ArrowUp : ArrowDown
+
+    return props.direction === 'asc'
+        ? ArrowUp
+        : ArrowDown
 }
 
+/**
+ * Navigates to a different pagination page
+ * while preserving filters and sorting.
+ *
+ * @param {number} page
+ */
 function goToPage(page) {
     router.get('/positions', {
         page,
@@ -502,26 +545,50 @@ function goToPage(page) {
     })
 }
 
+/**
+ * Returns the display label for a column key.
+ *
+ * @param {string} key
+ * @returns {string}
+ */
 function getColumnLabel(key) {
     return props.columns.find((col) => col.key === key)?.label ?? key
 }
 
+/**
+ * Moves a column one position left
+ * in the display order.
+ *
+ * @param {number} index
+ */
 function moveColumnLeft(index) {
     if (index <= 0) return
 
     const temp = settingsForm.columnOrder[index - 1]
+
     settingsForm.columnOrder[index - 1] = settingsForm.columnOrder[index]
     settingsForm.columnOrder[index] = temp
 }
 
+/**
+ * Moves a column one position right
+ * in the display order.
+ *
+ * @param {number} index
+ */
 function moveColumnRight(index) {
     if (index >= settingsForm.columnOrder.length - 1) return
 
     const temp = settingsForm.columnOrder[index + 1]
+
     settingsForm.columnOrder[index + 1] = settingsForm.columnOrder[index]
     settingsForm.columnOrder[index] = temp
 }
 
+/**
+ * Saves the current visible columns
+ * and column ordering preferences.
+ */
 function saveColumnPreferences() {
     router.post('/positions/preferences', {
         visible_columns: settingsForm.visibleColumns,
@@ -531,27 +598,46 @@ function saveColumnPreferences() {
     })
 }
 
+/**
+ * Resets local unsaved column settings
+ * back to the backend-provided defaults.
+ */
 function resetColumnSettingsLocally() {
     settingsForm.visibleColumns = [...(props.visibleColumns ?? [])]
     settingsForm.columnOrder = [...(props.columnOrder ?? [])]
 }
 
+/**
+ * Removes saved user preferences
+ * and restores application defaults.
+ */
 function resetPreferencesOnServer() {
     router.delete('/positions/preferences', {
         preserveScroll: true,
     })
 }
 
+/**
+ * Opens the delete confirmation dialog
+ * for the selected position.
+ *
+ * @param {number|string} id
+ */
 function openDeleteDialog(id) {
     positionToDelete.value = id
     deleteDialogOpen.value = true
 }
 
+/**
+ * Deletes the selected position
+ * and resets dialog state afterward.
+ */
 function confirmDelete() {
     if (!positionToDelete.value) return
 
     router.delete(`/positions/${positionToDelete.value}`, {
         preserveScroll: true,
+
         onFinish: () => {
             deleteDialogOpen.value = false
             positionToDelete.value = null
@@ -559,18 +645,42 @@ function confirmDelete() {
     })
 }
 
+/**
+ * Returns Tailwind badge classes
+ * based on position status.
+ *
+ * @param {string} status
+ * @returns {string}
+ */
 function getStatusClass(status) {
-    if (!status) return 'bg-gray-200 text-gray-800 hover:bg-gray-200'
+    if (!status) {
+        return 'bg-gray-200 text-gray-800 hover:bg-gray-200'
+    }
 
     const value = String(status).toLowerCase()
 
-    if (value === 'open') return 'bg-blue-500 text-white hover:bg-blue-500'
-    if (value === 'in process') return 'bg-yellow-500 text-black hover:bg-yellow-500'
-    if (value === 'closed') return 'bg-green-600 text-white hover:bg-green-600'
+    if (value === 'open') {
+        return 'bg-blue-500 text-white hover:bg-blue-500'
+    }
+
+    if (value === 'in process') {
+        return 'bg-yellow-500 text-black hover:bg-yellow-500'
+    }
+
+    if (value === 'closed') {
+        return 'bg-green-600 text-white hover:bg-green-600'
+    }
 
     return 'bg-gray-200 text-gray-800 hover:bg-gray-200'
 }
 
+/**
+ * Formats table cell values for display.
+ *
+ * @param {Object} row
+ * @param {string} key
+ * @returns {string}
+ */
 function formatCell(row, key) {
     const value = row[key]
 
@@ -581,10 +691,15 @@ function formatCell(row, key) {
     return value
 }
 
+/**
+ * Builds the CSV export URL using the current
+ * filters and column settings, then redirects
+ * the browser to the export endpoint.
+ */
 function exportCsv() {
     const params = new URLSearchParams()
 
-    // current filters
+    // Current filters.
     if (filterForm.search) {
         params.append('search', filterForm.search)
     }
@@ -593,12 +708,12 @@ function exportCsv() {
         params.append('status', filterForm.status)
     }
 
-    // current visible columns
+    // Current visible columns.
     settingsForm.visibleColumns.forEach((col) => {
         params.append('visible_columns[]', col)
     })
 
-    // current order
+    // Current column order.
     settingsForm.columnOrder.forEach((col) => {
         params.append('column_order[]', col)
     })

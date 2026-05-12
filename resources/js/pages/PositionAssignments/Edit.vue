@@ -163,11 +163,14 @@
 <script setup>
 import { computed } from 'vue'
 import { Link, useForm } from '@inertiajs/vue3'
+
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 
+// Backend-provided assignment record,
+// people list, positions list, and optional return URL.
 const props = defineProps({
     assignment: {
         type: Object,
@@ -187,15 +190,27 @@ const props = defineProps({
     },
 })
 
+/**
+ * Formats a date value for use
+ * in an HTML date input field.
+ *
+ * @param {string|null} value
+ * @returns {string}
+ */
 function formatDateForInput(value) {
     if (!value) return ''
+
     return String(value).slice(0, 10)
 }
 
+// Computed return URL used by the Back
+// and Cancel buttons in the template.
 const returnTarget = computed(() => {
     return props.return_to || `/people/${props.assignment.person_id}`
 })
 
+// Reactive Inertia form state initialized
+// with the existing assignment values.
 const form = useForm({
     person_id: props.assignment.person_id ?? '',
     position_id: props.assignment.position_id ?? '',
@@ -207,11 +222,17 @@ const form = useForm({
     return_to: props.return_to ?? '',
 })
 
+/**
+ * Validates and submits the updated assignment record
+ * to the backend update endpoint.
+ */
 function submit() {
+
     form.clearErrors()
 
     let hasError = false
 
+    // Required field validation.
     if (!form.person_id) {
         form.setError('person_id', 'Person is required.')
         hasError = true
@@ -232,11 +253,21 @@ function submit() {
         hasError = true
     }
 
-    if (form.end_date && form.start_date && form.end_date < form.start_date) {
-        form.setError('end_date', 'End date must be on or after the start date.')
+    // Validate that the end date is not earlier than the start date.
+    if (
+        form.end_date &&
+        form.start_date &&
+        form.end_date < form.start_date
+    ) {
+        form.setError(
+            'end_date',
+            'End date must be on or after the start date.'
+        )
+
         hasError = true
     }
 
+    // Stop submission if validation failed.
     if (hasError) return
 
     form.put(`/position-assignments/${props.assignment.id}`)
