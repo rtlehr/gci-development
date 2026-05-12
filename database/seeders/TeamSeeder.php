@@ -11,6 +11,9 @@ class TeamSeeder extends Seeder
     {
         $teams = [
             [
+                'team_name' => 'DEVELOPER',
+            ],
+            [
                 'team_name' => 'TEAM ONE',
             ],
             [

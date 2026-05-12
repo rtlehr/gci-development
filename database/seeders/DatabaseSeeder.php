@@ -13,12 +13,12 @@ class DatabaseSeeder extends Seeder
             RoleSeeder::class,
             WorkflowStepSeeder::class,
             PageHelpSeeder::class,
-            AdminUserSeeder::class,
             PositionSeeder::class,
             OrganizationSeeder::class,
-            CandidateSeeder::class,
             TeamSeeder::class,
             GroupSeeder::class,
+            AdminUserSeeder::class,
+            CandidateSeeder::class,
         ]);
     }
 }

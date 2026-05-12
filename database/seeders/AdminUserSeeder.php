@@ -9,6 +9,8 @@ use App\Models\User;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use App\Models\Group;
+use App\Models\Team;
 
 class AdminUserSeeder extends Seeder
 {
@@ -28,6 +30,8 @@ class AdminUserSeeder extends Seeder
                     'company_name' => 'Internal',
                     'notes' => 'Default seeded owner account.',
                     'role_name' => 'owner',
+                    'groups' => [],
+                    'teams' => [],
                 ],
                 [
                     'email' => 'admin@example.com',
@@ -40,6 +44,8 @@ class AdminUserSeeder extends Seeder
                     'company_name' => 'Internal',
                     'notes' => 'Default seeded administrator account.',
                     'role_name' => 'admin',
+                    'groups' => [],
+                    'teams' => [],
                 ],
                 [
                     'email' => 'cotr@example.com',
@@ -52,6 +58,8 @@ class AdminUserSeeder extends Seeder
                     'company_name' => 'Internal',
                     'notes' => 'Default seeded COTR account.',
                     'role_name' => 'cotr',
+                    'groups' => [],
+                    'teams' => [],
                 ],
                 [
                     'email' => 'pmo@example.com',
@@ -64,6 +72,8 @@ class AdminUserSeeder extends Seeder
                     'company_name' => 'Internal',
                     'notes' => 'Default seeded PMO account.',
                     'role_name' => 'pmo',
+                    'groups' => [],
+                    'teams' => [],
                 ],
                 [
                     'email' => 'candidate@example.com',
@@ -76,7 +86,23 @@ class AdminUserSeeder extends Seeder
                     'company_name' => 'Internal',
                     'notes' => 'Default seeded Candidate account.',
                     'role_name' => 'candidate',
+                    'groups' => [],
+                    'teams' => [],
                 ],
+                [
+                    'email' => 'developer@example.com',
+                    'name' => 'Developer User',
+                    'password' => 'password',
+                    'person_code' => '4567890',
+                    'first_name' => 'Developer',
+                    'preferred_name' => 'Developer User',
+                    'last_name' => 'User',
+                    'company_name' => 'Internal',
+                    'notes' => 'Default seeded Developer account.',
+                    'role_name' => 'admin',
+                    'groups' => [],
+                    'teams' => ['DEVELOPER'],
+                ]
             ];
 
             foreach ($seedUsers as $seedUser) {
@@ -102,6 +128,17 @@ class AdminUserSeeder extends Seeder
                         'notes' => $seedUser['notes'],
                     ]
                 );
+
+                $groupIds = Group::whereIn('group_name', $seedUser['groups'] ?? [])
+                    ->pluck('id')
+                    ->toArray();
+
+                $teamIds = Team::whereIn('team_name', $seedUser['teams'] ?? [])
+                    ->pluck('id')
+                    ->toArray();
+
+                $person->groups()->sync($groupIds);
+                $person->teams()->sync($teamIds);
 
                 DB::table('person_phone_numbers')->updateOrInsert(
                     [
