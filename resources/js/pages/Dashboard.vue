@@ -54,8 +54,8 @@ defineOptions({
             </PermissionBlock>
 
             <PermissionBlock
-                permission="view_admin"
-                fallback="This section is for users with the view_admin permission."
+                permission="access_tickets"
+                fallback="This section is for users with the access_tickets permission."
             >
                 <div
                     class="relative overflow-hidden rounded-xl border border-sidebar-border/70 p-4 dark:border-sidebar-border"

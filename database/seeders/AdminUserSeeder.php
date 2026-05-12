@@ -93,7 +93,7 @@ class AdminUserSeeder extends Seeder
                     'email' => 'developer@example.com',
                     'name' => 'Developer User',
                     'password' => 'password',
-                    'person_code' => '4567890',
+                    'person_code' => '5678912',
                     'first_name' => 'Developer',
                     'preferred_name' => 'Developer User',
                     'last_name' => 'User',
