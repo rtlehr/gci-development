@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\Alert;
 use App\Models\User;
+use App\Models\Team;
 
 class AlertService
 {
@@ -85,4 +86,32 @@ class AlertService
             sourceId: $sourceId
         );
     }
+
+    public function ticketCreatedForTeam(
+    string $teamName,
+    int|string $ticketId,
+    ?string $actionUrl = null
+    ): void {
+        $team = Team::query()
+            ->with('people.user')
+            ->where('team_name', $teamName)
+            ->first();
+
+        if (! $team) {
+            return;
+        }
+
+        foreach ($team->people as $person) {
+            if (! $person->user) {
+                continue;
+            }
+
+            $this->ticketAssigned(
+                user: $person->user,
+                ticketId: $ticketId,
+                actionUrl: $actionUrl
+            );
+        }
+    }
+
 }

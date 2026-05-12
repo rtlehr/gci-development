@@ -4,11 +4,11 @@ namespace App\Http\Controllers;
 
 use App\Models\Ticket;
 use App\Models\TicketActivity;
+use App\Models\User;
+use App\Services\AlertService;
 use App\Services\UserResolver;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
-use App\Services\AlertService;
-use App\Models\User;
 
 class TicketController extends Controller
 {
@@ -57,15 +57,11 @@ class TicketController extends Controller
             $screenshotPath = $request->file('screenshot')->store('ticket-screenshots', 'public');
         }
 
-        $ownerUser = User::where('email', 'owner@example.com')->firstOrFail();
-
-        $defaultAssignedUser = User::where('email', 'owner@example.com')->first();
-
         $ticket = Ticket::create([
             'ticket_number' => $ticketNumber,
             'title' => $validated['title'],
             'submitted_by_user_id' => $userId,
-            'assigned_to_user_id' => $defaultAssignedUser?->id,
+            'assigned_to_user_id' => null,
             'request_type' => $validated['request_type'],
             'importance' => $validated['importance'],
             'category' => $validated['category'] ?? null,
@@ -75,14 +71,6 @@ class TicketController extends Controller
             'status' => 'new',
         ]);
 
-        if ($defaultAssignedUser) {
-            $alertService->ticketAssigned(
-                user: $defaultAssignedUser,
-                ticketId: $ticket->ticket_number,
-                actionUrl: route('admin.tickets.show', $ticket)
-            );
-        }
-
         TicketActivity::create([
             'ticket_id' => $ticket->id,
             'changed_by_user_id' => $userId,
@@ -90,16 +78,22 @@ class TicketController extends Controller
             'comment' => 'Ticket created.',
         ]);
 
+        $alertService->ticketCreatedForTeam(
+            teamName: 'DEVELOPER',
+            ticketId: $ticket->ticket_number,
+            actionUrl: route('admin.tickets.show', $ticket)
+        );
+
         return redirect()
             ->route('tickets.create')
             ->with('success', "Request submitted successfully. Ticket {$ticket->ticket_number} created.");
     }
 
     public function assign(
-    Request $request,
-    Ticket $ticket,
-    AlertService $alertService,
-    UserResolver $userResolver
+        Request $request,
+        Ticket $ticket,
+        AlertService $alertService,
+        UserResolver $userResolver
     ) {
         $validated = $request->validate([
             'assigned_to_user_id' => ['required', 'exists:users,id'],
@@ -108,7 +102,7 @@ class TicketController extends Controller
         $oldAssignedUserId = $ticket->assigned_to_user_id;
         $newAssignedUserId = (int) $validated['assigned_to_user_id'];
 
-        if ($oldAssignedUserId === $newAssignedUserId) {
+        if ((int) $oldAssignedUserId === $newAssignedUserId) {
             return back()->with('success', 'Ticket is already assigned to that user.');
         }
 
@@ -133,5 +127,4 @@ class TicketController extends Controller
 
         return back()->with('success', 'Ticket assigned successfully.');
     }
-
 }
