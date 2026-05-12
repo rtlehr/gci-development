@@ -4,11 +4,10 @@
             <h1 class="text-2xl font-semibold">Groups</h1>
 
             <div class="flex gap-2">
-                
                 <Button variant="outline" @click="showColumnSettings = !showColumnSettings">
                     {{ showColumnSettings ? 'Hide Column Settings' : 'Column Settings' }}
                 </Button>
-                
+
                 <Button variant="outline" @click="exportCsv">
                     Export CSV
                 </Button>
@@ -323,7 +322,14 @@ const { can } = useAuth()
 const props = defineProps({
     groups: {
         type: Object,
-        required: true,
+        default: () => ({
+            data: [],
+            current_page: 1,
+            last_page: 1,
+            from: 0,
+            to: 0,
+            total: 0,
+        }),
     },
     columns: {
         type: Array,
@@ -381,8 +387,8 @@ const orderedColumnDefinitions = computed(() => {
 })
 
 const pagesToShow = computed(() => {
-    const current = props.groups.current_page ?? 1
-    const last = props.groups.last_page ?? 1
+    const current = props.groups?.current_page ?? 1
+    const last = props.groups?.last_page ?? 1
 
     const start = Math.max(current - 2, 1)
     const end = Math.min(current + 2, last)
@@ -437,7 +443,9 @@ function sortBy(column) {
 }
 
 function getSortIcon(column) {
-    if (props.sort !== column) return ArrowUpDown
+    if (props.sort !== column) {
+        return ArrowUpDown
+    }
 
     return props.direction === 'asc' ? ArrowUp : ArrowDown
 }

@@ -8,7 +8,7 @@ export const Permissions = {
     PEOPLE_CREATE: 'create_people',
     PEOPLE_READ: 'read_people',
     PEOPLE_UPDATE: 'update_people',
-    PEOPLE_DELETE: 'delete_people',
+    PEOPLE_DELETE: 'delete_people', 
 
     POSITIONS_ACCESS: 'access_positions',
     POSITIONS_CREATE: 'create_positions',
@@ -27,8 +27,6 @@ export const Permissions = {
     TICKETS_READ: 'read_tickets',
     TICKETS_UPDATE: 'update_tickets',
     TICKETS_DELETE: 'delete_tickets',
-
-    //stoped here
 
     GROUPS_ACCESS: 'access_groups',
     GROUPS_CREATE: 'create_groups',

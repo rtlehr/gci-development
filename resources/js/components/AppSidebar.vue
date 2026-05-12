@@ -82,13 +82,13 @@ const allMainNavCategories: NavCategory[] = [
                 title: 'User Permissions',
                 href: '/admin/users',
                 icon: ArrowLeftRight,
-                permission: 'view_admin',
+                permission: 'access_permissions',
             },
             {
                 title: 'Add Groups',
                 href: '/admin/groups',
                 icon: Group,
-                permission: 'view_admin',
+                permission: 'access_groups',
             },
             {
                 title: 'Add Teams',
