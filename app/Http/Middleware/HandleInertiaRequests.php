@@ -72,6 +72,8 @@ class HandleInertiaRequests extends Middleware
         return [
             ...$shared,
 
+            'appLabels' => config('app_labels'),
+            
             'headerAlerts' => [
                 'count' => $alertCount,
                 'recent' => $recentAlerts,

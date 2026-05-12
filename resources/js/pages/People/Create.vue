@@ -26,7 +26,11 @@
                     <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
                         <div class="space-y-2">
                             <Label for="person_code">
-                                AIN Number <span class="text-red-500">*</span>
+
+                                {{ label('person_code') }}
+
+                                <span class="text-red-500">*</span>
+
                             </Label>
                             <Input
                                 id="person_code"
@@ -193,6 +197,10 @@ import {
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
+
+import { useAppLabels } from '@/composables/useAppLabels'
+
+const { label } = useAppLabels()
 
 // Backend-provided group and team lists
 // used by the assignments editor.
