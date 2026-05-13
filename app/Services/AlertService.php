@@ -206,4 +206,34 @@ class AlertService
         );
     }
 
+    public function ticketChangedForWatchers(
+        Ticket $ticket,
+        int $changedByUserId,
+        string $changeMessage,
+        ?string $actionUrl = null
+    ): void {
+        $ticket->loadMissing('watchers.person');
+
+        foreach ($ticket->watchers as $watcher) {
+            if ((int) $watcher->id === (int) $changedByUserId) {
+                continue;
+            }
+
+            $this->createForUser(
+                user: $watcher,
+                title: "Ticket {$ticket->ticket_number} Updated",
+                message: $changeMessage,
+                actionUrl: $actionUrl,
+                type: 'ticket_watch',
+                priority: 'normal',
+                sourceType: 'ticket',
+                sourceId: $ticket->id,
+                metadata: [
+                    'ticket_number' => $ticket->ticket_number,
+                ],
+                shouldEmail: false
+            );
+        }
+    }
+
 }

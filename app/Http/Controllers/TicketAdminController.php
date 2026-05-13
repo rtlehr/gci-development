@@ -142,6 +142,7 @@ class TicketAdminController extends Controller
             'submittedBy.person',
             'assignedTo.person',
             'assignedUsers.person',
+            'watchers.person',
             'activities.changedBy.person',
         ]);
 
@@ -175,15 +176,28 @@ class TicketAdminController extends Controller
             })
             ->values();
 
-        return Inertia::render('Admin/Tickets/Show', [
-            'ticket' => $ticket,
-            'assignableUsers' => $assignableUsers,
+            $currentUser = $userResolver->resolveUser();
 
-            'currentUser' => [
-                'id' => $currentUser->id,
-                'name' => $currentUserDisplayName,
-            ],
-        ]);
+            $currentUserDisplayName = trim(
+                ($currentUser->person->first_name ?? '') . ' ' . ($currentUser->person->last_name ?? '')
+            );
+
+            if ($currentUserDisplayName === '') {
+                $currentUserDisplayName = $currentUser->name;
+            }
+
+            $isWatching = $ticket->watchers
+                ->contains('id', $currentUser->id);
+
+            return Inertia::render('Admin/Tickets/Show', [
+                'ticket' => $ticket,
+                'assignableUsers' => $assignableUsers,
+                'currentUser' => [
+                    'id' => $currentUser->id,
+                    'name' => $currentUserDisplayName,
+                ],
+                'isWatching' => $isWatching,
+            ]);
     }
 
     public function update(
@@ -291,12 +305,31 @@ class TicketAdminController extends Controller
             ]);
         }
 
+        if (
+            $originalStatus !== $ticket->status ||
+            $originalImportance !== $ticket->importance ||
+            (string) $originalAssignedTo !== (string) $ticket->assigned_to_user_id ||
+            ($originalResolutionNotes ?? '') !== ($ticket->resolution_notes ?? '')
+        ) {
+            $alertService->ticketChangedForWatchers(
+                ticket: $ticket,
+                changedByUserId: $changedByUserId,
+                changeMessage: "Ticket {$ticket->ticket_number} has been updated.",
+                actionUrl: route('admin.tickets.show', $ticket)
+            );
+        }
+
         return redirect()
             ->route('admin.tickets.show', $ticket->id)
             ->with('success', 'Ticket updated successfully.');
     }
 
-    public function addComment(Request $request, Ticket $ticket, UserResolver $userResolver)
+    public function addComment(
+        Request $request,
+        Ticket $ticket,
+        UserResolver $userResolver,
+        AlertService $alertService
+    )
     {
         $validated = $request->validate([
             'comment' => ['required', 'string'],
@@ -308,6 +341,15 @@ class TicketAdminController extends Controller
             'event_type' => 'comment_added',
             'comment' => $validated['comment'],
         ]);
+
+        $changedByUserId = $userResolver->resolveUserId();
+
+        $alertService->ticketChangedForWatchers(
+            ticket: $ticket,
+            changedByUserId: $changedByUserId,
+            changeMessage: "A comment was added to ticket {$ticket->ticket_number}.",
+            actionUrl: route('admin.tickets.show', $ticket)
+        );
 
         return redirect()
             ->route('admin.tickets.show', $ticket->id)
@@ -444,4 +486,27 @@ class TicketAdminController extends Controller
             }
         );
     }
+
+    public function watch(Ticket $ticket, UserResolver $userResolver)
+    {
+        $userId = $userResolver->resolveUserId();
+
+        $ticket->watchers()->syncWithoutDetaching([$userId]);
+
+        return redirect()
+            ->route('admin.tickets.show', $ticket->id)
+            ->with('success', 'You are now watching this ticket.');
+    }
+
+    public function unwatch(Ticket $ticket, UserResolver $userResolver)
+    {
+        $userId = $userResolver->resolveUserId();
+
+        $ticket->watchers()->detach($userId);
+
+        return redirect()
+            ->route('admin.tickets.show', $ticket->id)
+            ->with('success', 'You are no longer watching this ticket.');
+    }
+
 }

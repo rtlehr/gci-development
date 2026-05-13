@@ -21,7 +21,14 @@ const props = defineProps({
         type: Object,
         required: true,
     },
+    isWatching: {
+        type: Boolean,
+        default: false,
+    },
+    
 })
+
+const watchForm = useForm({})
 
 // Reactive form state used to manage
 // ticket updates such as status, assignment,
@@ -259,6 +266,19 @@ function formatDateTime(value) {
 // Computed source URL value used by the template.
 // Returns a placeholder if no source URL exists.
 const sourceUrl = computed(() => props.ticket.source_url || '—')
+
+function watchTicket() {
+    watchForm.post(`/admin/tickets/${props.ticket.id}/watch`, {
+        preserveScroll: true,
+    })
+}
+
+function unwatchTicket() {
+    watchForm.delete(`/admin/tickets/${props.ticket.id}/watch`, {
+        preserveScroll: true,
+    })
+}
+
 </script>
 
 <template>
@@ -273,9 +293,32 @@ const sourceUrl = computed(() => props.ticket.source_url || '—')
                 </p>
             </div>
 
-            <Link href="/admin/tickets">
-                <Button variant="outline">Back to Tickets</Button>
-            </Link>
+            <div class="flex items-center gap-2">
+                <Button
+                    v-if="!isWatching"
+                    type="button"
+                    variant="outline"
+                    :disabled="watchForm.processing"
+                    @click="watchTicket"
+                >
+                    Watch Ticket
+                </Button>
+
+                <Button
+                    v-else
+                    type="button"
+                    variant="outline"
+                    :disabled="watchForm.processing"
+                    @click="unwatchTicket"
+                >
+                    Stop Watching
+                </Button>
+
+                <Link href="/admin/tickets">
+                    <Button variant="outline">Back to Tickets</Button>
+                </Link>
+            </div>
+
         </div>
 
         <div class="grid grid-cols-1 xl:grid-cols-3 gap-6">

@@ -43,3 +43,11 @@ Route::patch('/admin/tickets/{ticket}/assign', [TicketController::class, 'assign
 Route::post('/admin/tickets/{ticket}/comments', [TicketAdminController::class, 'addComment'])
     ->name('admin.tickets.comments.store')
     ->middleware('permission:update_tickets');
+
+Route::post('/admin/tickets/{ticket}/watch', [TicketAdminController::class, 'watch'])
+    ->name('admin.tickets.watch')
+    ->middleware('permission:read_tickets');
+
+Route::delete('/admin/tickets/{ticket}/watch', [TicketAdminController::class, 'unwatch'])
+    ->name('admin.tickets.unwatch')
+    ->middleware('permission:read_tickets');
