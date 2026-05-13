@@ -19,7 +19,10 @@ class Alert extends Model
         'source_id',
         'metadata',
         'read_at',
+        'should_email',
+        'email_queued_at',
         'emailed_at',
+        'email_error',
     ];
 
     protected $casts = [

@@ -11,34 +11,133 @@ return new class extends Migration
         Schema::create('alerts', function (Blueprint $table) {
             $table->id();
 
-            // Who receives the alert
-            $table->foreignId('user_id')->constrained()->cascadeOnDelete();
+            /*
+            |--------------------------------------------------------------------------
+            | Ownership
+            |--------------------------------------------------------------------------
+            */
 
-            // Optional: tie to person if your app uses people heavily
-            $table->foreignId('person_id')->nullable()->constrained('people')->nullOnDelete();
+            // User receiving the alert
+            $table->foreignId('user_id')
+                ->constrained()
+                ->cascadeOnDelete();
 
-            $table->string('type')->default('general');
-            $table->string('priority')->default('normal'); // low, normal, high
+            // Optional linked person record
+            $table->foreignId('person_id')
+                ->nullable()
+                ->constrained('people')
+                ->nullOnDelete();
+
+            /*
+            |--------------------------------------------------------------------------
+            | Alert Details
+            |--------------------------------------------------------------------------
+            */
+
+            // General alert category
+            // Examples:
+            // ticket_assignment
+            // workflow
+            // assignment
+            // reminder
+            // system
+            $table->string('type')
+                ->default('general');
+
+            // low, normal, high
+            $table->string('priority')
+                ->default('normal');
 
             $table->string('title');
-            $table->text('message')->nullable();
 
-            // Optional link the user clicks
-            $table->string('action_url')->nullable();
+            $table->text('message')
+                ->nullable();
 
-            // Optional source reference
-            $table->string('source_type')->nullable(); // ticket, candidate_workflow, assignment, etc.
-            $table->unsignedBigInteger('source_id')->nullable();
+            /*
+            |--------------------------------------------------------------------------
+            | Navigation / Source Tracking
+            |--------------------------------------------------------------------------
+            */
 
-            $table->json('metadata')->nullable();
+            // URL the user can click to view the related item
+            $table->string('action_url')
+                ->nullable();
 
-            $table->timestamp('read_at')->nullable();
-            $table->timestamp('emailed_at')->nullable();
+            // Related source type
+            // Examples:
+            // ticket
+            // candidate
+            // workflow
+            // assignment
+            $table->string('source_type')
+                ->nullable();
+
+            // Related source record ID
+            $table->unsignedBigInteger('source_id')
+                ->nullable();
+
+            /*
+            |--------------------------------------------------------------------------
+            | Additional Metadata
+            |--------------------------------------------------------------------------
+            */
+
+            // Flexible JSON storage for future expansion
+            $table->json('metadata')
+                ->nullable();
+
+            /*
+            |--------------------------------------------------------------------------
+            | Read Tracking
+            |--------------------------------------------------------------------------
+            */
+
+            // When the user viewed/read the alert
+            $table->timestamp('read_at')
+                ->nullable();
+
+            /*
+            |--------------------------------------------------------------------------
+            | Email Notification Tracking
+            |--------------------------------------------------------------------------
+            */
+
+            // Whether this alert should generate an email
+            $table->boolean('should_email')
+                ->default(false);
+
+            // When the email job/process started
+            $table->timestamp('email_queued_at')
+                ->nullable();
+
+            // When the email was successfully sent
+            $table->timestamp('emailed_at')
+                ->nullable();
+
+            // Store any send failure message
+            $table->text('email_error')
+                ->nullable();
 
             $table->timestamps();
 
+            /*
+            |--------------------------------------------------------------------------
+            | Indexes
+            |--------------------------------------------------------------------------
+            */
+
             $table->index(['user_id', 'read_at']);
-            $table->index(['source_type', 'source_id']);
+
+            $table->index([
+                'user_id',
+                'should_email',
+                'emailed_at',
+            ]);
+
+            $table->index([
+                'source_type',
+                'source_id',
+            ]);
         });
     }
 

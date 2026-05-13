@@ -8,6 +8,9 @@ use Inertia\Inertia;
 use App\Models\Person;
 use App\Models\Ticket;
 
+use Illuminate\Support\Facades\Mail;
+use App\Mail\TestEmail;
+
 Route::get('/', function (UserResolver $userResolver) {
 
     $user = $userResolver->resolveUser();
@@ -107,3 +110,4 @@ require __DIR__.'/Groups.php';
 require __DIR__.'/Organizations.php';
 require __DIR__.'/Alerts.php';
 require __DIR__.'/Teams.php';
+require __DIR__.'/email.php';

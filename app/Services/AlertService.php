@@ -17,7 +17,8 @@ class AlertService
         string $priority = 'normal',
         ?string $sourceType = null,
         ?int $sourceId = null,
-        ?array $metadata = null
+        ?array $metadata = null,
+        bool $shouldEmail = false
     ): Alert {
         return Alert::create([
             'user_id' => $user->id,
@@ -30,6 +31,7 @@ class AlertService
             'source_type' => $sourceType,
             'source_id' => $sourceId,
             'metadata' => $metadata,
+            'should_email' => $shouldEmail,
         ]);
     }
 
@@ -60,12 +62,13 @@ class AlertService
         return $this->createForUser(
             user: $user,
             title: 'Ticket Assigned',
-            message: "You have been assigned ticket #{$ticketId}.",
+            message: "You have been assigned ticket {$ticketId}.",
             actionUrl: $actionUrl,
             type: 'ticket_assignment',
             priority: 'normal',
             sourceType: 'ticket',
-            sourceId: (int) $ticketId
+            sourceId: is_numeric($ticketId) ? (int) $ticketId : null,
+            shouldEmail: true
         );
     }
 
