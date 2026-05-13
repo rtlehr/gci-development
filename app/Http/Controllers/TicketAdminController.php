@@ -252,7 +252,8 @@ class TicketAdminController extends Controller
             if ($newAssignedUser) {
                 $alertService->ticketAssigned(
                     user: $newAssignedUser,
-                    ticketId: $ticket->ticket_number,
+                    ticketDatabaseId: $ticket->id,
+                    ticketNumber: $ticket->ticket_number,
                     actionUrl: route('admin.tickets.show', $ticket)
                 );
             }

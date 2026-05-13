@@ -20,7 +20,7 @@ class AdminUserSeeder extends Seeder
 
             $seedUsers = [
                 [
-                    'email' => 'owner@example.com',
+                    'email' => 'owner@localhost',
                     'name' => 'Owner Admin',
                     'password' => 'password',
                     'person_code' => '1111111',
@@ -34,7 +34,7 @@ class AdminUserSeeder extends Seeder
                     'teams' => [],
                 ],
                 [
-                    'email' => 'admin@example.com',
+                    'email' => 'admin@localhost',
                     'name' => 'Admin',
                     'password' => 'password',
                     'person_code' => '1234567',
@@ -48,7 +48,7 @@ class AdminUserSeeder extends Seeder
                     'teams' => [],
                 ],
                 [
-                    'email' => 'cotr@example.com',
+                    'email' => 'cotr@localhost',
                     'name' => 'COTR User',
                     'password' => 'password',
                     'person_code' => '2345678',
@@ -62,7 +62,7 @@ class AdminUserSeeder extends Seeder
                     'teams' => [],
                 ],
                 [
-                    'email' => 'pmo@example.com',
+                    'email' => 'pmo@localhost',
                     'name' => 'PMO User',
                     'password' => 'password',
                     'person_code' => '3456789',
@@ -76,7 +76,7 @@ class AdminUserSeeder extends Seeder
                     'teams' => [],
                 ],
                 [
-                    'email' => 'candidate@example.com',
+                    'email' => 'candidate@localhost',
                     'name' => 'Candidate User',
                     'password' => 'password',
                     'person_code' => '4567890',
@@ -90,7 +90,7 @@ class AdminUserSeeder extends Seeder
                     'teams' => [],
                 ],
                 [
-                    'email' => 'developer@example.com',
+                    'email' => 'developer@localhost',
                     'name' => 'Developer User',
                     'password' => 'password',
                     'person_code' => '5678912',

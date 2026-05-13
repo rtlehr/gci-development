@@ -56,18 +56,19 @@ class AlertService
 
     public function ticketAssigned(
         User $user,
-        int|string $ticketId,
+        int $ticketDatabaseId,
+        string $ticketNumber,
         ?string $actionUrl = null
     ): Alert {
         return $this->createForUser(
             user: $user,
             title: 'Ticket Assigned',
-            message: "You have been assigned ticket {$ticketId}.",
+            message: "You have been assigned ticket {$ticketNumber}.",
             actionUrl: $actionUrl,
             type: 'ticket_assignment',
             priority: 'normal',
             sourceType: 'ticket',
-            sourceId: is_numeric($ticketId) ? (int) $ticketId : null,
+            sourceId: $ticketDatabaseId,
             shouldEmail: true
         );
     }
@@ -92,7 +93,8 @@ class AlertService
 
     public function ticketCreatedForTeam(
     string $teamName,
-    int|string $ticketId,
+    int $ticketDatabaseId,
+    string $ticketNumber,
     ?string $actionUrl = null
     ): void {
         $team = Team::query()
@@ -111,7 +113,8 @@ class AlertService
 
             $this->ticketAssigned(
                 user: $person->user,
-                ticketId: $ticketId,
+                ticketDatabaseId: $ticketDatabaseId,
+                ticketNumber: $ticketNumber,
                 actionUrl: $actionUrl
             );
         }

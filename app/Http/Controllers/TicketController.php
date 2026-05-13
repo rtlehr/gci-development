@@ -80,7 +80,8 @@ class TicketController extends Controller
 
         $alertService->ticketCreatedForTeam(
             teamName: 'DEVELOPER',
-            ticketId: $ticket->ticket_number,
+            ticketDatabaseId: $ticket->id,
+            ticketNumber: $ticket->ticket_number,
             actionUrl: route('admin.tickets.show', $ticket)
         );
 
