@@ -12,9 +12,9 @@ use App\Services\ListExportService;
 use App\Services\UserResolver;
 use App\Support\ListDefinitions\TicketsDefinition;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Artisan;
 use Inertia\Inertia;
 use Symfony\Component\HttpFoundation\StreamedResponse;
-use Illuminate\Support\Facades\DB;
 
 class TicketAdminController extends Controller
 {
@@ -38,6 +38,7 @@ class TicketAdminController extends Controller
                 ->with([
                     'submittedBy.person',
                     'assignedTo.person',
+                    'assignedUsers.person',
                 ])
                 ->select('tickets.*')
                 ->selectRaw("
@@ -87,9 +88,11 @@ class TicketAdminController extends Controller
 
                 if ($assignedTo) {
                     if ($assignedTo === 'unassigned') {
-                        $query->whereNull('tickets.assigned_to_user_id');
+                        $query->whereDoesntHave('assignedUsers');
                     } else {
-                        $query->where('tickets.assigned_to_user_id', $assignedTo);
+                        $query->whereHas('assignedUsers', function ($q) use ($assignedTo) {
+                            $q->where('users.id', $assignedTo);
+                        });
                     }
                 }
             }
@@ -138,6 +141,7 @@ class TicketAdminController extends Controller
         $ticket->load([
             'submittedBy.person',
             'assignedTo.person',
+            'assignedUsers.person',
             'activities.changedBy.person',
         ]);
 
@@ -182,78 +186,114 @@ class TicketAdminController extends Controller
         ]);
     }
 
-    public function update(Request $request, Ticket $ticket, UserResolver $userResolver)
-    {
+    public function update(
+        Request $request,
+        Ticket $ticket,
+        UserResolver $userResolver,
+        AlertService $alertService
+    ) {
         $validated = $request->validate([
-            'status' => ['required', 'string'],
-            'importance' => ['required', 'string'],
+            'status' => ['required', 'in:new,in_progress,on_hold,complete,canceled'],
+            'importance' => ['required', 'in:show_stopper,asap,nice_to_have'],
             'assigned_to_user_id' => ['nullable', 'exists:users,id'],
             'resolution_notes' => ['nullable', 'string'],
         ]);
 
-        $currentUser = $userResolver->resolveUser();
+        $changedByUserId = $userResolver->resolveUserId();
 
-        DB::transaction(function () use ($ticket, $validated, $currentUser) {
-            $oldStatus = $ticket->status;
-            $oldImportance = $ticket->importance;
-            $oldAssignedToUserId = $ticket->assigned_to_user_id;
-            $oldResolutionNotes = $ticket->resolution_notes;
+        $originalStatus = $ticket->status;
+        $originalImportance = $ticket->importance;
+        $originalAssignedTo = $ticket->assigned_to_user_id;
+        $originalResolutionNotes = $ticket->resolution_notes;
 
-            $ticket->update([
-                'status' => $validated['status'],
-                'importance' => $validated['importance'],
-                'assigned_to_user_id' => $validated['assigned_to_user_id'] ?? null,
-                'resolution_notes' => $validated['resolution_notes'] ?? null,
+        $ticket->update([
+            'status' => $validated['status'],
+            'importance' => $validated['importance'],
+            'assigned_to_user_id' => $validated['assigned_to_user_id'] ?? null,
+            'resolution_notes' => $validated['resolution_notes'] ?? null,
+        ]);
+
+        if ($originalStatus !== $ticket->status) {
+            TicketActivity::create([
+                'ticket_id' => $ticket->id,
+                'changed_by_user_id' => $changedByUserId,
+                'event_type' => 'status_changed',
+                'field_name' => 'status',
+                'old_value' => $originalStatus,
+                'new_value' => $ticket->status,
+            ]);
+        }
+
+        if ($originalImportance !== $ticket->importance) {
+            TicketActivity::create([
+                'ticket_id' => $ticket->id,
+                'changed_by_user_id' => $changedByUserId,
+                'event_type' => 'importance_changed',
+                'field_name' => 'importance',
+                'old_value' => $originalImportance,
+                'new_value' => $ticket->importance,
+            ]);
+        }
+
+        if ((string) $originalAssignedTo !== (string) $ticket->assigned_to_user_id) {
+            $oldAssignedUser = $originalAssignedTo
+                ? User::with('person')->find($originalAssignedTo)
+                : null;
+
+            $newAssignedUser = $ticket->assigned_to_user_id
+                ? User::with('person')->find($ticket->assigned_to_user_id)
+                : null;
+
+            $oldAssignedName = $oldAssignedUser
+                ? trim(($oldAssignedUser->person->first_name ?? '') . ' ' . ($oldAssignedUser->person->last_name ?? ''))
+                : 'Unassigned';
+
+            if ($oldAssignedName === '' && $oldAssignedUser) {
+                $oldAssignedName = $oldAssignedUser->name;
+            }
+
+            $newAssignedName = $newAssignedUser
+                ? trim(($newAssignedUser->person->first_name ?? '') . ' ' . ($newAssignedUser->person->last_name ?? ''))
+                : 'Unassigned';
+
+            if ($newAssignedName === '' && $newAssignedUser) {
+                $newAssignedName = $newAssignedUser->name;
+            }
+
+            TicketActivity::create([
+                'ticket_id' => $ticket->id,
+                'changed_by_user_id' => $changedByUserId,
+                'event_type' => 'assignment_changed',
+                'field_name' => 'assigned_to_user_id',
+                'old_value' => $oldAssignedName,
+                'new_value' => $newAssignedName,
             ]);
 
-            if ($oldStatus !== $ticket->status) {
-                TicketActivity::create([
-                    'ticket_id' => $ticket->id,
-                    'changed_by_user_id' => $currentUser->id,
-                    'event_type' => 'status_changed',
-                    'old_value' => $oldStatus,
-                    'new_value' => $ticket->status,
-                ]);
+            if ($newAssignedUser) {
+                $alertService->reassignTicketToUser(
+                    ticket: $ticket,
+                    user: $newAssignedUser,
+                    actionUrl: route('admin.tickets.show', $ticket)
+                );
+
+                Artisan::call('alerts:send-emails');
             }
+        }
 
-            if ($oldImportance !== $ticket->importance) {
-                TicketActivity::create([
-                    'ticket_id' => $ticket->id,
-                    'changed_by_user_id' => $currentUser->id,
-                    'event_type' => 'importance_changed',
-                    'old_value' => $oldImportance,
-                    'new_value' => $ticket->importance,
-                ]);
-            }
+        if (($originalResolutionNotes ?? '') !== ($ticket->resolution_notes ?? '')) {
+            TicketActivity::create([
+                'ticket_id' => $ticket->id,
+                'changed_by_user_id' => $changedByUserId,
+                'event_type' => 'resolution_updated',
+                'field_name' => 'resolution_notes',
+                'old_value' => $originalResolutionNotes,
+                'new_value' => $ticket->resolution_notes,
+            ]);
+        }
 
-            if ((string) $oldAssignedToUserId !== (string) $ticket->assigned_to_user_id) {
-                $oldAssignedName = $oldAssignedToUserId
-                    ? User::find($oldAssignedToUserId)?->name
-                    : null;
-
-                $newAssignedName = $ticket->assigned_to_user_id
-                    ? User::find($ticket->assigned_to_user_id)?->name
-                    : null;
-
-                TicketActivity::create([
-                    'ticket_id' => $ticket->id,
-                    'changed_by_user_id' => $currentUser->id,
-                    'event_type' => 'assignment_changed',
-                    'old_value' => $oldAssignedName,
-                    'new_value' => $newAssignedName,
-                ]);
-            }
-
-            if ($oldResolutionNotes !== $ticket->resolution_notes) {
-                TicketActivity::create([
-                    'ticket_id' => $ticket->id,
-                    'changed_by_user_id' => $currentUser->id,
-                    'event_type' => 'resolution_updated',
-                ]);
-            }
-        });
-
-        return back()->with('success', 'Ticket updated.');
+        return redirect()
+            ->route('admin.tickets.show', $ticket->id)
+            ->with('success', 'Ticket updated successfully.');
     }
 
     public function addComment(Request $request, Ticket $ticket, UserResolver $userResolver)
@@ -343,6 +383,7 @@ class TicketAdminController extends Controller
                 ->with([
                     'submittedBy.person',
                     'assignedTo.person',
+                    'assignedUsers.person',
                 ])
                 ->select('tickets.*')
                 ->selectRaw("
@@ -393,9 +434,11 @@ class TicketAdminController extends Controller
 
                 if ($assignedTo) {
                     if ($assignedTo === 'unassigned') {
-                        $query->whereNull('tickets.assigned_to_user_id');
+                        $query->whereDoesntHave('assignedUsers');
                     } else {
-                        $query->where('tickets.assigned_to_user_id', $assignedTo);
+                        $query->whereHas('assignedUsers', function ($q) use ($assignedTo) {
+                            $q->where('users.id', $assignedTo);
+                        });
                     }
                 }
             }

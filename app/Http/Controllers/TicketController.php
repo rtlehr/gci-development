@@ -9,6 +9,7 @@ use App\Services\AlertService;
 use App\Services\UserResolver;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
+use Illuminate\Support\Facades\Artisan;
 
 class TicketController extends Controller
 {
@@ -84,16 +85,18 @@ class TicketController extends Controller
             actionUrl: route('admin.tickets.show', $ticket)
         );
 
+        Artisan::call('alerts:send-emails');
+
         return redirect()
             ->route('tickets.create')
             ->with('success', "Request submitted successfully. Ticket {$ticket->ticket_number} created.");
     }
 
     public function assign(
-        Request $request,
-        Ticket $ticket,
-        AlertService $alertService,
-        UserResolver $userResolver
+    Request $request,
+    Ticket $ticket,
+    AlertService $alertService,
+    UserResolver $userResolver
     ) {
         $validated = $request->validate([
             'assigned_to_user_id' => ['required', 'exists:users,id'],
@@ -108,14 +111,24 @@ class TicketController extends Controller
 
         $assignedUser = User::findOrFail($newAssignedUserId);
 
+        $oldAssignedName = $oldAssignedUserId
+            ? User::find($oldAssignedUserId)?->name
+            : 'Unassigned';
+
         $ticket->update([
             'assigned_to_user_id' => $assignedUser->id,
         ]);
 
+        // Remove team assignments and assign only this user
+        $ticket->assignedUsers()->sync([$assignedUser->id]);
+
         TicketActivity::create([
             'ticket_id' => $ticket->id,
             'changed_by_user_id' => $userResolver->resolveUserId(),
-            'event_type' => 'assigned',
+            'event_type' => 'assignment_changed',
+            'field_name' => 'assigned_to_user_id',
+            'old_value' => $oldAssignedName,
+            'new_value' => $assignedUser->name,
             'comment' => "Ticket assigned to {$assignedUser->name}.",
         ]);
 
@@ -124,6 +137,8 @@ class TicketController extends Controller
             user: $assignedUser,
             actionUrl: route('admin.tickets.show', $ticket)
         );
+
+        Artisan::call('alerts:send-emails');
 
         return back()->with('success', 'Ticket assigned successfully.');
     }
