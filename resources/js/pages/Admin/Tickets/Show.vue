@@ -17,6 +17,10 @@ const props = defineProps({
         type: Array,
         default: () => [],
     },
+    currentUser: {
+        type: Object,
+        required: true,
+    },
 })
 
 // Reactive form state used to manage
@@ -42,6 +46,19 @@ const commentForm = useForm({
  */
 function saveTicket() {
     ticketForm.put(`/admin/tickets/${props.ticket.id}`)
+}
+
+/**
+ * Assigns the ticket form to the current active user.
+ * This also works with impersonation as long as the backend
+ * passes the resolved current user.
+ */
+function assignToMe() {
+    ticketForm.assigned_to_user_id = String(props.currentUser.id)
+
+    if (ticketForm.status === 'new') {
+        ticketForm.status = 'in_progress'
+    }
 }
 
 /**
@@ -434,6 +451,7 @@ const sourceUrl = computed(() => props.ticket.source_url || '—')
 
                         <div class="space-y-2">
                             <Label for="assigned_to_user_id">Assigned To</Label>
+
                             <select
                                 id="assigned_to_user_id"
                                 v-model="ticketForm.assigned_to_user_id"
@@ -448,6 +466,14 @@ const sourceUrl = computed(() => props.ticket.source_url || '—')
                                     {{ user.name }}
                                 </option>
                             </select>
+
+                            <button
+                                type="button"
+                                class="text-xs font-medium text-primary underline-offset-4 hover:underline"
+                                @click="assignToMe"
+                            >
+                                Assign to me
+                            </button>
                         </div>
 
                         <div class="space-y-2">
