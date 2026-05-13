@@ -72,4 +72,10 @@ class User extends Authenticatable
         return $this->hasMany(TicketActivity::class, 'changed_by_user_id');
     }
     
+    public function assignedTeamTickets()
+    {
+        return $this->belongsToMany(\App\Models\Ticket::class, 'ticket_user')
+            ->withTimestamps();
+    }
+
 }

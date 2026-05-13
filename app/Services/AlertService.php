@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\Alert;
 use App\Models\User;
 use App\Models\Team;
+use App\Models\Ticket;
 
 class AlertService
 {
@@ -118,6 +119,72 @@ class AlertService
                 actionUrl: $actionUrl
             );
         }
+    }
+
+    public function assignTicketToTeam(
+        Ticket $ticket,
+        string $teamName,
+        ?string $actionUrl = null
+    ): void {
+        $team = Team::query()
+            ->with('people.user')
+            ->where('team_name', $teamName)
+            ->first();
+
+        if (! $team) {
+            return;
+        }
+
+        $userIds = $team->people
+            ->filter(fn ($person) => $person->user)
+            ->pluck('user.id')
+            ->unique()
+            ->values();
+
+        if ($userIds->isEmpty()) {
+            return;
+        }
+
+        // Assign ticket to all users on the team
+        $ticket->assignedUsers()->sync($userIds);
+
+        foreach ($team->people as $person) {
+            if (! $person->user) {
+                continue;
+            }
+
+            $this->ticketAssigned(
+                user: $person->user,
+                ticketDatabaseId: $ticket->id,
+                ticketNumber: $ticket->ticket_number,
+                actionUrl: $actionUrl
+            );
+        }
+    }
+
+    public function reassignTicketToUser(
+        Ticket $ticket,
+        User $user,
+        ?string $actionUrl = null
+    ): void {
+        // Remove all previous assigned users and assign only the new user
+        $ticket->assignedUsers()->sync([$user->id]);
+
+        // Mark old unread ticket alerts as read for everyone except new assignee
+        Alert::where('source_type', 'ticket')
+            ->where('source_id', $ticket->id)
+            ->whereNull('read_at')
+            ->where('user_id', '!=', $user->id)
+            ->update([
+                'read_at' => now(),
+            ]);
+
+        $this->ticketAssigned(
+            user: $user,
+            ticketDatabaseId: $ticket->id,
+            ticketNumber: $ticket->ticket_number,
+            actionUrl: $actionUrl
+        );
     }
 
 }

@@ -42,5 +42,11 @@ class Ticket extends Model
     {
         return $this->belongsTo(User::class, 'assigned_to_user_id');
     }
+
+    public function assignedUsers()
+    {
+        return $this->belongsToMany(\App\Models\User::class, 'ticket_user')
+            ->withTimestamps();
+    }
     
 }

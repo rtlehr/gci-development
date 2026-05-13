@@ -12,7 +12,6 @@ use Illuminate\Support\Facades\Mail;
 use App\Mail\TestEmail;
 
 Route::get('/', function (UserResolver $userResolver) {
-
     $user = $userResolver->resolveUser();
 
     return Inertia::render('Dashboard', [
@@ -23,20 +22,12 @@ Route::get('/', function (UserResolver $userResolver) {
             ->get(),
 
         'assignedTickets' => Ticket::query()
-            ->where('assigned_to_user_id', $user->id)
-            ->whereNotIn('status', ['complete', 'canceled'])
+            ->whereHas('assignedUsers', function ($query) use ($user) {
+                $query->where('users.id', $user->id);
+            })
             ->latest()
-            ->limit(10)
-            ->get([
-                'id',
-                'ticket_number',
-                'title',
-                'request_type',
-                'importance',
-                'category',
-                'status',
-                'created_at',
-            ]),
+            ->limit(5)
+            ->get(),
     ]);
 })->name('home');
 

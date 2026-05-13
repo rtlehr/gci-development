@@ -78,10 +78,9 @@ class TicketController extends Controller
             'comment' => 'Ticket created.',
         ]);
 
-        $alertService->ticketCreatedForTeam(
+        $alertService->assignTicketToTeam(
+            ticket: $ticket,
             teamName: 'DEVELOPER',
-            ticketDatabaseId: $ticket->id,
-            ticketNumber: $ticket->ticket_number,
             actionUrl: route('admin.tickets.show', $ticket)
         );
 
@@ -120,9 +119,9 @@ class TicketController extends Controller
             'comment' => "Ticket assigned to {$assignedUser->name}.",
         ]);
 
-        $alertService->ticketAssigned(
+        $alertService->reassignTicketToUser(
+            ticket: $ticket,
             user: $assignedUser,
-            ticketId: $ticket->ticket_number,
             actionUrl: route('admin.tickets.show', $ticket)
         );
 
