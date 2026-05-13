@@ -179,11 +179,30 @@ class AlertService
                 'read_at' => now(),
             ]);
 
-        $this->ticketAssigned(
+        $this->ticketReassigned(
             user: $user,
             ticketDatabaseId: $ticket->id,
             ticketNumber: $ticket->ticket_number,
             actionUrl: $actionUrl
+        );
+    }
+
+    public function ticketReassigned(
+        User $user,
+        int $ticketDatabaseId,
+        string $ticketNumber,
+        ?string $actionUrl = null
+    ): Alert {
+        return $this->createForUser(
+            user: $user,
+            title: "Ticket {$ticketNumber} has been assigned to you",
+            message: "Ticket {$ticketNumber} has been assigned to you.",
+            actionUrl: $actionUrl,
+            type: 'ticket_reassigned',
+            priority: 'normal',
+            sourceType: 'ticket',
+            sourceId: $ticketDatabaseId,
+            shouldEmail: true
         );
     }
 

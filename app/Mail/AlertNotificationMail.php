@@ -29,7 +29,11 @@ class AlertNotificationMail extends Mailable
         $subject = $this->alert->title;
 
         if ($this->ticket) {
-            $subject = "A new ticket has been submitted, {$this->ticket->ticket_number}";
+            if ($this->alert->type === 'ticket_reassigned') {
+                $subject = "Ticket {$this->ticket->ticket_number} has been assigned to you";
+            } else {
+                $subject = "A new ticket has been submitted, {$this->ticket->ticket_number}";
+            }
         }
 
         return $this
@@ -39,4 +43,5 @@ class AlertNotificationMail extends Mailable
                 'ticket' => $this->ticket,
             ]);
     }
+    
 }

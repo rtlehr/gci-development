@@ -1,8 +1,14 @@
 @if ($ticket)
 
-    <h2>
-        A new ticket has been submitted, {{ $ticket->ticket_number }}
-    </h2>
+    @if ($alert->type === 'ticket_reassigned')
+        <h2>
+            Ticket {{ $ticket->ticket_number }} has been assigned to you
+        </h2>
+    @else
+        <h2>
+            A new ticket has been submitted, {{ $ticket->ticket_number }}
+        </h2>
+    @endif
 
     <p>
         Please review the following ticket.
