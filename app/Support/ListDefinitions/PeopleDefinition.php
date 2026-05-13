@@ -2,6 +2,8 @@
 
 namespace App\Support\ListDefinitions;
 
+use Illuminate\Support\Facades\DB;
+
 class PeopleDefinition
 {
     public static function get()
@@ -81,7 +83,7 @@ class PeopleDefinition
                 [
                     'key' => 'primary_phone_number',
                     'label' => 'Primary Phone',
-                    'db_field' => 'primary_phone_number',
+                    'db_field' => 'primary_phone.phone_number',
                     'sortable' => true,
                     'searchable' => true,
                     'hideable' => true,
@@ -92,13 +94,13 @@ class PeopleDefinition
                 [
                     'key' => 'primary_address_display',
                     'label' => 'Primary Address',
-                    'db_field' => 'primary_address_display',
-                    'sortable' => true,
-                    'searchable' => true,
+                    'db_field' => 'primary_address.line_1',
+                    'sortable' => false,
+                    'searchable' => false,
                     'hideable' => true,
                     'exportable' => true,
                     'default_visible' => true,
-                    'default_order' => 7,
+                    'default_order' => 8,
                 ],
 
             ],
