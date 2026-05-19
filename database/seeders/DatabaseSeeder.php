@@ -18,6 +18,7 @@ class DatabaseSeeder extends Seeder
             TeamSeeder::class,
             GroupSeeder::class,
             AdminUserSeeder::class,
+            TicketSeeder::class,
         ]);
     }
 }
