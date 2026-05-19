@@ -27,7 +27,7 @@
                         <div class="space-y-2">
                             <Label for="person_code">
 
-                                {{ label('person_code') }}
+                                {{ label('person_code') }}  
 
                                 <span class="text-red-500">*</span>
 
