@@ -677,18 +677,74 @@ function getStatusClass(status) {
 /**
  * Formats table cell values for display.
  *
+ * Handles:
+ * - Empty values
+ * - Boolean Yes/No fields
+ * - Date fields
+ *
  * @param {Object} row
  * @param {string} key
  * @returns {string}
  */
 function formatCell(row, key) {
+
     const value = row[key]
 
-    if (value === null || value === undefined || value === '') {
+    // Show a dash for empty values.
+    if (
+        value === null ||
+        value === undefined ||
+        value === ''
+    ) {
         return '—'
     }
 
+    // Convert boolean-style fields to Yes/No.
+    const booleanFields = [
+        'is_essential',
+        'travel_required',
+        'high_risk_role',
+        'request_to_close',
+    ]
+
+    if (booleanFields.includes(key)) {
+        return value ? 'Yes' : 'No'
+    }
+
+    // Format date-style fields for display.
+    const dateFields = [
+        'scheduled_to_close',
+        'close_date',
+        'created_at',
+        'updated_at',
+    ]
+
+    if (dateFields.includes(key)) {
+        return formatDate(value)
+    }
+
     return value
+}
+
+/**
+ * Formats a date value into a readable local date.
+ *
+ * @param {string} value
+ * @returns {string}
+ */
+function formatDate(value) {
+
+    if (!value) {
+        return '—'
+    }
+
+    const date = new Date(value)
+
+    if (Number.isNaN(date.getTime())) {
+        return value
+    }
+
+    return date.toLocaleDateString()
 }
 
 /**

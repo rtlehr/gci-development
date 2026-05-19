@@ -3,16 +3,21 @@
 namespace App\Http\Controllers;
 
 use Inertia\Inertia;
+
 use App\Models\Position;
+use App\Models\PositionActivity;
 use App\Models\UserListPreference;
+use App\Models\Organization;
+
 use App\Services\ListEngine;
 use App\Services\UserResolver;
-use App\Support\ListDefinitions\PositionsDefinition;
 use App\Services\ListExportService;
+
+use App\Support\ListDefinitions\PositionsDefinition;
+
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Response;
+
 use Symfony\Component\HttpFoundation\StreamedResponse;
-use App\Models\Organization;
 
 class PositionsController extends Controller
 {
@@ -21,7 +26,9 @@ class PositionsController extends Controller
         UserResolver $userResolver,
         ListEngine $listEngine
     ) {
+
         $definition = PositionsDefinition::get();
+
         $userId = $userResolver->resolveUserId();
 
         $list = $listEngine->run(
@@ -29,7 +36,9 @@ class PositionsController extends Controller
             definition: $definition,
             userId: $userId,
             query: Position::query(),
+
             filterCallback: function ($query, $request) {
+
                 $status = $request->input('status', '');
 
                 if ($status) {
@@ -52,34 +61,168 @@ class PositionsController extends Controller
     }
 
     public function create()
-    {   
+    {
         $organizations = Organization::orderBy('full_path')
             ->get(['id', 'name', 'full_path', 'depth']);
 
         return Inertia::render('Positions/Create', [
             'organizations' => $organizations,
         ]);
-
     }
 
-    public function store(Request $request)
-    {
+    public function store(
+        Request $request,
+        UserResolver $userResolver
+    ) {
+
         $validated = $request->validate([
+
             'position_code' => ['nullable', 'string', 'max:255'],
-            'status' => ['required', 'in:Open,In Process,Closed'],
-            'labor_category' => ['nullable', 'string', 'max:255'],
-            'job_title' => ['required', 'string', 'max:255'],
-            'level' => ['nullable', 'integer'],
-            'project_team_name' => ['nullable', 'string', 'max:255'],
-            'organization_id' => ['nullable', 'exists:organizations,id'],
-            'customer_lead_name' => ['nullable', 'string', 'max:255'],
-            'customer_created_at' => ['nullable', 'date'],
-            'closed_at' => ['nullable', 'date', 'required_if:status,Closed'],
-            'closed_reason' => ['nullable', 'string', 'required_if:status,Closed'],
-            'notes' => ['nullable', 'string'],
+
+            'status' => [
+                'required',
+                'in:Open,In Process,Closed',
+            ],
+
+            'job_title' => [
+                'required',
+                'string',
+                'max:255',
+            ],
+
+            'experience_level' => [
+                'nullable',
+                'in:Beginner,Novice,Experienced,Senior',
+            ],
+
+            'labor_category' => [
+                'nullable',
+                'string',
+                'max:255',
+            ],
+
+            'certifications_required' => [
+                'nullable',
+                'string',
+            ],
+
+            'training_required' => [
+                'nullable',
+                'string',
+            ],
+
+            'experience' => [
+                'nullable',
+                'string',
+            ],
+
+            'is_essential' => [
+                'boolean',
+            ],
+
+            'travel_required' => [
+                'boolean',
+            ],
+
+            'high_risk_role' => [
+                'boolean',
+            ],
+
+            'location' => [
+                'nullable',
+                'string',
+                'max:255',
+            ],
+
+            'building' => [
+                'nullable',
+                'string',
+                'max:255',
+            ],
+
+            'mission_description' => [
+                'nullable',
+                'string',
+            ],
+
+            'component' => [
+                'nullable',
+                'string',
+                'max:255',
+            ],
+
+            'position_organization_id' => [
+                'nullable',
+                'exists:organizations,id',
+            ],
+
+            'sponsoring_organization_id' => [
+                'nullable',
+                'exists:organizations,id',
+            ],
+
+            'funding_organization_id' => [
+                'nullable',
+                'exists:organizations,id',
+            ],
+
+            'funding_info' => [
+                'nullable',
+                'string',
+            ],
+
+            'request_to_close' => [
+                'boolean',
+            ],
+
+            'scheduled_to_close' => [
+                'nullable',
+                'date',
+            ],
+
+            'close_date' => [
+                'nullable',
+                'date',
+                'required_if:status,Closed',
+            ],
+
+            'close_reason' => [
+                'nullable',
+                'string',
+                'required_if:status,Closed',
+            ],
+
+            'project_team_name' => [
+                'nullable',
+                'string',
+                'max:255',
+            ],
+
+            'customer_lead_name' => [
+                'nullable',
+                'string',
+                'max:255',
+            ],
+
+            'customer_created_at' => [
+                'nullable',
+                'date',
+            ],
+
+            'notes' => [
+                'nullable',
+                'string',
+            ],
         ]);
 
         $position = Position::create($validated);
+
+        PositionActivity::create([
+            'position_id' => $position->id,
+            'user_id' => $userResolver->resolveUserId(),
+            'action' => 'created',
+            'description' => 'Position created.',
+        ]);
 
         return redirect()
             ->route('positions.show', $position->id)
@@ -88,8 +231,15 @@ class PositionsController extends Controller
 
     public function show($id)
     {
-        $position = Position::with(['currentAssignment.person', 'assignments.person'])
-            ->findOrFail($id);
+        $position = Position::with([
+            'currentAssignment.person',
+            'assignments.person',
+            'activities.user',
+
+            'positionOrganization',
+            'sponsoringOrganization',
+            'fundingOrganization',
+        ])->findOrFail($id);
 
         return inertia('Positions/Show', [
             'position' => $position,
@@ -109,41 +259,233 @@ class PositionsController extends Controller
         ]);
     }
 
-    public function update(Request $request, $id)
-    {
+    public function update(
+        Request $request,
+        UserResolver $userResolver,
+        $id
+    ) {
+
         $position = Position::findOrFail($id);
 
+        $original = $position->getOriginal();
+
         $validated = $request->validate([
+
             'position_code' => ['nullable', 'string', 'max:255'],
-            'status' => ['required', 'in:Open,In Process,Closed'],
-            'labor_category' => ['nullable', 'string', 'max:255'],
-            'job_title' => ['required', 'string', 'max:255'],
-            'level' => ['nullable', 'integer'],
-            'project_team_name' => ['nullable', 'string', 'max:255'],
-            'organization_id' => ['nullable', 'exists:organizations,id'],
-            'customer_lead_name' => ['nullable', 'string', 'max:255'],
-            'customer_created_at' => ['nullable', 'date'],
-            'closed_at' => ['nullable', 'date', 'required_if:status,Closed'],
-            'closed_reason' => ['nullable', 'string', 'required_if:status,Closed'],
-            'notes' => ['nullable', 'string'],
+
+            'status' => [
+                'required',
+                'in:Open,In Process,Closed',
+            ],
+
+            'job_title' => [
+                'required',
+                'string',
+                'max:255',
+            ],
+
+            'experience_level' => [
+                'nullable',
+                'in:Beginner,Novice,Experienced,Senior',
+            ],
+
+            'labor_category' => [
+                'nullable',
+                'string',
+                'max:255',
+            ],
+
+            'certifications_required' => [
+                'nullable',
+                'string',
+            ],
+
+            'training_required' => [
+                'nullable',
+                'string',
+            ],
+
+            'experience' => [
+                'nullable',
+                'string',
+            ],
+
+            'is_essential' => [
+                'boolean',
+            ],
+
+            'travel_required' => [
+                'boolean',
+            ],
+
+            'high_risk_role' => [
+                'boolean',
+            ],
+
+            'location' => [
+                'nullable',
+                'string',
+                'max:255',
+            ],
+
+            'building' => [
+                'nullable',
+                'string',
+                'max:255',
+            ],
+
+            'mission_description' => [
+                'nullable',
+                'string',
+            ],
+
+            'component' => [
+                'nullable',
+                'string',
+                'max:255',
+            ],
+
+            'position_organization_id' => [
+                'nullable',
+                'exists:organizations,id',
+            ],
+
+            'sponsoring_organization_id' => [
+                'nullable',
+                'exists:organizations,id',
+            ],
+
+            'funding_organization_id' => [
+                'nullable',
+                'exists:organizations,id',
+            ],
+
+            'funding_info' => [
+                'nullable',
+                'string',
+            ],
+
+            'request_to_close' => [
+                'boolean',
+            ],
+
+            'scheduled_to_close' => [
+                'nullable',
+                'date',
+            ],
+
+            'close_date' => [
+                'nullable',
+                'date',
+                'required_if:status,Closed',
+            ],
+
+            'close_reason' => [
+                'nullable',
+                'string',
+                'required_if:status,Closed',
+            ],
+
+            'project_team_name' => [
+                'nullable',
+                'string',
+                'max:255',
+            ],
+
+            'customer_lead_name' => [
+                'nullable',
+                'string',
+                'max:255',
+            ],
+
+            'customer_created_at' => [
+                'nullable',
+                'date',
+            ],
+
+            'notes' => [
+                'nullable',
+                'string',
+            ],
         ]);
 
         $position->update($validated);
 
+        /*
+        |--------------------------------------------------------------------------
+        | Ignore Fields
+        |--------------------------------------------------------------------------
+        |
+        | Some fields are normalized/formatted differently between
+        | Laravel and the frontend and would create noisy activity logs.
+        |
+        */
+
+        $ignoredActivityFields = [
+            'customer_created_at',
+        ];
+
+        foreach ($validated as $field => $newValue) {
+
+            // Skip ignored fields.
+            if (in_array($field, $ignoredActivityFields)) {
+                continue;
+            }
+
+            $oldValue = $original[$field] ?? null;
+
+            if ((string) $oldValue !== (string) $newValue) {
+
+                PositionActivity::create([
+                    'position_id' => $position->id,
+                    'user_id' => $userResolver->resolveUserId(),
+
+                    'action' => 'updated',
+
+                    'field_name' => $field,
+
+                    'old_value' => is_array($oldValue)
+                        ? json_encode($oldValue)
+                        : $oldValue,
+
+                    'new_value' => is_array($newValue)
+                        ? json_encode($newValue)
+                        : $newValue,
+
+                    'description' => "Updated {$field}.",
+                ]);
+            }
+        }
+
         return redirect()
-            ->route('positions.index')
+            ->route('positions.show', $position->id)
             ->with('success', 'Position updated successfully.');
     }
 
-    public function destroy($id)
-    {
-        $position = Position::with('assignments')->findOrFail($id);
+    public function destroy(
+        UserResolver $userResolver,
+        $id
+    ) {
+
+        $position = Position::with('assignments')
+            ->findOrFail($id);
 
         if ($position->assignments()->exists()) {
+
             return redirect()
                 ->route('positions.index')
-                ->with('error', 'This position cannot be deleted because it has assignments.');
+                ->with(
+                    'error',
+                    'This position cannot be deleted because it has assignments.'
+                );
         }
+
+        PositionActivity::create([
+            'position_id' => $position->id,
+            'user_id' => $userResolver->resolveUserId(),
+            'action' => 'deleted',
+            'description' => 'Position deleted.',
+        ]);
 
         $position->delete();
 
@@ -152,14 +494,21 @@ class PositionsController extends Controller
             ->with('success', 'Position deleted successfully.');
     }
 
-    public function savePreferences(Request $request, UserResolver $userResolver)
-    {
+    public function savePreferences(
+        Request $request,
+        UserResolver $userResolver
+    ) {
+
         $definition = PositionsDefinition::get();
-        $validKeys = collect($definition['columns'])->pluck('key')->toArray();
+
+        $validKeys = collect($definition['columns'])
+            ->pluck('key')
+            ->toArray();
 
         $validated = $request->validate([
             'visible_columns' => ['required', 'array'],
             'visible_columns.*' => ['string'],
+
             'column_order' => ['required', 'array'],
             'column_order.*' => ['string'],
         ]);
@@ -192,9 +541,12 @@ class PositionsController extends Controller
             ->with('success', 'Column preferences saved.');
     }
 
-    public function resetPreferences(UserResolver $userResolver)
-    {
+    public function resetPreferences(
+        UserResolver $userResolver
+    ) {
+
         $definition = PositionsDefinition::get();
+
         $userId = $userResolver->resolveUserId();
 
         UserListPreference::where('user_id', $userId)
@@ -203,19 +555,28 @@ class PositionsController extends Controller
 
         return redirect()
             ->route('positions.index')
-            ->with('success', 'Column preferences reset to defaults.');
+            ->with(
+                'success',
+                'Column preferences reset to defaults.'
+            );
     }
 
     public function exportCsv(
-    Request $request,
-    ListExportService $listExportService
+        Request $request,
+        ListExportService $listExportService
     ): StreamedResponse {
+
         return $listExportService->exportCsv(
             request: $request,
+
             definition: PositionsDefinition::get(),
+
             query: Position::query(),
+
             filenamePrefix: 'positions-export',
+
             filterCallback: function ($query, $request) {
+
                 $status = $request->input('status', '');
 
                 if ($status) {
@@ -224,5 +585,4 @@ class PositionsController extends Controller
             }
         );
     }
-    
 }
