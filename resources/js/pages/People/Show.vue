@@ -6,7 +6,7 @@
                     {{ fullName(person) }}
                 </h1>
                 <p class="text-sm text-muted-foreground mt-1">
-                    Person Code: {{ person.person_code || '—' }}
+                   {{ label('person_code') }}: {{ person.person_code || '—' }}
                 </p>
             </div>
 
@@ -35,7 +35,6 @@
                         <DetailItem label="First Name" :value="person.first_name" />
                         <DetailItem label="Preferred Name" :value="person.preferred_name" />
                         <DetailItem label="Last Name" :value="person.last_name" />
-                        <DetailItem label="Person Code" :value="person.person_code" />
                         <DetailItem label="Company Name" :value="person.company_name" />
                         <DetailItem label="Email" :value="person.email" />
                         <DetailItem label="Employment Status" :value="person.employment_status" />
@@ -417,6 +416,10 @@ import {
 } from '@/components/ui/table'
 
 import AttachmentList from '@/components/attachments/AttachmentList.vue'
+
+import { useAppLabels } from '@/composables/useAppLabels'
+
+const { label } = useAppLabels()
 
 const { can } = useAuth()
 
