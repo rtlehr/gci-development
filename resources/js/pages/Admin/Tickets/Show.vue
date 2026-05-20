@@ -469,7 +469,7 @@ function unwatchTicket() {
                             <select
                                 id="status"
                                 v-model="ticketForm.status"
-                                class="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                                class="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"  
                             >
                                 <option value="new">New</option>
                                 <option value="in_progress">In Progress</option>

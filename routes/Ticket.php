@@ -12,7 +12,7 @@ Route::post('/tickets', [TicketController::class, 'store'])
     ->name('tickets.store')
     ->middleware('permission:create_tickets');
 
-Route::get('/admin/tickets', [TicketAdminController::class, 'index'])
+Route::get('/admin/tickets', [TicketAdminController::class, 'index'])   
     ->name('admin.tickets.index')
     ->middleware('permission:access_tickets');
 

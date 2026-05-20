@@ -566,7 +566,7 @@ function exportCsv() {
 
                     <div class="space-y-2">
                         <Label>Importance</Label>
-                        <select v-model="filterForm.importance" class="h-10 border rounded-md px-3">
+                        <select v-model="filterForm.importance" class="h-10 border rounded-md px-3">   
                             <option value="">All</option>
                             <option value="show_stopper">Show Stopper</option>
                             <option value="asap">ASAP</option>

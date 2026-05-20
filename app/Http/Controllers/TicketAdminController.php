@@ -98,25 +98,7 @@ class TicketAdminController extends Controller
             }
         );
 
-        $assignableUsers = User::query()
-            ->with('person')
-            ->orderBy('name')
-            ->get()
-            ->map(function ($user) {
-                $displayName = trim(
-                    ($user->person->first_name ?? '') . ' ' . ($user->person->last_name ?? '')
-                );
-
-                if ($displayName === '') {
-                    $displayName = $user->name;
-                }
-
-                return [
-                    'id' => $user->id,
-                    'name' => $displayName,
-                ];
-            })
-            ->values();
+        $assignableUsers = $this->getAssignableTicketUsers();
 
         $list['filters']['search'] = $request->input('search', '');
         $list['filters']['status'] = $request->input('status', '');
@@ -156,25 +138,7 @@ class TicketAdminController extends Controller
             $currentUserDisplayName = $currentUser->name;
         }
 
-        $assignableUsers = User::query()
-            ->with('person')
-            ->orderBy('name')
-            ->get()
-            ->map(function ($user) {
-                $displayName = trim(
-                    ($user->person->first_name ?? '') . ' ' . ($user->person->last_name ?? '')
-                );
-
-                if ($displayName === '') {
-                    $displayName = $user->name;
-                }
-
-                return [
-                    'id' => $user->id,
-                    'name' => $displayName,
-                ];
-            })
-            ->values();
+        $assignableUsers = $this->getAssignableTicketUsers();
 
             $currentUser = $userResolver->resolveUser();
 
@@ -507,6 +471,47 @@ class TicketAdminController extends Controller
         return redirect()
             ->route('admin.tickets.show', $ticket->id)
             ->with('success', 'You are no longer watching this ticket.');
+    }
+
+    private function getAssignableTicketUsers()
+    {
+        $requiredPermissions = [
+            'access_tickets',
+            'read_tickets',
+            'update_tickets',
+        ];
+
+        return User::query()
+            ->with(['person', 'permissions', 'roles.permissions'])
+            ->where(function ($query) use ($requiredPermissions) {
+                foreach ($requiredPermissions as $permissionName) {
+                    $query->where(function ($q) use ($permissionName) {
+                        $q->whereHas('permissions', function ($permissionQuery) use ($permissionName) {
+                            $permissionQuery->where('name', $permissionName);
+                        })
+                        ->orWhereHas('roles.permissions', function ($permissionQuery) use ($permissionName) {
+                            $permissionQuery->where('name', $permissionName);
+                        });
+                    });
+                }
+            })
+            ->orderBy('name')
+            ->get()
+            ->map(function ($user) {
+                $displayName = trim(
+                    ($user->person->first_name ?? '') . ' ' . ($user->person->last_name ?? '')
+                );
+
+                if ($displayName === '') {
+                    $displayName = $user->name;
+                }
+
+                return [
+                    'id' => $user->id,
+                    'name' => $displayName,
+                ];
+            })
+            ->values();
     }
 
 }
