@@ -1,7 +1,6 @@
 <script setup>
 import { Link, useForm } from '@inertiajs/vue3'
 import { Button } from '@/components/ui/button'
-import { Label } from '@/components/ui/label'
 
 // Backend-provided user, role, and permission data.
 const props = defineProps({
@@ -56,30 +55,6 @@ const form = useForm({
 })
 
 /**
- * Removes roles that no longer fully match
- * the currently selected permissions.
- *
- * If a permission tied to a role is manually removed,
- * that role is automatically unchecked.
- */
-const syncRolesFromPermissions = () => {
-    form.roles = form.roles.filter((roleId) => {
-
-        const role = props.roles.find((item) => item.id === roleId)
-
-        if (!role) {
-            return false
-        }
-
-        const rolePermissionIds = getRolePermissionIds(role)
-
-        return rolePermissionIds.every((permissionId) =>
-            form.permissions.includes(permissionId)
-        )
-    })
-}
-
-/**
  * Toggles a role on or off.
  *
  * When enabled:
@@ -90,10 +65,11 @@ const syncRolesFromPermissions = () => {
  * - The role is removed
  * - All role permissions are removed
  *
+ * Manual permission changes do not change role selections.
+ *
  * @param {number|string} roleId
  */
 const toggleRole = (roleId) => {
-
     const role = props.roles.find((item) => item.id === roleId)
 
     if (!role) {
@@ -103,15 +79,19 @@ const toggleRole = (roleId) => {
     const rolePermissionIds = getRolePermissionIds(role)
 
     if (form.roles.includes(roleId)) {
-
         form.roles = form.roles.filter((id) => id !== roleId)
 
-        form.permissions = form.permissions.filter(
-            (permissionId) => !rolePermissionIds.includes(permissionId)
-        )
+        const remainingRolePermissionIds = props.roles
+            .filter((item) => form.roles.includes(item.id))
+            .flatMap((item) => getRolePermissionIds(item))
 
+        form.permissions = form.permissions.filter((permissionId) => {
+            const belongsToUncheckedRole = rolePermissionIds.includes(permissionId)
+            const belongsToRemainingRole = remainingRolePermissionIds.includes(permissionId)
+
+            return !belongsToUncheckedRole || belongsToRemainingRole
+        })
     } else {
-
         form.roles.push(roleId)
 
         form.permissions = uniqueIds([
@@ -124,25 +104,18 @@ const toggleRole = (roleId) => {
 /**
  * Toggles an individual permission on or off.
  *
- * After permissions are updated, roles are re-validated
- * to ensure selected roles still match their permission sets.
+ * This does not change selected roles.
  *
  * @param {number|string} permissionId
  */
 const togglePermission = (permissionId) => {
-
     if (form.permissions.includes(permissionId)) {
-
         form.permissions = form.permissions.filter(
             (id) => id !== permissionId
         )
-
     } else {
-
         form.permissions.push(permissionId)
     }
-
-    syncRolesFromPermissions()
 }
 
 /**
@@ -210,7 +183,7 @@ const submit = () => {
                         </h2>
 
                         <p class="text-sm text-muted-foreground">
-                            Selecting a role automatically selects that role’s permissions.
+                            Selecting a role automatically adds that role’s default permissions.
                         </p>
 
                     </div>
@@ -265,7 +238,7 @@ const submit = () => {
                         </h2>
 
                         <p class="text-sm text-muted-foreground">
-                            If you manually change a role permission, that role will be unchecked.
+                            Permissions can be customized without changing the selected roles.
                         </p>
 
                     </div>
