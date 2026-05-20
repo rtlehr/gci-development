@@ -100,32 +100,6 @@ class WorkflowStepSeeder extends Seeder
                 'allows_comments' => true,
                 'is_active' => true,
             ],
-            [
-                'code' => 'crossover',
-                'name' => 'Crossover',
-                'step_order' => 7,
-                'default_status' => 'submitted',
-                'allows_status' => true,
-                'allows_requested_at' => true,
-                'allows_scheduled_at' => false,
-                'allows_completed_at' => true,
-                'allows_notes' => false,
-                'allows_comments' => false,
-                'is_active' => true,
-            ],
-            [
-                'code' => 'security_scrub',
-                'name' => 'Security Scrub',
-                'step_order' => 8,
-                'default_status' => null,
-                'allows_status' => false,
-                'allows_requested_at' => true,
-                'allows_scheduled_at' => false,
-                'allows_completed_at' => true,
-                'allows_notes' => false,
-                'allows_comments' => false,
-                'is_active' => true,
-            ],
         ];
 
         foreach ($steps as $step) {
