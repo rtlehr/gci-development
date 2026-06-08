@@ -38,6 +38,6 @@ return [
     |
     */
 
-    'person_code' => env('DEV_PERSON_CODE', 1111111),
+    'person_code' => env('DEV_PERSON_CODE'),
 
 ];

@@ -37,17 +37,21 @@ class UserResolver
          * has been selected yet.
          */
         if (
-            config('app.debug') === true &&
-            config('devuser.enabled') === true
-        ) {
-            $personCode = config('devuser.person_code');
+    config('devuser.enabled') === true &&
+    session()->has('dev_person_code')
+    ) {
+        return session('dev_person_code');
+    }
 
-            if (blank($personCode)) {
-                throw new RuntimeException('DEV_USER_ENABLED is true, but no DEV_PERSON_CODE is configured.');
-            }
+    if (config('devuser.enabled') === true) {
+        $personCode = config('devuser.person_code');
 
-            return $personCode;
+        if (blank($personCode)) {
+            throw new RuntimeException('DEV_USER_ENABLED is true, but no DEV_PERSON_CODE is configured.');
         }
+
+        return $personCode;
+    }
 
         /*
          * Production / real authentication path:

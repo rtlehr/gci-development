@@ -1,3 +1,5 @@
+<?php
+
 // database/seeders/PositionAssignmentSeeder.php
 
 namespace Database\Seeders;
