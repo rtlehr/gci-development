@@ -12,19 +12,20 @@ class UserResolver
      * Get the active person_code for the current request.
      *
      * Resolution order:
-     * 1. Development session override, if enabled
-     * 2. Default development person_code, if enabled
+     * 1. Session-based development override, if DEV_USER_ENABLED=true
+     * 2. Default development/testing person_code, if DEV_USER_ENABLED=true
      * 3. ADFS/server-provided identity value
      */
     public function getPersonCode(): string|int
     {
         /*
-         * Development override:
-         * Allows the DevUserSwitcher to impersonate a selected person.
-         * This should only work when APP_DEBUG=true and DEV_USER_ENABLED=true.
+         * Development/testing session override.
+         *
+         * This allows the DevUserSwitcher to impersonate another person.
+         * It is controlled by DEV_USER_ENABLED, not APP_DEBUG, so it can also
+         * be used to test production builds locally before ADFS is available.
          */
         if (
-            config('app.debug') === true &&
             config('devuser.enabled') === true &&
             session()->has('dev_person_code')
         ) {
@@ -32,31 +33,26 @@ class UserResolver
         }
 
         /*
-         * Default development user:
-         * Used when dev user mode is enabled but no session override
-         * has been selected yet.
+         * Default development/testing person_code.
+         *
+         * This is useful for local development and local production-build
+         * testing when ADFS/server authentication is not configured yet.
          */
-        if (
-    config('devuser.enabled') === true &&
-    session()->has('dev_person_code')
-    ) {
-        return session('dev_person_code');
-    }
+        if (config('devuser.enabled') === true) {
+            $personCode = config('devuser.person_code');
 
-    if (config('devuser.enabled') === true) {
-        $personCode = config('devuser.person_code');
+            if (blank($personCode)) {
+                throw new RuntimeException('DEV_USER_ENABLED is true, but no DEV_PERSON_CODE is configured.');
+            }
 
-        if (blank($personCode)) {
-            throw new RuntimeException('DEV_USER_ENABLED is true, but no DEV_PERSON_CODE is configured.');
+            return $personCode;
         }
 
-        return $personCode;
-    }
-
         /*
-         * Production / real authentication path:
-         * In production, ADFS or the web server should provide an identity
-         * value to PHP. This value must match people.person_code.
+         * Production / real authentication path.
+         *
+         * In real production, ADFS, IIS, Apache, or a reverse proxy should
+         * provide a server/header value that maps to people.person_code.
          */
         $personCode = $this->getPersonCodeFromAdfs();
 
@@ -70,7 +66,7 @@ class UserResolver
     /**
      * Attempt to read the person_code from ADFS/server variables.
      *
-     * The exact key depends on how ADFS, IIS/Apache, or the reverse proxy
+     * The exact key depends on how ADFS, IIS, Apache, or the reverse proxy
      * passes claims into PHP.
      */
     protected function getPersonCodeFromAdfs(): ?string
@@ -79,6 +75,8 @@ class UserResolver
             ?? request()->server('HTTP_EMPLOYEEID')
             ?? request()->server('HTTP_EMPLOYEE_ID')
             ?? request()->server('HTTP_ADFS_PERSON_CODE')
+            ?? request()->server('AUTH_USER')
+            ?? request()->server('LOGON_USER')
             ?? request()->server('REMOTE_USER')
             ?? null;
     }
