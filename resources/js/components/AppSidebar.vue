@@ -12,6 +12,7 @@ import {
     BookUser,
     Building2,
     Boxes,
+    BriefcaseBusiness,
 } from 'lucide-vue-next'
 
 import AppLogo from '@/components/AppLogo.vue'
@@ -65,6 +66,12 @@ const allMainNavCategories: NavCategory[] = [
                 title: 'Positions',
                 href: '/positions',
                 icon: ClipboardMinus,
+                permission: 'access_positions',
+            },
+            {
+                title: 'Job Titles',
+                href: '/job-titles',
+                icon: BriefcaseBusiness,
                 permission: 'access_positions',
             },
             {

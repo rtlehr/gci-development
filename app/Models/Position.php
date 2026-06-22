@@ -4,17 +4,22 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use App\Models\PositionAssignment;
-use App\Models\Person;
-use App\Models\Organization;
 
 class Position extends Model
 {
     use HasFactory;
 
+    /*
+    |--------------------------------------------------------------------------
+    | Mass Assignable Fields
+    |--------------------------------------------------------------------------
+    */
+
     protected $fillable = [
         'position_code',
         'status',
+
+        'job_title_id',
         'job_title',
         'experience_level',
         'labor_category',
@@ -50,6 +55,12 @@ class Position extends Model
         'notes',
     ];
 
+    /*
+    |--------------------------------------------------------------------------
+    | Casts
+    |--------------------------------------------------------------------------
+    */
+
     protected $casts = [
         'is_essential' => 'boolean',
         'travel_required' => 'boolean',
@@ -60,6 +71,12 @@ class Position extends Model
         'close_date' => 'date',
         'customer_created_at' => 'date',
     ];
+
+    /*
+    |--------------------------------------------------------------------------
+    | Position Assignment Relationships
+    |--------------------------------------------------------------------------
+    */
 
     public function assignments()
     {
@@ -85,6 +102,45 @@ class Position extends Model
             ->whereNull('end_date');
     }
 
+    /*
+    |--------------------------------------------------------------------------
+    | Job Title Relationship
+    |--------------------------------------------------------------------------
+    */
+
+    public function jobTitle()
+    {
+        return $this->belongsTo(JobTitle::class, 'job_title_id');
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | Position-Specific Skills / Tasks
+    |--------------------------------------------------------------------------
+    */
+
+    public function customSkills()
+    {
+        return $this->hasMany(PositionCustomSkill::class)
+            ->where('is_active', true)
+            ->orderBy('sort_order')
+            ->orderBy('name');
+    }
+
+    public function customTasks()
+    {
+        return $this->hasMany(PositionCustomTask::class)
+            ->where('is_active', true)
+            ->orderBy('sort_order')
+            ->orderBy('name');
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | Organization Relationships
+    |--------------------------------------------------------------------------
+    */
+
     public function positionOrganization()
     {
         return $this->belongsTo(
@@ -109,25 +165,133 @@ class Position extends Model
         );
     }
 
+    /*
+    |--------------------------------------------------------------------------
+    | Activity / Audit History
+    |--------------------------------------------------------------------------
+    */
+
     public function activities()
     {
         return $this->hasMany(PositionActivity::class)
             ->latest();
     }
 
-    /**
-     * Keep labor_category automatically aligned with
-     * job_title + experience_level.
-     */
+    /*
+    |--------------------------------------------------------------------------
+    | Combined Skill / Task Helpers
+    |--------------------------------------------------------------------------
+    */
+
+    public function inheritedSkills()
+    {
+        return $this->jobTitle?->skills ?? collect();
+    }
+
+    public function inheritedTasks()
+    {
+        return $this->jobTitle?->tasks ?? collect();
+    }
+
+    public function allSkills()
+    {
+        return $this->inheritedSkills()
+            ->map(function ($skill) {
+                return [
+                    'source' => 'Job Title',
+                    'name' => $skill->name,
+                    'description' => $skill->description,
+                ];
+            })
+            ->concat(
+                $this->customSkills->map(function ($skill) {
+                    return [
+                        'source' => 'Custom',
+                        'name' => $skill->name,
+                        'description' => $skill->description,
+                    ];
+                })
+            )
+            ->values();
+    }
+
+    public function allTasks()
+    {
+        return $this->inheritedTasks()
+            ->map(function ($task) {
+                return [
+                    'source' => 'Job Title',
+                    'name' => $task->name,
+                    'description' => $task->description,
+                ];
+            })
+            ->concat(
+                $this->customTasks->map(function ($task) {
+                    return [
+                        'source' => 'Custom',
+                        'name' => $task->name,
+                        'description' => $task->description,
+                    ];
+                })
+            )
+            ->values();
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | Model Events
+    |--------------------------------------------------------------------------
+    */
+
     protected static function booted(): void
     {
         static::saving(function (Position $position) {
+
+            /*
+            |--------------------------------------------------------------------------
+            | Keep Job Title Snapshot Current
+            |--------------------------------------------------------------------------
+            |
+            | job_title_id points to the master JobTitle record.
+            | job_title stores only the readable name as a plain string.
+            |
+            */
+
+            if ($position->job_title_id) {
+                $jobTitle = JobTitle::query()
+                    ->select('id', 'name')
+                    ->find($position->job_title_id);
+
+                if ($jobTitle) {
+                    $position->job_title = $jobTitle->name;
+                }
+            }
+
+            /*
+            |--------------------------------------------------------------------------
+            | Keep Labor Category Current
+            |--------------------------------------------------------------------------
+            */
+
             if (
                 filled($position->job_title) &&
                 filled($position->experience_level)
             ) {
                 $position->labor_category =
                     $position->job_title . ' - ' . $position->experience_level;
+            }
+
+            /*
+            |--------------------------------------------------------------------------
+            | Clear Labor Category When Incomplete
+            |--------------------------------------------------------------------------
+            */
+
+            if (
+                blank($position->job_title) ||
+                blank($position->experience_level)
+            ) {
+                $position->labor_category = null;
             }
         });
     }

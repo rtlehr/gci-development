@@ -1,6 +1,5 @@
 <template>
     <div class="p-6 space-y-6">
-
         <!-- Page Header -->
         <div class="flex items-center justify-between">
             <div>
@@ -15,29 +14,42 @@
 
             <div class="flex gap-2">
                 <Link href="/positions">
-                    <Button variant="outline">Back to List</Button>
+                    <Button variant="outline">
+                        Back to List
+                    </Button>
                 </Link>
 
-                <Link :href="`/positions/${position.id}/edit`" v-if="can('view_admin')">
-                    <Button>Edit Position</Button>
+                <Link
+                    :href="`/positions/${position.id}/edit`"
+                    v-if="can('view_admin')"
+                >
+                    <Button>
+                        Edit Position
+                    </Button>
                 </Link>
 
-                <Link :href="`/position-assignments/create?position_id=${position.id}`" v-if="can('view_admin')">
-                    <Button variant="outline">Add Assignment</Button>
+                <Link
+                    :href="`/position-assignments/create?position_id=${position.id}`"
+                    v-if="can('view_admin')"
+                >
+                    <Button variant="outline">
+                        Add Assignment
+                    </Button>
                 </Link>
             </div>
         </div>
 
         <!-- Position Overview -->
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-
             <!-- Core Position Information -->
             <Card>
                 <CardHeader>
-                    <CardTitle>Position Information</CardTitle>
+                    <CardTitle>
+                        Position Information
+                    </CardTitle>
                 </CardHeader>
 
-                <CardContent class="space-y-4">
+                <CardContent>
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <DetailItem label="Status" :value="position.status" />
                         <DetailItem label="Job Title" :value="position.job_title" />
@@ -54,10 +66,12 @@
             <!-- Flags and Risk -->
             <Card>
                 <CardHeader>
-                    <CardTitle>Flags and Risk</CardTitle>
+                    <CardTitle>
+                        Flags and Risk
+                    </CardTitle>
                 </CardHeader>
 
-                <CardContent class="space-y-4">
+                <CardContent>
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <DetailItem label="Essential" :value="yesNo(position.is_essential)" />
                         <DetailItem label="Travel Required" :value="yesNo(position.travel_required)" />
@@ -71,7 +85,9 @@
         <!-- Organizations -->
         <Card>
             <CardHeader>
-                <CardTitle>Organizations</CardTitle>
+                <CardTitle>
+                    Organizations
+                </CardTitle>
             </CardHeader>
 
             <CardContent>
@@ -94,16 +110,201 @@
             </CardContent>
         </Card>
 
+        <!-- Skills and Tasks -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <!-- Skills -->
+            <Card>
+                <CardHeader>
+                    <CardTitle>
+                        Skills
+                    </CardTitle>
+                </CardHeader>
+
+                <CardContent class="space-y-6">
+                    <!-- Job Title Skills -->
+                    <div>
+                        <h3 class="font-medium mb-3">
+                            Job Title Skills
+                        </h3>
+
+                        <div
+                            v-if="jobTitleSkills.length"
+                            class="space-y-3"
+                        >
+                            <div
+                                v-for="skill in jobTitleSkills"
+                                :key="skill.id"
+                                class="border rounded-lg p-3"
+                            >
+                                <div class="font-medium text-sm">
+                                    {{ skill.name }}
+                                </div>
+
+                                <p class="text-sm text-muted-foreground mt-1">
+                                    {{ skill.description || 'No description provided.' }}
+                                </p>
+                            </div>
+                        </div>
+
+                        <p
+                            v-else
+                            class="text-sm text-muted-foreground"
+                        >
+                            No default skills found for this job title.
+                        </p>
+                    </div>
+
+                    <!-- Custom Position Skills -->
+                    <div>
+                        <h3 class="font-medium mb-3">
+                            Custom Position Skills
+                        </h3>
+
+                        <div
+                            v-if="customSkills.length"
+                            class="space-y-3"
+                        >
+                            <div
+                                v-for="skill in customSkills"
+                                :key="skill.id"
+                                class="border rounded-lg p-3"
+                            >
+                                <div class="font-medium text-sm">
+                                    {{ skill.name }}
+                                </div>
+
+                                <p class="text-sm text-muted-foreground mt-1">
+                                    {{ skill.description || 'No description provided.' }}
+                                </p>
+                            </div>
+                        </div>
+
+                        <p
+                            v-else
+                            class="text-sm text-muted-foreground"
+                        >
+                            No custom skills have been added to this position.
+                        </p>
+                    </div>
+                </CardContent>
+            </Card>
+
+            <!-- Tasks -->
+            <Card>
+                <CardHeader>
+                    <CardTitle>
+                        Tasks
+                    </CardTitle>
+                </CardHeader>
+
+                <CardContent class="space-y-6">
+                    <!-- Job Title Tasks -->
+                    <div>
+                        <h3 class="font-medium mb-3">
+                            Job Title Tasks
+                        </h3>
+
+                        <div
+                            v-if="jobTitleTasks.length"
+                            class="space-y-3"
+                        >
+                            <div
+                                v-for="task in jobTitleTasks"
+                                :key="task.id"
+                                class="border rounded-lg p-3"
+                            >
+                                <div class="font-medium text-sm">
+                                    {{ task.name }}
+                                </div>
+
+                                <p class="text-sm text-muted-foreground mt-1">
+                                    {{ task.description || 'No description provided.' }}
+                                </p>
+                            </div>
+                        </div>
+
+                        <p
+                            v-else
+                            class="text-sm text-muted-foreground"
+                        >
+                            No default tasks found for this job title.
+                        </p>
+                    </div>
+
+                    <!-- Custom Position Tasks -->
+                    <div>
+                        <h3 class="font-medium mb-3">
+                            Custom Position Tasks
+                        </h3>
+
+                        <div
+                            v-if="customTasks.length"
+                            class="space-y-3"
+                        >
+                            <div
+                                v-for="task in customTasks"
+                                :key="task.id"
+                                class="border rounded-lg p-3"
+                            >
+                                <div class="font-medium text-sm">
+                                    {{ task.name }}
+                                </div>
+
+                                <p class="text-sm text-muted-foreground mt-1">
+                                    {{ task.description || 'No description provided.' }}
+                                </p>
+                            </div>
+                        </div>
+
+                        <p
+                            v-else
+                            class="text-sm text-muted-foreground"
+                        >
+                            No custom tasks have been added to this position.
+                        </p>
+                    </div>
+                </CardContent>
+            </Card>
+        </div>
+
         <!-- Requirements -->
         <Card>
             <CardHeader>
-                <CardTitle>Requirements and Qualifications</CardTitle>
+                <CardTitle>
+                    Requirements and Qualifications
+                </CardTitle>
             </CardHeader>
 
             <CardContent class="space-y-4">
-                <LongText label="Certifications Required" :value="position.certifications_required" />
-                <LongText label="Training Required" :value="position.training_required" />
-                <LongText label="Experience" :value="position.experience" />
+                <div>
+                    <div class="text-sm font-medium text-muted-foreground">
+                        Certifications Required
+                    </div>
+
+                    <p class="text-sm whitespace-pre-line mt-1">
+                        {{ position.certifications_required || 'None provided.' }}
+                    </p>
+                </div>
+
+                <div>
+                    <div class="text-sm font-medium text-muted-foreground">
+                        Training Required
+                    </div>
+
+                    <p class="text-sm whitespace-pre-line mt-1">
+                        {{ position.training_required || 'None provided.' }}
+                    </p>
+                </div>
+
+                <div>
+                    <div class="text-sm font-medium text-muted-foreground">
+                        Experience
+                    </div>
+
+                    <p class="text-sm whitespace-pre-line mt-1">
+                        {{ position.experience || 'None provided.' }}
+                    </p>
+                </div>
             </CardContent>
         </Card>
 
@@ -111,7 +312,9 @@
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <Card>
                 <CardHeader>
-                    <CardTitle>Mission Description</CardTitle>
+                    <CardTitle>
+                        Mission Description
+                    </CardTitle>
                 </CardHeader>
 
                 <CardContent>
@@ -123,7 +326,9 @@
 
             <Card>
                 <CardHeader>
-                    <CardTitle>Funding Information</CardTitle>
+                    <CardTitle>
+                        Funding Information
+                    </CardTitle>
                 </CardHeader>
 
                 <CardContent>
@@ -137,7 +342,9 @@
         <!-- Closure Workflow -->
         <Card>
             <CardHeader>
-                <CardTitle>Closure Workflow</CardTitle>
+                <CardTitle>
+                    Closure Workflow
+                </CardTitle>
             </CardHeader>
 
             <CardContent>
@@ -153,27 +360,49 @@
         <!-- Additional Information -->
         <Card>
             <CardHeader>
-                <CardTitle>Additional Information</CardTitle>
+                <CardTitle>
+                    Additional Information
+                </CardTitle>
             </CardHeader>
 
             <CardContent class="space-y-4">
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <DetailItem label="Customer Lead" :value="position.customer_lead_name" />
-                    <DetailItem label="Customer Created At" :value="formatDate(position.customer_created_at)" />
+                    <DetailItem
+                        label="Customer Lead"
+                        :value="position.customer_lead_name"
+                    />
+
+                    <DetailItem
+                        label="Customer Created At"
+                        :value="formatDate(position.customer_created_at)"
+                    />
                 </div>
 
-                <LongText label="Notes" :value="position.notes" fallback="No notes available." />
+                <div>
+                    <div class="text-sm font-medium text-muted-foreground">
+                        Notes
+                    </div>
+
+                    <p class="text-sm whitespace-pre-line mt-1">
+                        {{ position.notes || 'No notes available.' }}
+                    </p>
+                </div>
             </CardContent>
         </Card>
 
         <!-- Current Assignments -->
         <Card>
             <CardHeader>
-                <CardTitle>Current Assignments</CardTitle>
+                <CardTitle>
+                    Current Assignments
+                </CardTitle>
             </CardHeader>
 
             <CardContent>
-                <div v-if="activeAssignments.length" class="space-y-3">
+                <div
+                    v-if="activeAssignments.length"
+                    class="space-y-3"
+                >
                     <div
                         v-for="assignment in activeAssignments"
                         :key="assignment.id"
@@ -202,12 +431,47 @@
                                 </div>
                             </div>
 
-                            <AssignmentActions :assignment-id="assignment.id" />
+                            <DropdownMenu>
+                                <DropdownMenuTrigger as-child>
+                                    <Button
+                                        variant="ghost"
+                                        size="icon"
+                                    >
+                                        <MoreHorizontal class="h-4 w-4" />
+                                    </Button>
+                                </DropdownMenuTrigger>
+
+                                <DropdownMenuContent align="end">
+                                    <DropdownMenuLabel>
+                                        Actions
+                                    </DropdownMenuLabel>
+
+                                    <DropdownMenuSeparator />
+
+                                    <DropdownMenuItem as-child>
+                                        <Link :href="`/position-assignments/${assignment.id}/edit?return_to=/positions/${position.id}`">
+                                            Edit
+                                        </Link>
+                                    </DropdownMenuItem>
+
+                                    <DropdownMenuSeparator />
+
+                                    <DropdownMenuItem
+                                        @click="openDeleteDialog(assignment.id)"
+                                        class="text-red-600 focus:text-red-600"
+                                    >
+                                        Delete
+                                    </DropdownMenuItem>
+                                </DropdownMenuContent>
+                            </DropdownMenu>
                         </div>
                     </div>
                 </div>
 
-                <div v-else class="text-sm text-muted-foreground">
+                <div
+                    v-else
+                    class="text-sm text-muted-foreground"
+                >
                     No active assignments found.
                 </div>
             </CardContent>
@@ -216,7 +480,9 @@
         <!-- Assignment History -->
         <Card>
             <CardHeader>
-                <CardTitle>Assignment History</CardTitle>
+                <CardTitle>
+                    Assignment History
+                </CardTitle>
             </CardHeader>
 
             <CardContent>
@@ -239,31 +505,85 @@
                                 v-for="assignment in position.assignments"
                                 :key="assignment.id"
                             >
-                                <TableCell>{{ fullName(assignment.person) }}</TableCell>
-                                <TableCell>{{ assignment.person?.person_code || '—' }}</TableCell>
-                                <TableCell>{{ assignment.assignment_status || '—' }}</TableCell>
-                                <TableCell>{{ assignment.assignment_type || '—' }}</TableCell>
-                                <TableCell>{{ formatDate(assignment.start_date) }}</TableCell>
-                                <TableCell>{{ formatDate(assignment.end_date) }}</TableCell>
+                                <TableCell>
+                                    {{ fullName(assignment.person) }}
+                                </TableCell>
+
+                                <TableCell>
+                                    {{ assignment.person?.person_code || '—' }}
+                                </TableCell>
+
+                                <TableCell>
+                                    {{ assignment.assignment_status || '—' }}
+                                </TableCell>
+
+                                <TableCell>
+                                    {{ assignment.assignment_type || '—' }}
+                                </TableCell>
+
+                                <TableCell>
+                                    {{ formatDate(assignment.start_date) }}
+                                </TableCell>
+
+                                <TableCell>
+                                    {{ formatDate(assignment.end_date) }}
+                                </TableCell>
 
                                 <TableCell class="text-right">
-                                    <AssignmentActions :assignment-id="assignment.id" />
+                                    <DropdownMenu>
+                                        <DropdownMenuTrigger as-child>
+                                            <Button
+                                                variant="ghost"
+                                                size="icon"
+                                            >
+                                                <MoreHorizontal class="h-4 w-4" />
+                                            </Button>
+                                        </DropdownMenuTrigger>
+
+                                        <DropdownMenuContent align="end">
+                                            <DropdownMenuLabel>
+                                                Actions
+                                            </DropdownMenuLabel>
+
+                                            <DropdownMenuSeparator />
+
+                                            <DropdownMenuItem as-child>
+                                                <Link :href="`/position-assignments/${assignment.id}/edit?return_to=/positions/${position.id}`">
+                                                    Edit
+                                                </Link>
+                                            </DropdownMenuItem>
+
+                                            <DropdownMenuSeparator />
+
+                                            <DropdownMenuItem
+                                                @click="openDeleteDialog(assignment.id)"
+                                                class="text-red-600 focus:text-red-600"
+                                            >
+                                                Delete
+                                            </DropdownMenuItem>
+                                        </DropdownMenuContent>
+                                    </DropdownMenu>
                                 </TableCell>
                             </TableRow>
                         </TableBody>
                     </Table>
                 </div>
 
-                <div v-else class="text-sm text-muted-foreground">
+                <div
+                    v-else
+                    class="text-sm text-muted-foreground"
+                >
                     No assignment history found.
                 </div>
             </CardContent>
         </Card>
 
-        <!-- Position Activity History -->
+        <!-- Position Change History -->
         <Card>
             <CardHeader>
-                <CardTitle>Position Change History</CardTitle>
+                <CardTitle>
+                    Position Change History
+                </CardTitle>
             </CardHeader>
 
             <CardContent>
@@ -285,28 +605,53 @@
                                 v-for="activity in position.activities"
                                 :key="activity.id"
                             >
-                                <TableCell>{{ formatDateTime(activity.created_at) }}</TableCell>
-                                <TableCell>{{ activity.user?.name || activity.user?.username || 'System' }}</TableCell>
-                                <TableCell>{{ activity.action || '—' }}</TableCell>
-                                <TableCell>{{ formatFieldName(activity.field_name) }}</TableCell>
-                                <TableCell>{{ activity.old_value || '—' }}</TableCell>
-                                <TableCell>{{ activity.new_value || '—' }}</TableCell>
+                                <TableCell>
+                                    {{ formatDateTime(activity.created_at) }}
+                                </TableCell>
+
+                                <TableCell>
+                                    {{ activity.user?.name || activity.user?.username || 'System' }}
+                                </TableCell>
+
+                                <TableCell>
+                                    {{ activity.action || '—' }}
+                                </TableCell>
+
+                                <TableCell>
+                                    {{ formatFieldName(activity.field_name) }}
+                                </TableCell>
+
+                                <TableCell>
+                                    {{ activity.old_value || '—' }}
+                                </TableCell>
+
+                                <TableCell>
+                                    {{ activity.new_value || '—' }}
+                                </TableCell>
                             </TableRow>
                         </TableBody>
                     </Table>
                 </div>
 
-                <div v-else class="text-sm text-muted-foreground">
+                <div
+                    v-else
+                    class="text-sm text-muted-foreground"
+                >
                     No position changes have been recorded.
                 </div>
             </CardContent>
         </Card>
 
         <!-- Delete Assignment Dialog -->
-        <AlertDialog :open="deleteDialogOpen" @update:open="deleteDialogOpen = $event">
+        <AlertDialog
+            :open="deleteDialogOpen"
+            @update:open="deleteDialogOpen = $event"
+        >
             <AlertDialogContent>
                 <AlertDialogHeader>
-                    <AlertDialogTitle>Delete Assignment?</AlertDialogTitle>
+                    <AlertDialogTitle>
+                        Delete Assignment?
+                    </AlertDialogTitle>
 
                     <AlertDialogDescription>
                         This action cannot be undone. This will permanently delete the assignment.
@@ -331,15 +676,26 @@
 </template>
 
 <script setup>
-import { computed, ref } from 'vue'
-import { Link, router } from '@inertiajs/vue3'
+import { ref } from 'vue'
+
+import {
+    Link,
+    router,
+} from '@inertiajs/vue3'
+
 import { MoreHorizontal } from 'lucide-vue-next'
 import { useAuth } from '@/composables/useAuth'
 
 import DetailItem from '@/components/DetailItem.vue'
 
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+
+import {
+    Card,
+    CardContent,
+    CardHeader,
+    CardTitle,
+} from '@/components/ui/card'
 
 import {
     AlertDialog,
@@ -383,7 +739,39 @@ const props = defineProps({
         type: Object,
         required: true,
     },
+
+    jobTitleSkills: {
+        type: Array,
+        default: () => [],
+    },
+
+    jobTitleTasks: {
+        type: Array,
+        default: () => [],
+    },
+
+    customSkills: {
+        type: Array,
+        default: () => [],
+    },
+
+    customTasks: {
+        type: Array,
+        default: () => [],
+    },
 })
+
+/*
+|--------------------------------------------------------------------------
+| Template Data
+|--------------------------------------------------------------------------
+*/
+
+const position = props.position
+const jobTitleSkills = props.jobTitleSkills ?? []
+const jobTitleTasks = props.jobTitleTasks ?? []
+const customSkills = props.customSkills ?? []
+const customTasks = props.customTasks ?? []
 
 /*
 |--------------------------------------------------------------------------
@@ -396,31 +784,23 @@ const assignmentToDelete = ref(null)
 
 /*
 |--------------------------------------------------------------------------
-| Computed Values
+| Computed-Like Helpers
 |--------------------------------------------------------------------------
 */
 
-/**
- * Creates a short alias so the template can use position directly.
- */
-const position = computed(() => props.position)
-
-/**
- * Filters assignments to show only active/current assignments.
- */
-const activeAssignments = computed(() => {
-    if (!props.position.assignments) {
+function activeAssignments() {
+    if (!position.assignments) {
         return []
     }
 
-    return props.position.assignments.filter((assignment) => {
+    return position.assignments.filter((assignment) => {
         const status = String(
             assignment.assignment_status || ''
         ).toLowerCase()
 
         return status === 'active' || !assignment.end_date
     })
-})
+}
 
 /*
 |--------------------------------------------------------------------------
@@ -428,22 +808,10 @@ const activeAssignments = computed(() => {
 |--------------------------------------------------------------------------
 */
 
-/**
- * Converts boolean values into Yes/No display text.
- *
- * @param {boolean|number|string|null} value
- * @returns {string}
- */
 function yesNo(value) {
     return value ? 'Yes' : 'No'
 }
 
-/**
- * Formats a date value into a localized readable date string.
- *
- * @param {string|null} value
- * @returns {string}
- */
 function formatDate(value) {
     if (!value) {
         return '—'
@@ -458,12 +826,6 @@ function formatDate(value) {
     return date.toLocaleDateString()
 }
 
-/**
- * Formats a date/time value into a localized readable date and time.
- *
- * @param {string|null} value
- * @returns {string}
- */
 function formatDateTime(value) {
     if (!value) {
         return '—'
@@ -478,14 +840,6 @@ function formatDateTime(value) {
     return date.toLocaleString()
 }
 
-/**
- * Returns a readable organization name.
- *
- * Uses full_path first because your organization dropdown is hierarchical.
- *
- * @param {Object|null} organization
- * @returns {string}
- */
 function organizationName(organization) {
     if (!organization) {
         return '—'
@@ -494,12 +848,6 @@ function organizationName(organization) {
     return organization.full_path || organization.name || '—'
 }
 
-/**
- * Converts snake_case field names into readable labels.
- *
- * @param {string|null} fieldName
- * @returns {string}
- */
 function formatFieldName(fieldName) {
     if (!fieldName) {
         return '—'
@@ -510,12 +858,6 @@ function formatFieldName(fieldName) {
         .replace(/\b\w/g, (char) => char.toUpperCase())
 }
 
-/**
- * Builds a person's full display name.
- *
- * @param {Object|null} person
- * @returns {string}
- */
 function fullName(person) {
     if (!person) {
         return '—'
@@ -533,19 +875,11 @@ function fullName(person) {
 |--------------------------------------------------------------------------
 */
 
-/**
- * Opens the delete confirmation dialog for the selected assignment.
- *
- * @param {number|string} id
- */
 function openDeleteDialog(id) {
     assignmentToDelete.value = id
     deleteDialogOpen.value = true
 }
 
-/**
- * Deletes the selected assignment and returns the user to the current page.
- */
 function confirmDelete() {
     if (!assignmentToDelete.value) {
         return
@@ -553,7 +887,7 @@ function confirmDelete() {
 
     router.delete(`/position-assignments/${assignmentToDelete.value}`, {
         data: {
-            return_to: `/positions/${props.position.id}`,
+            return_to: `/positions/${position.id}`,
         },
 
         preserveScroll: true,
@@ -563,94 +897,5 @@ function confirmDelete() {
             assignmentToDelete.value = null
         },
     })
-}
-
-/*
-|--------------------------------------------------------------------------
-| Local Helper Components
-|--------------------------------------------------------------------------
-*/
-
-const LongText = {
-    props: {
-        label: {
-            type: String,
-            required: true,
-        },
-        value: {
-            type: String,
-            default: '',
-        },
-        fallback: {
-            type: String,
-            default: 'None provided.',
-        },
-    },
-
-    template: `
-        <div>
-            <div class="text-sm font-medium text-muted-foreground">
-                {{ label }}
-            </div>
-
-            <p class="text-sm whitespace-pre-line mt-1">
-                {{ value || fallback }}
-            </p>
-        </div>
-    `,
-}
-
-const AssignmentActions = {
-    components: {
-        Button,
-        DropdownMenu,
-        DropdownMenuContent,
-        DropdownMenuItem,
-        DropdownMenuLabel,
-        DropdownMenuSeparator,
-        DropdownMenuTrigger,
-        Link,
-        MoreHorizontal,
-    },
-
-    props: {
-        assignmentId: {
-            type: [Number, String],
-            required: true,
-        },
-    },
-
-    template: `
-        <DropdownMenu>
-            <DropdownMenuTrigger as-child>
-                <Button variant="ghost" size="icon">
-                    <MoreHorizontal class="h-4 w-4" />
-                </Button>
-            </DropdownMenuTrigger>
-
-            <DropdownMenuContent align="end">
-                <DropdownMenuLabel>
-                    Actions
-                </DropdownMenuLabel>
-
-                <DropdownMenuSeparator />
-
-                <DropdownMenuItem as-child>
-                    <Link :href="\`/position-assignments/\${assignmentId}/edit?return_to=/positions/${props.position.id}\`">
-                        Edit
-                    </Link>
-                </DropdownMenuItem>
-
-                <DropdownMenuSeparator />
-
-                <DropdownMenuItem
-                    class="text-red-600 focus:text-red-600"
-                    @click="$parent.openDeleteDialog(assignmentId)"
-                >
-                    Delete
-                </DropdownMenuItem>
-            </DropdownMenuContent>
-        </DropdownMenu>
-    `,
 }
 </script>

@@ -349,6 +349,46 @@ class PermissionSeeder extends Seeder
                 'is_system' => false,
                 'is_locked' => false,
             ],
+            [
+                'name' => 'access_position_titles',
+                'group_name' => 'Position Titles',
+                'label' => 'Access Position Titles',
+                'description' => 'Can access Position Titles information.',
+                'is_system' => false,
+                'is_locked' => false,
+            ],
+            [
+                'name' => 'create_position_titles',
+                'group_name' => 'Position Titles',
+                'label' => 'Create Position Titles',
+                'description' => 'Can create trouble Position Titles.',
+                'is_system' => false,
+                'is_locked' => false,
+            ],
+            [
+                'name' => 'read_position_titles',
+                'group_name' => 'Position Titles',
+                'label' => 'Read Position Titles',
+                'description' => 'Can view a Position Titles information.',
+                'is_system' => false,
+                'is_locked' => false,
+            ],
+            [
+                'name' => 'update_position_titles',
+                'group_name' => 'Position Titles',
+                'label' => 'Update Position Titles',
+                'description' => 'Can update Position Titles information.',
+                'is_system' => false,
+                'is_locked' => false,
+            ],
+            [
+                'name' => 'delete_position_titles',
+                'group_name' => 'Position Titles',
+                'label' => 'Delete Position Titles',
+                'description' => 'Can delete Position Titles.',
+                'is_system' => false,
+                'is_locked' => false,
+            ],
         ];
 
         foreach ($permissions as $permission) {

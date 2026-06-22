@@ -31,6 +31,11 @@ return new class extends Migration
 
             $table->string('job_title');
 
+            $table->foreignId('job_title_id')
+                ->nullable()
+                ->constrained('job_titles')
+                ->nullOnDelete();
+
             $table->enum('experience_level', [
                 'Beginner',
                 'Novice',
