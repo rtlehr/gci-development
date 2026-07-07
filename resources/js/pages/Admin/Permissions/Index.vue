@@ -2,6 +2,8 @@
 import { computed, reactive, ref } from 'vue'
 import { Link, router } from '@inertiajs/vue3'
 import ColumnSettings from '@/Components/Lists/ColumnSettings.vue'
+import ListToolbar from '@/Components/Lists/ListToolbar.vue'
+import ListFilters from '@/Components/Lists/ListFilters.vue'
 
 import {
     ArrowDown,
@@ -12,8 +14,6 @@ import {
 } from 'lucide-vue-next'
 
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
 import { Badge } from '@/components/ui/badge'
 
 import {
@@ -281,25 +281,14 @@ function exportCsv() {
 
 <template>
     <div class="p-6 space-y-6">
-        <div class="flex items-center justify-between">
-            <h1 class="text-2xl font-semibold">Permissions</h1>
-
-            <div class="flex gap-2">
-                <Button variant="outline" @click="showColumnSettings = true">
-                    Column Settings
-                </Button>
-
-                <!--
-                <Button variant="outline" @click="exportCsv">
-                    Export CSV
-                </Button>
-                -->
-
-                <Link href="/admin/permissions/create">
-                    <Button>Create Permission</Button>
-                </Link>
-            </div>
-        </div>
+        <ListToolbar
+            title="Permissions"
+            create-label="Create Permission"
+            create-href="/admin/permissions/create"
+            :can-create="true"
+            :can-export="false"
+            @open-column-settings="showColumnSettings = true"
+        />
 
         <ColumnSettings
             v-model:open="showColumnSettings"
@@ -311,25 +300,12 @@ function exportCsv() {
             @reset-defaults="resetPreferencesOnServer"
         />
 
-        <div class="border rounded-xl p-4 bg-background">
-            <form @submit.prevent="applyFilters" class="flex flex-col md:flex-row gap-4 md:items-end">
-                <div class="flex-1 space-y-2">
-                    <Label for="search">Search</Label>
-                    <Input
-                        id="search"
-                        v-model="filterForm.search"
-                        placeholder="Search permissions..."
-                    />
-                </div>
-
-                <div class="flex gap-2">
-                    <Button type="submit">Apply</Button>
-                    <Button type="button" variant="outline" @click="resetFilters">
-                        Reset
-                    </Button>
-                </div>
-            </form>
-        </div>
+        <ListFilters
+            v-model:search="filterForm.search"
+            search-placeholder="Search permissions..."
+            @apply="applyFilters"
+            @reset="resetFilters"
+        />
 
         <div class="border rounded-xl bg-background overflow-hidden">
             <Table>

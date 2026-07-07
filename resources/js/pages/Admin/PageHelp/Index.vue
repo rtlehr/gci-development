@@ -1,30 +1,22 @@
 <template>
     <div class="space-y-6 p-6">
-        <div class="flex items-center justify-between">
-            <div>
-                <h1 class="text-2xl font-semibold">Page Help</h1>
-                <p class="mt-1 text-sm text-muted-foreground">
-                    Manage help content shown in the help panel.
-                </p>
-            </div>
+        <ListToolbar
+            title="Page Help"
+            description="Manage help content shown in the help panel."
+            create-label="Create Help Page"
+            create-href="/admin/page-help/create"
+            :can-create="true"
+            :can-export="false"
+            :show-column-settings="false"
+        />
 
-            <Link href="/admin/page-help/create">
-                <Button>Create Help Page</Button>
-            </Link>
-        </div>
-
-        <div class="rounded-xl border bg-background p-4">
-            <form @submit.prevent="applyFilters" class="flex gap-2">
-                <Input
-                    v-model="filterForm.search"
-                    placeholder="Search by key or title..."
-                />
-                <Button type="submit">Search</Button>
-                <Button type="button" variant="outline" @click="resetFilters">
-                    Reset
-                </Button>
-            </form>
-        </div>
+        <ListFilters
+            v-model:search="filterForm.search"
+            search-placeholder="Search by key or title..."
+            apply-label="Search"
+            @apply="applyFilters"
+            @reset="resetFilters"
+        />
 
         <div class="overflow-hidden rounded-xl border bg-background">
             <Table>
@@ -77,8 +69,11 @@
 <script setup>
 import { reactive } from 'vue'
 import { Link, router } from '@inertiajs/vue3'
+import ListToolbar from '@/Components/Lists/ListToolbar.vue'
+import ListFilters from '@/Components/Lists/ListFilters.vue'
+
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
+
 import {
     Table,
     TableBody,

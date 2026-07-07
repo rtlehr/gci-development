@@ -2,6 +2,8 @@
 import { computed, reactive, ref } from 'vue'
 import { Link, router } from '@inertiajs/vue3'
 import ColumnSettings from '@/Components/Lists/ColumnSettings.vue'
+import ListToolbar from '@/Components/Lists/ListToolbar.vue'
+import ListFilters from '@/Components/Lists/ListFilters.vue'
 
 import {
     ArrowDown,
@@ -10,7 +12,6 @@ import {
 } from 'lucide-vue-next'
 
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Badge } from '@/components/ui/badge'
 
@@ -356,21 +357,13 @@ function exportCsv() {
 
 <template>
     <div class="p-6 space-y-6">
-        <div class="flex items-center justify-between">
-            <h1 class="text-2xl font-semibold">Tickets</h1>
-
-            <div class="flex gap-2">
-                <Button variant="outline" @click="showColumnSettings = true">
-                    Column Settings
-                </Button>
-
-                <!--
-                <Button variant="outline" @click="exportCsv">
-                    Export CSV
-                </Button>
-                -->
-            </div>
-        </div>
+        <ListToolbar
+            title="Tickets"
+            :can-export="false"
+            :can-create="false"
+            @open-column-settings="showColumnSettings = true"
+            @export="exportCsv"
+        />
 
         <ColumnSettings
             v-model:open="showColumnSettings"
@@ -382,52 +375,54 @@ function exportCsv() {
             @reset-defaults="resetPreferencesOnServer"
         />
 
-        <div class="border rounded-xl p-4 bg-background">
-            <form @submit.prevent="applyFilters" class="space-y-4">
-                <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-5 gap-4">
-                    <div class="space-y-2 xl:col-span-2">
-                        <Label>Search</Label>
-                        <Input v-model="filterForm.search" />
-                    </div>
-
-                    <div class="space-y-2">
-                        <Label>Request Type</Label>
-                        <select v-model="filterForm.request_type" class="h-10 border rounded-md px-3">
-                            <option value="">All</option>
-                            <option value="bug">Bug</option>
-                            <option value="improvement">Improvement</option>
-                        </select>
-                    </div>
-
-                    <div class="space-y-2">
-                        <Label>Importance</Label>
-                        <select v-model="filterForm.importance" class="h-10 border rounded-md px-3">
-                            <option value="">All</option>
-                            <option value="show_stopper">Show Stopper</option>
-                            <option value="asap">ASAP</option>
-                            <option value="nice_to_have">Nice to Have</option>
-                        </select>
-                    </div>
-
-                    <div class="space-y-2">
-                        <Label>Status</Label>
-                        <select v-model="filterForm.status" class="h-10 border rounded-md px-3">
-                            <option value="">All</option>
-                            <option value="new">New</option>
-                            <option value="in_progress">In Progress</option>
-                            <option value="on_hold">On Hold</option>
-                            <option value="complete">Complete</option>
-                            <option value="canceled">Canceled</option>
-                        </select>
-                    </div>
+        <ListFilters
+            v-model:search="filterForm.search"
+            search-placeholder="Search tickets..."
+            @apply="applyFilters"
+            @reset="resetFilters"
+        >
+            <template #filters>
+                <div class="space-y-2">
+                    <Label>Request Type</Label>
+                    <select
+                        v-model="filterForm.request_type"
+                        class="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                    >
+                        <option value="">All</option>
+                        <option value="bug">Bug</option>
+                        <option value="improvement">Improvement</option>
+                    </select>
                 </div>
 
-                <div class="flex gap-2">
-                    <Button type="submit">Apply</Button>
-                    <Button type="button" variant="outline" @click="resetFilters">Reset</Button>
+                <div class="space-y-2">
+                    <Label>Importance</Label>
+                    <select
+                        v-model="filterForm.importance"
+                        class="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                    >
+                        <option value="">All</option>
+                        <option value="show_stopper">Show Stopper</option>
+                        <option value="asap">ASAP</option>
+                        <option value="nice_to_have">Nice to Have</option>
+                    </select>
                 </div>
-            </form>
-        </div>
+
+                <div class="space-y-2">
+                    <Label>Status</Label>
+                    <select
+                        v-model="filterForm.status"
+                        class="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                    >
+                        <option value="">All</option>
+                        <option value="new">New</option>
+                        <option value="in_progress">In Progress</option>
+                        <option value="on_hold">On Hold</option>
+                        <option value="complete">Complete</option>
+                        <option value="canceled">Canceled</option>
+                    </select>
+                </div>
+            </template>
+        </ListFilters>
 
         <div class="border rounded-xl bg-background overflow-hidden">
             <Table>

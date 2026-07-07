@@ -1,26 +1,15 @@
 <template>
     <div class="p-6 space-y-6">
-        <div class="flex items-center justify-between">
-            <h1 class="text-2xl font-semibold">Positions</h1>
-
-            <div class="flex gap-2">
-                <Button variant="outline" @click="showColumnSettings = !showColumnSettings">
-                    {{ showColumnSettings ? 'Hide Column Settings' : 'Column Settings' }}
-                </Button>
-
-                <Button
-                    variant="outline"
-                    :disabled="isDownloading"
-                    @click="exportCsv"
-                >
-                    {{ isDownloading ? 'Exporting...' : 'Export CSV' }}
-                </Button>
-
-                <Link href="/positions/create" v-if="can(Permissions.POSITIONS_CREATE)">
-                    <Button>Create Position</Button>
-                </Link>
-            </div>
-        </div>
+        <ListToolbar
+            title="Positions"
+            create-label="Create Position"
+            create-href="/positions/create"
+            :can-create="can(Permissions.POSITIONS_CREATE)"
+            :can-export="true"
+            :is-downloading="isDownloading"
+            @open-column-settings="showColumnSettings = true"
+            @export="exportCsv"
+        />
 
         <!-- Column Settings Panel -->
         <ColumnSettings
@@ -34,17 +23,13 @@
         />
 
         <!-- Filters -->
-        <div class="border rounded-xl p-4 bg-background">
-            <form @submit.prevent="applyFilters" class="flex flex-col md:flex-row gap-4 md:items-end">
-                <div class="flex-1 space-y-2">
-                    <Label for="search">Search</Label>
-                    <Input
-                        id="search"
-                        v-model="filterForm.search"
-                        placeholder="Search visible columns..."
-                    />
-                </div>
-
+        <ListFilters
+            v-model:search="filterForm.search"
+            search-placeholder="Search visible columns..."
+            @apply="applyFilters"
+            @reset="resetFilters"
+        >
+            <template #filters>
                 <div class="w-full md:w-[220px] space-y-2">
                     <Label for="status-filter">Status</Label>
                     <select
@@ -58,15 +43,8 @@
                         <option value="Closed">Closed</option>
                     </select>
                 </div>
-
-                <div class="flex gap-2">
-                    <Button type="submit">Apply</Button>
-                    <Button type="button" variant="outline" @click="resetFilters">
-                        Reset
-                    </Button>
-                </div>
-            </form>
-        </div>
+            </template>
+        </ListFilters>
 
         <!-- Table -->
         <div class="border rounded-xl bg-background overflow-hidden">
@@ -257,11 +235,12 @@ import {
 } from 'lucide-vue-next'
 
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Badge } from '@/components/ui/badge'
 import { useFileDownload } from '@/composables/useFileDownload'
 import ColumnSettings from '@/Components/Lists/ColumnSettings.vue'
+import ListToolbar from '@/Components/Lists/ListToolbar.vue'
+import ListFilters from '@/Components/Lists/ListFilters.vue'
 
 import {
     AlertDialog,

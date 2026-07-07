@@ -1,26 +1,15 @@
 <template>
     <div class="p-6 space-y-6">
-        <div class="flex items-center justify-between">
-            <h1 class="text-2xl font-semibold">Candidates</h1>
-
-            <div class="flex gap-2">
-                <Button variant="outline" @click="showColumnSettings = true">
-                    Column Settings
-                </Button>
-
-                <Button
-                    variant="outline"
-                    :disabled="isDownloading"
-                    @click="exportCsv"
-                >
-                    {{ isDownloading ? 'Exporting...' : 'Export CSV' }}
-                </Button>
-
-                <Link href="/candidates/create" v-if="can(Permissions.CANDIDATES_CREATE)">
-                    <Button>Create Candidate</Button>
-                </Link>
-            </div>
-        </div>
+        <ListToolbar
+            title="Candidates"
+            create-label="Create Candidate"
+            create-href="/candidates/create"
+            :can-create="can(Permissions.CANDIDATES_CREATE)"
+            :can-export="true"
+            :is-downloading="isDownloading"
+            @open-column-settings="showColumnSettings = true"
+            @export="exportCsv"
+        />
 
         <ColumnSettings
             v-model:open="showColumnSettings"
@@ -32,18 +21,13 @@
             @reset-defaults="resetPreferencesOnServer"
         />
 
-        <!-- Filters -->
-        <div class="border rounded-xl p-4 bg-background">
-            <form @submit.prevent="applyFilters" class="flex flex-col md:flex-row gap-4 md:items-end">
-                <div class="flex-1 space-y-2">
-                    <Label for="search">Search</Label>
-                    <Input
-                        id="search"
-                        v-model="filterForm.search"
-                        placeholder="Search candidates, people, positions..."
-                    />
-                </div>
-
+        <ListFilters
+            v-model:search="filterForm.search"
+            search-placeholder="Search candidates, people, positions..."
+            @apply="applyFilters"
+            @reset="resetFilters"
+        >
+            <template #filters>
                 <div class="w-full md:w-56 space-y-2">
                     <Label for="status">Status</Label>
                     <select
@@ -61,15 +45,8 @@
                         </option>
                     </select>
                 </div>
-
-                <div class="flex gap-2">
-                    <Button type="submit">Apply</Button>
-                    <Button type="button" variant="outline" @click="resetFilters">
-                        Reset
-                    </Button>
-                </div>
-            </form>
-        </div>
+            </template>
+        </ListFilters>
 
         <!-- Table -->
         <div class="border rounded-xl bg-background overflow-hidden">
@@ -126,11 +103,14 @@
                             {{ formatCell(candidate, col.key) }}
                         </TableCell>
 
-                        <TableCell class="text-right" v-if="
+                        <TableCell
+                            class="text-right"
+                            v-if="
                                 can(Permissions.CANDIDATES_READ) ||
                                 can(Permissions.CANDIDATES_UPDATE) ||
                                 can(Permissions.CANDIDATES_DELETE)
-                            ">
+                            "
+                        >
                             <DropdownMenu>
                                 <DropdownMenuTrigger as-child>
                                     <Button variant="ghost" size="icon">
@@ -247,6 +227,8 @@ import { Link, router } from '@inertiajs/vue3'
 import { useAuth } from '@/composables/useAuth'
 import { useFileDownload } from '@/composables/useFileDownload'
 import ColumnSettings from '@/Components/Lists/ColumnSettings.vue'
+import ListToolbar from '@/Components/Lists/ListToolbar.vue'
+import ListFilters from '@/Components/Lists/ListFilters.vue'
 
 import {
     ArrowDown,
@@ -256,7 +238,6 @@ import {
 } from 'lucide-vue-next'
 
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 
 import {

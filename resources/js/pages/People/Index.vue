@@ -1,26 +1,15 @@
 <template>
     <div class="p-6 space-y-6">
-        <div class="flex items-center justify-between">
-            <h1 class="text-2xl font-semibold">People</h1>
-
-            <div class="flex gap-2">
-                <Button variant="outline" @click="showColumnSettings = true">
-                    Column Settings
-                </Button>
-
-                <Button
-                    variant="outline"
-                    :disabled="isDownloading"
-                    @click="exportCsv"
-                >
-                    {{ isDownloading ? 'Exporting...' : 'Export CSV' }}
-                </Button>
-
-                <Link href="/people/create" v-if="can(Permissions.PEOPLE_CREATE)">
-                    <Button>Add Person</Button>
-                </Link>
-            </div>
-        </div>
+        <ListToolbar
+            title="People"
+            create-label="Add Person"
+            create-href="/people/create"
+            :can-create="can(Permissions.PEOPLE_CREATE)"
+            :can-export="true"
+            :is-downloading="isDownloading"
+            @open-column-settings="showColumnSettings = true"
+            @export="exportCsv"
+        />
 
         <ColumnSettings
             v-model:open="showColumnSettings"
@@ -32,26 +21,12 @@
             @reset-defaults="resetPreferencesOnServer"
         />
 
-        <!-- Filters -->
-        <div class="border rounded-xl p-4 bg-background">
-            <form @submit.prevent="applyFilters" class="flex flex-col md:flex-row gap-4 md:items-end">
-                <div class="flex-1 space-y-2">
-                    <Label for="search">Search</Label>
-                    <Input
-                        id="search"
-                        v-model="filterForm.search"
-                        placeholder="Search visible columns..."
-                    />
-                </div>
-
-                <div class="flex gap-2">
-                    <Button type="submit">Apply</Button>
-                    <Button type="button" variant="outline" @click="resetFilters">
-                        Reset
-                    </Button>
-                </div>
-            </form>
-        </div>
+        <ListFilters
+            v-model:search="filterForm.search"
+            search-placeholder="Search visible columns..."
+            @apply="applyFilters"
+            @reset="resetFilters"
+        />
 
         <!-- Table -->
         <div class="border rounded-xl bg-background overflow-hidden">
@@ -227,6 +202,8 @@ import { Link, router } from '@inertiajs/vue3'
 import { useAuth } from '@/composables/useAuth'
 import { useFileDownload } from '@/composables/useFileDownload'
 import ColumnSettings from '@/Components/Lists/ColumnSettings.vue'
+import ListToolbar from '@/Components/Lists/ListToolbar.vue'
+import ListFilters from '@/Components/Lists/ListFilters.vue'
 
 import {
     ArrowDown,
@@ -236,8 +213,6 @@ import {
 } from 'lucide-vue-next'
 
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
 
 import {
     AlertDialog,

@@ -1,24 +1,14 @@
 <template>
     <div class="p-6 space-y-6">
-        <div class="flex items-center justify-between">
-            <h1 class="text-2xl font-semibold">Groups</h1>
-
-            <div class="flex gap-2">
-                <Button variant="outline" @click="showColumnSettings = true">
-                    Column Settings
-                </Button>
-
-                <!--
-                <Button variant="outline" @click="exportCsv">
-                    Export CSV
-                </Button>
-                -->
-
-                <Link href="/admin/groups/create" v-if="can('view_admin')">
-                    <Button>Add Group</Button>
-                </Link>
-            </div>
-        </div>
+        <ListToolbar
+            title="Groups"
+            create-label="Add Group"
+            create-href="/admin/groups/create"
+            :can-create="can('view_admin')"
+            :can-export="false"
+            @open-column-settings="showColumnSettings = true"
+            @export="exportCsv"
+        />
 
         <ColumnSettings
             v-model:open="showColumnSettings"
@@ -30,27 +20,12 @@
             @reset-defaults="resetPreferencesOnServer"
         />
 
-        <div class="border rounded-xl p-4 bg-background">
-            <form @submit.prevent="applyFilters" class="flex flex-col md:flex-row gap-4 md:items-end">
-                <div class="flex-1 space-y-2">
-                    <Label for="search">Search</Label>
-
-                    <Input
-                        id="search"
-                        v-model="filterForm.search"
-                        placeholder="Search groups..."
-                    />
-                </div>
-
-                <div class="flex gap-2">
-                    <Button type="submit">Apply</Button>
-
-                    <Button type="button" variant="outline" @click="resetFilters">
-                        Reset
-                    </Button>
-                </div>
-            </form>
-        </div>
+        <ListFilters
+            v-model:search="filterForm.search"
+            search-placeholder="Search groups..."
+            @apply="applyFilters"
+            @reset="resetFilters"
+        />
 
         <div class="border rounded-xl bg-background overflow-hidden">
             <Table>
@@ -199,6 +174,8 @@ import { computed, reactive, ref } from 'vue'
 import { Link, router } from '@inertiajs/vue3'
 import { useAuth } from '@/composables/useAuth'
 import ColumnSettings from '@/Components/Lists/ColumnSettings.vue'
+import ListFilters from '@/Components/Lists/ListFilters.vue'
+import ListToolbar from '@/Components/Lists/ListToolbar.vue'
 
 import {
     ArrowDown,
@@ -208,8 +185,6 @@ import {
 } from 'lucide-vue-next'
 
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
 
 import {
     AlertDialog,
@@ -344,9 +319,15 @@ function updateColumnSettings(updatedColumns) {
     settingsForm.columnOrder = updatedColumns.map((column) => column.key)
 }
 
+function getFilterPayload() {
+    return {
+        search: filterForm.search,
+    }
+}
+
 function applyFilters() {
     router.get('/admin/groups', {
-        search: filterForm.search,
+        ...getFilterPayload(),
         sort: props.sort,
         direction: props.direction,
     }, {
@@ -375,7 +356,7 @@ function sortBy(column) {
     }
 
     router.get('/admin/groups', {
-        search: filterForm.search,
+        ...getFilterPayload(),
         sort: column,
         direction: nextDirection,
     }, {
@@ -393,7 +374,7 @@ function getSortIcon(column) {
 function goToPage(page) {
     router.get('/admin/groups', {
         page,
-        search: filterForm.search,
+        ...getFilterPayload(),
         sort: props.sort,
         direction: props.direction,
     }, {

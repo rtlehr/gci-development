@@ -1,28 +1,14 @@
 <template>
     <div class="p-6 space-y-6">
-        <div class="flex items-center justify-between">
-            <div>
-                <h1 class="text-2xl font-semibold">
-                    Job Titles
-                </h1>
-
-                <p class="text-sm text-muted-foreground mt-1">
-                    Manage master job titles, default skills, and default tasks.
-                </p>
-            </div>
-
-            <div class="flex gap-2">
-                <Button variant="outline" @click="showColumnSettings = true">
-                    Column Settings
-                </Button>
-
-                <Link href="/job-titles/create">
-                    <Button>
-                        Create Job Title
-                    </Button>
-                </Link>
-            </div>
-        </div>
+        <ListToolbar
+            title="Job Titles"
+            description="Manage master job titles, default skills, and default tasks."
+            create-label="Create Job Title"
+            create-href="/job-titles/create"
+            :can-create="true"
+            :can-export="false"
+            @open-column-settings="showColumnSettings = true"
+        />
 
         <ColumnSettings
             v-model:open="showColumnSettings"
@@ -65,7 +51,7 @@
                             :key="col.key"
                             :class="col.key === 'name' ? 'font-medium' : ''"
                         >
-                            <template v-if="col.key === 'status'">
+                            <template v-if="col.key === 'is_active'">
                                 <Badge :variant="jobTitle.is_active ? 'default' : 'secondary'">
                                     {{ jobTitle.is_active ? 'Active' : 'Inactive' }}
                                 </Badge>
@@ -110,6 +96,7 @@
 import { computed, reactive, ref } from 'vue'
 import { Link, router } from '@inertiajs/vue3'
 import ColumnSettings from '@/Components/Lists/ColumnSettings.vue'
+import ListToolbar from '@/Components/Lists/ListToolbar.vue'
 
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -122,17 +109,6 @@ import {
     TableHeader,
     TableRow,
 } from '@/components/ui/table'
-
-const defaultColumns = [
-    { key: 'name', label: 'Name', sortable: false },
-    { key: 'description', label: 'Description', sortable: false },
-    { key: 'skills_count', label: 'Skills', sortable: false },
-    { key: 'tasks_count', label: 'Tasks', sortable: false },
-    { key: 'positions_count', label: 'Positions', sortable: false },
-    { key: 'status', label: 'Status', sortable: false },
-]
-
-const defaultColumnKeys = defaultColumns.map((column) => column.key)
 
 const props = defineProps({
     jobTitles: {
@@ -177,8 +153,8 @@ const props = defineProps({
 const showColumnSettings = ref(false)
 
 const settingsForm = reactive({
-    visibleColumns: [...(props.visibleColumns ?? defaultColumnKeys)],
-    columnOrder: [...(props.columnOrder ?? defaultColumnKeys)],
+    visibleColumns: [...(props.visibleColumns ?? [])],
+    columnOrder: [...(props.columnOrder ?? [])],
 })
 
 const jobTitles = props.jobTitles ?? []
@@ -237,8 +213,8 @@ function saveColumnPreferences(updatedColumns = columnsForSettings.value) {
 }
 
 function resetColumnSettingsLocally() {
-    settingsForm.visibleColumns = [...(props.visibleColumns ?? defaultColumnKeys)]
-    settingsForm.columnOrder = [...(props.columnOrder ?? defaultColumnKeys)]
+    settingsForm.visibleColumns = [...(props.visibleColumns ?? [])]
+    settingsForm.columnOrder = [...(props.columnOrder ?? [])]
 }
 
 function resetPreferencesOnServer() {
