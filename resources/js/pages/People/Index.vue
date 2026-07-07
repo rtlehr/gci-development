@@ -8,8 +8,12 @@
                     {{ showColumnSettings ? 'Hide Column Settings' : 'Column Settings' }}
                 </Button>
 
-                <Button variant="outline" @click="exportCsv">
-                    Export CSV
+                <Button
+                    variant="outline"
+                    :disabled="isDownloading"
+                    @click="exportCsv"
+                >
+                    {{ isDownloading ? 'Exporting...' : 'Export CSV' }}
                 </Button>
 
                 <Link href="/people/create" v-if="can(Permissions.PEOPLE_CREATE)">
@@ -186,7 +190,6 @@
                             "
                         >
                             <DropdownMenu>
-
                                 <DropdownMenuTrigger as-child>
                                     <Button variant="ghost" size="icon">
                                         <MoreHorizontal class="h-4 w-4" />
@@ -195,7 +198,6 @@
 
                                 <DropdownMenuContent align="end">
                                     <DropdownMenuLabel>Actions</DropdownMenuLabel>
-
                                     <DropdownMenuSeparator />
 
                                     <DropdownMenuItem as-child v-if="can(Permissions.PEOPLE_READ)">
@@ -210,7 +212,7 @@
                                         </Link>
                                     </DropdownMenuItem>
 
-                                    <DropdownMenuSeparator />
+                                    <DropdownMenuSeparator v-if="can(Permissions.PEOPLE_DELETE)" />
 
                                     <DropdownMenuItem
                                         v-if="can(Permissions.PEOPLE_DELETE)"
@@ -220,7 +222,6 @@
                                         Delete
                                     </DropdownMenuItem>
                                 </DropdownMenuContent>
-
                             </DropdownMenu>
                         </TableCell>
                     </TableRow>
@@ -297,6 +298,7 @@
 import { computed, reactive, ref } from 'vue'
 import { Link, router } from '@inertiajs/vue3'
 import { useAuth } from '@/composables/useAuth'
+import { useFileDownload } from '@/composables/useFileDownload'
 
 import {
     ArrowDown,
@@ -341,6 +343,11 @@ import {
 import { Permissions } from '@/constants/permissions'
 
 const { can } = useAuth()
+
+const {
+    downloadFile,
+    isDownloading,
+} = useFileDownload()
 
 // Backend-provided people data, filters,
 // sorting state, and column configuration.
@@ -431,12 +438,32 @@ const pagesToShow = computed(() => {
 })
 
 /**
+ * Builds the payload used for filtering the list.
+ */
+function getFilterPayload() {
+    return {
+        search: filterForm.search,
+    }
+}
+
+/**
+ * Builds the payload used for exporting.
+ */
+function getExportPayload() {
+    return {
+        ...getFilterPayload(),
+        visible_columns: settingsForm.visibleColumns,
+        column_order: settingsForm.columnOrder,
+    }
+}
+
+/**
  * Applies the current search filter
  * while preserving sorting state.
  */
 function applyFilters() {
     router.get('/people', {
-        search: filterForm.search,
+        ...getFilterPayload(),
         sort: props.sort,
         direction: props.direction,
     }, {
@@ -475,7 +502,7 @@ function sortBy(column) {
     }
 
     router.get('/people', {
-        search: filterForm.search,
+        ...getFilterPayload(),
         sort: column,
         direction: nextDirection,
     }, {
@@ -508,7 +535,7 @@ function getSortIcon(column) {
 function goToPage(page) {
     router.get('/people', {
         page,
-        search: filterForm.search,
+        ...getFilterPayload(),
         sort: props.sort,
         direction: props.direction,
     }, {
@@ -626,7 +653,6 @@ function confirmDelete() {
  * @returns {string}
  */
 function formatCell(row, key) {
-
     // Handle primary phone number display from multiple possible relationships.
     if (key === 'primary_phone_number') {
         return row.primary_phone_number
@@ -646,25 +672,12 @@ function formatCell(row, key) {
 }
 
 /**
- * Builds the CSV export URL using the current
- * filters and column settings, then redirects
- * the browser to the export endpoint.
+ * Exports the current people list as CSV.
  */
 function exportCsv() {
-    const params = new URLSearchParams()
-
-    if (filterForm.search) {
-        params.append('search', filterForm.search)
-    }
-
-    settingsForm.visibleColumns.forEach((col) => {
-        params.append('visible_columns[]', col)
-    })
-
-    settingsForm.columnOrder.forEach((col) => {
-        params.append('column_order[]', col)
-    })
-
-    window.location.href = `/people/export/csv?${params.toString()}`
+    downloadFile(
+        '/people/export/csv',
+        getExportPayload()
+    )
 }
 </script>

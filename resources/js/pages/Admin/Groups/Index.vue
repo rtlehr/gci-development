@@ -8,10 +8,12 @@
                     {{ showColumnSettings ? 'Hide Column Settings' : 'Column Settings' }}
                 </Button>
 
+                <!--
                 <Button variant="outline" @click="exportCsv">
                     Export CSV
                 </Button>
-
+            -->
+                
                 <Link href="/admin/groups/create" v-if="can('view_admin')">
                     <Button>Add Group</Button>
                 </Link>

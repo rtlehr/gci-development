@@ -370,10 +370,12 @@ function exportCsv() {
                     {{ showColumnSettings ? 'Hide Column Settings' : 'Column Settings' }}
                 </Button>
 
+                <!--
                 <Button variant="outline" @click="exportCsv">
                     Export CSV
                 </Button>
-
+            -->
+                
                 <Link href="/admin/roles/create">
                     <Button>Create Role</Button>
                 </Link>

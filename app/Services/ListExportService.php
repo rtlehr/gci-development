@@ -17,22 +17,20 @@ class ListExportService
         string $filenamePrefix,
         ?callable $filterCallback = null
     ): StreamedResponse {
-        $visibleColumns = $request->input('visible_columns', []);
-        $columnOrder = $request->input('column_order', []);
-        $search = $request->input('search', '');
-
         $allColumns = collect($definition['columns']);
         $validKeys = $allColumns->pluck('key')->toArray();
 
-        $visibleColumns = collect($visibleColumns)
-            ->filter(fn ($key) => in_array($key, $validKeys))
-            ->values()
-            ->toArray();
+        $visibleColumns = $this->sanitizeColumnArray(
+            $request->input('visible_columns', []),
+            $validKeys
+        );
 
-        $columnOrder = collect($columnOrder)
-            ->filter(fn ($key) => in_array($key, $validKeys))
-            ->values()
-            ->toArray();
+        $columnOrder = $this->sanitizeColumnArray(
+            $request->input('column_order', []),
+            $validKeys
+        );
+
+        $search = trim((string) $request->input('search', ''));
 
         if (empty($visibleColumns)) {
             $visibleColumns = $allColumns
@@ -51,20 +49,21 @@ class ListExportService
         }
 
         $activeColumnKeys = collect($columnOrder)
-            ->filter(fn ($key) => in_array($key, $visibleColumns))
+            ->filter(fn ($key) => in_array($key, $visibleColumns, true))
             ->values()
             ->toArray();
 
         $activeColumns = $allColumns
             ->filter(function ($col) use ($activeColumnKeys) {
-                return in_array($col['key'], $activeColumnKeys) && ($col['exportable'] ?? true);
+                return in_array($col['key'], $activeColumnKeys, true)
+                    && ($col['exportable'] ?? true);
             })
             ->sortBy(function ($col) use ($activeColumnKeys) {
-                return array_search($col['key'], $activeColumnKeys);
+                return array_search($col['key'], $activeColumnKeys, true);
             })
             ->values();
 
-        if ($search) {
+        if ($search !== '') {
             $searchableFields = $activeColumns
                 ->where('searchable', true)
                 ->pluck('db_field')
@@ -74,7 +73,7 @@ class ListExportService
             if ($searchableFields->isNotEmpty()) {
                 $query->where(function ($q) use ($searchableFields, $search) {
                     foreach ($searchableFields as $field) {
-                        $q->orWhere($field, 'like', "%{$search}%");
+                        $q->orWhere($field, 'like', '%' . $search . '%');
                     }
                 });
             }
@@ -91,6 +90,9 @@ class ListExportService
         return Response::streamDownload(function () use ($rows, $activeColumns, $definition) {
             $handle = fopen('php://output', 'w');
 
+            // Helps Excel open UTF-8 CSV files correctly.
+            fwrite($handle, "\xEF\xBB\xBF");
+
             fputcsv($handle, $activeColumns->pluck('label')->toArray());
 
             foreach ($rows as $rowModel) {
@@ -105,8 +107,21 @@ class ListExportService
 
             fclose($handle);
         }, $filename, [
-            'Content-Type' => 'text/csv',
+            'Content-Type' => 'text/csv; charset=UTF-8',
+            'Cache-Control' => 'no-store, no-cache',
         ]);
+    }
+
+    protected function sanitizeColumnArray(mixed $columns, array $validKeys): array
+    {
+        if (!is_array($columns)) {
+            return [];
+        }
+
+        return collect($columns)
+            ->filter(fn ($key) => is_string($key) && in_array($key, $validKeys, true))
+            ->values()
+            ->toArray();
     }
 
     protected function resolveExportValue($rowModel, array $column, array $definition): string
@@ -129,7 +144,7 @@ class ListExportService
         }
 
         if (is_object($value)) {
-            return json_encode($value);
+            return json_encode($value) ?: '';
         }
 
         return $value === null ? '' : (string) $value;

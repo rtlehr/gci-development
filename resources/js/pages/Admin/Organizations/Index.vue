@@ -13,8 +13,12 @@
                     {{ showColumnSettings ? 'Hide Column Settings' : 'Column Settings' }}
                 </Button>
 
-                <Button variant="outline" @click="exportCsv">
-                    Export CSV
+                <Button
+                    variant="outline"
+                    :disabled="isDownloading"
+                    @click="exportCsv"
+                >
+                    {{ isDownloading ? 'Exporting...' : 'Export CSV' }}
                 </Button>
 
                 <Link href="/admin/organizations/create" v-if="can(Permissions.ADMIN)">
@@ -272,6 +276,7 @@
 import { computed, reactive, ref } from 'vue'
 import { Link, router } from '@inertiajs/vue3'
 import { useAuth } from '@/composables/useAuth'
+import { useFileDownload } from '@/composables/useFileDownload'
 
 import {
     ArrowDown,
@@ -316,6 +321,11 @@ import {
 import { Permissions } from '@/constants/permissions'
 
 const { can } = useAuth()
+
+const {
+    downloadFile,
+    isDownloading,
+} = useFileDownload()
 
 // Backend-provided page data and current table state.
 const props = defineProps({
@@ -393,6 +403,7 @@ const pagesToShow = computed(() => {
     const end = Math.min(current + 2, last)
 
     const pages = []
+
     for (let i = start; i <= end; i++) {
         pages.push(i)
     }
@@ -400,13 +411,23 @@ const pagesToShow = computed(() => {
     return pages
 })
 
-/**
- * Applies the current search value and reloads the list.
- * Keeps the existing sort column and direction.
- */
+function getFilterPayload() {
+    return {
+        search: filterForm.search,
+    }
+}
+
+function getExportPayload() {
+    return {
+        ...getFilterPayload(),
+        visible_columns: settingsForm.visibleColumns,
+        column_order: settingsForm.columnOrder,
+    }
+}
+
 function applyFilters() {
     router.get('/admin/organizations', {
-        search: filterForm.search,
+        ...getFilterPayload(),
         sort: props.sort,
         direction: props.direction,
     }, {
@@ -415,10 +436,6 @@ function applyFilters() {
     })
 }
 
-/**
- * Clears the search filter and reloads the list.
- * Keeps the existing sort column and direction.
- */
 function resetFilters() {
     filterForm.search = ''
 
@@ -431,12 +448,6 @@ function resetFilters() {
     })
 }
 
-/**
- * Updates the active sort column.
- * If the same column is clicked while ascending, it switches to descending.
- *
- * @param {string} column
- */
 function sortBy(column) {
     let nextDirection = 'asc'
 
@@ -445,7 +456,7 @@ function sortBy(column) {
     }
 
     router.get('/admin/organizations', {
-        search: filterForm.search,
+        ...getFilterPayload(),
         sort: column,
         direction: nextDirection,
     }, {
@@ -454,26 +465,18 @@ function sortBy(column) {
     })
 }
 
-/**
- * Selects the correct sort icon for a column.
- *
- * @param {string} column
- * @returns {Component}
- */
 function getSortIcon(column) {
     if (props.sort !== column) return ArrowUpDown
-    return props.direction === 'asc' ? ArrowUp : ArrowDown
+
+    return props.direction === 'asc'
+        ? ArrowUp
+        : ArrowDown
 }
 
-/**
- * Loads a different pagination page while preserving filters and sorting.
- *
- * @param {number} page
- */
 function goToPage(page) {
     router.get('/admin/organizations', {
         page,
-        search: filterForm.search,
+        ...getFilterPayload(),
         sort: props.sort,
         direction: props.direction,
     }, {
@@ -482,45 +485,28 @@ function goToPage(page) {
     })
 }
 
-/**
- * Gets the display label for a column key.
- *
- * @param {string} key
- * @returns {string}
- */
 function getColumnLabel(key) {
     return props.columns.find((col) => col.key === key)?.label ?? key
 }
 
-/**
- * Moves a column one position left in the display order.
- *
- * @param {number} index
- */
 function moveColumnLeft(index) {
     if (index <= 0) return
 
     const temp = settingsForm.columnOrder[index - 1]
+
     settingsForm.columnOrder[index - 1] = settingsForm.columnOrder[index]
     settingsForm.columnOrder[index] = temp
 }
 
-/**
- * Moves a column one position right in the display order.
- *
- * @param {number} index
- */
 function moveColumnRight(index) {
     if (index >= settingsForm.columnOrder.length - 1) return
 
     const temp = settingsForm.columnOrder[index + 1]
+
     settingsForm.columnOrder[index + 1] = settingsForm.columnOrder[index]
     settingsForm.columnOrder[index] = temp
 }
 
-/**
- * Saves the selected visible columns and column order to the backend.
- */
 function saveColumnPreferences() {
     router.post('/admin/organizations/preferences', {
         visible_columns: settingsForm.visibleColumns,
@@ -530,41 +516,28 @@ function saveColumnPreferences() {
     })
 }
 
-/**
- * Resets local unsaved column changes to the values originally provided by the backend.
- */
 function resetColumnSettingsLocally() {
     settingsForm.visibleColumns = [...(props.visibleColumns ?? [])]
     settingsForm.columnOrder = [...(props.columnOrder ?? [])]
 }
 
-/**
- * Deletes saved column preferences on the backend and restores application defaults.
- */
 function resetPreferencesOnServer() {
     router.delete('/admin/organizations/preferences', {
         preserveScroll: true,
     })
 }
 
-/**
- * Opens the delete confirmation dialog for the selected organization.
- *
- * @param {number|string} id
- */
 function openDeleteDialog(id) {
     organizationToDelete.value = id
     deleteDialogOpen.value = true
 }
 
-/**
- * Deletes the selected organization and clears dialog state when finished.
- */
 function confirmDelete() {
     if (!organizationToDelete.value) return
 
     router.delete(`/admin/organizations/${organizationToDelete.value}`, {
         preserveScroll: true,
+
         onFinish: () => {
             deleteDialogOpen.value = false
             organizationToDelete.value = null
@@ -572,14 +545,6 @@ function confirmDelete() {
     })
 }
 
-/**
- * Formats a table cell value.
- * Empty values display as an em dash.
- *
- * @param {Object} row
- * @param {string} key
- * @returns {string}
- */
 function formatCell(row, key) {
     const value = row[key]
 
@@ -590,25 +555,10 @@ function formatCell(row, key) {
     return value
 }
 
-/**
- * Builds the CSV export URL using current filters and column settings.
- * Redirects the browser to the export endpoint.
- */
 function exportCsv() {
-    const params = new URLSearchParams()
-
-    if (filterForm.search) {
-        params.append('search', filterForm.search)
-    }
-
-    settingsForm.visibleColumns.forEach((col) => {
-        params.append('visible_columns[]', col)
-    })
-
-    settingsForm.columnOrder.forEach((col) => {
-        params.append('column_order[]', col)
-    })
-
-    window.location.href = `/admin/organizations/export/csv?${params.toString()}`
+    downloadFile(
+        '/admin/organizations/export/csv',
+        getExportPayload()
+    )
 }
 </script>

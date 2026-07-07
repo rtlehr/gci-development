@@ -300,6 +300,9 @@ class OrganizationController extends Controller
             }
 
             fclose($handle);
-        }, 'organizations.csv');
+        }, 'organizations-export-' . now()->format('Y-m-d_H-i-s') . '.csv', [
+    'Content-Type' => 'text/csv; charset=UTF-8',
+    'Cache-Control' => 'no-store, no-cache',
+]);
     }
 }

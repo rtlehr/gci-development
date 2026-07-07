@@ -10,7 +10,7 @@ Route::middleware('permission:view_admin')->group(function () {
     Route::delete('/admin/organizations/preferences', [OrganizationController::class, 'resetPreferences'])
         ->name('admin.organizations.preferences.reset');
 
-    Route::get('/admin/organizations/export/csv', [OrganizationController::class, 'exportCsv'])
+    Route::post('/admin/organizations/export/csv', [OrganizationController::class, 'exportCsv'])
         ->name('admin.organizations.export.csv');
 
     Route::resource('admin/organizations', OrganizationController::class)

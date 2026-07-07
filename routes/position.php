@@ -11,11 +11,7 @@ Route::post('/positions/preferences', [PositionsController::class, 'savePreferen
     ->name('positions.preferences.save')
     ->middleware('permission:access_positions');
 
-Route::delete('/positions/preferences', [PositionsController::class, 'resetPreferences'])
-    ->name('positions.preferences.reset')
-    ->middleware('permission:access_positions');
-
-Route::get('/positions/export/csv', [PositionsController::class, 'exportCsv'])
+Route::post('/positions/export/csv', [PositionsController::class, 'exportCsv'])
     ->name('positions.export.csv')
     ->middleware('permission:access_positions');
 

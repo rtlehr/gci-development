@@ -366,10 +366,12 @@ function exportCsv() {
                     {{ showColumnSettings ? 'Hide Column Settings' : 'Column Settings' }}
                 </Button>
 
+                <!--
                 <Button variant="outline" @click="exportCsv">
                     Export CSV
                 </Button>
-
+                -->
+                
                 <Link href="/admin/permissions/create">
                     <Button>Create Permission</Button>
                 </Link>

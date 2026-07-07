@@ -482,9 +482,11 @@ function exportCsv() {
                     {{ showColumnSettings ? 'Hide Column Settings' : 'Column Settings' }}
                 </Button>
 
+                <!--
                 <Button variant="outline" @click="exportCsv">
                     Export CSV
                 </Button>
+            -->
             </div>
         </div>
 

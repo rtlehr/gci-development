@@ -8,8 +8,12 @@
                     {{ showColumnSettings ? 'Hide Column Settings' : 'Column Settings' }}
                 </Button>
 
-                <Button variant="outline" @click="exportCsv">
-                    Export CSV
+                <Button
+                    variant="outline"
+                    :disabled="isDownloading"
+                    @click="exportCsv"
+                >
+                    {{ isDownloading ? 'Exporting...' : 'Export CSV' }}
                 </Button>
 
                 <Link href="/positions/create" v-if="can(Permissions.POSITIONS_CREATE)">
@@ -330,6 +334,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Badge } from '@/components/ui/badge'
+import { useFileDownload } from '@/composables/useFileDownload'
 
 import {
     AlertDialog,
@@ -361,6 +366,11 @@ import {
 } from '@/components/ui/table'
 
 import { Permissions } from '@/constants/permissions'
+
+const {
+    downloadFile,
+    isDownloading,
+} = useFileDownload()
 
 const { can } = useAuth()
 
@@ -460,8 +470,7 @@ const pagesToShow = computed(() => {
  */
 function applyFilters() {
     router.get('/positions', {
-        search: filterForm.search,
-        status: filterForm.status,
+        ...getFilterPayload(),
         sort: props.sort,
         direction: props.direction,
     }, {
@@ -501,14 +510,14 @@ function sortBy(column) {
     }
 
     router.get('/positions', {
-        search: filterForm.search,
-        status: filterForm.status,
+        ...getFilterPayload(),
         sort: column,
         direction: nextDirection,
     }, {
         preserveState: true,
         replace: true,
     })
+
 }
 
 /**
@@ -535,8 +544,7 @@ function getSortIcon(column) {
 function goToPage(page) {
     router.get('/positions', {
         page,
-        search: filterForm.search,
-        status: filterForm.status,
+        ...getFilterPayload(),
         sort: props.sort,
         direction: props.direction,
     }, {
@@ -748,32 +756,35 @@ function formatDate(value) {
 }
 
 /**
- * Builds the CSV export URL using the current
- * filters and column settings, then redirects
- * the browser to the export endpoint.
+ * Builds the payload used for filtering the list.
+ */
+function getFilterPayload() {
+    return {
+        search: filterForm.search,
+        status: filterForm.status,
+    }
+}
+
+/**
+ * Builds the payload used for exporting.
+ */
+function getExportPayload() {
+    return {
+        ...getFilterPayload(),
+        visible_columns: settingsForm.visibleColumns,
+        column_order: settingsForm.columnOrder,
+    }
+}
+
+
+/**
+ * Exports the current list as CSV.
  */
 function exportCsv() {
-    const params = new URLSearchParams()
-
-    // Current filters.
-    if (filterForm.search) {
-        params.append('search', filterForm.search)
-    }
-
-    if (filterForm.status) {
-        params.append('status', filterForm.status)
-    }
-
-    // Current visible columns.
-    settingsForm.visibleColumns.forEach((col) => {
-        params.append('visible_columns[]', col)
-    })
-
-    // Current column order.
-    settingsForm.columnOrder.forEach((col) => {
-        params.append('column_order[]', col)
-    })
-
-    window.location.href = `/positions/export/csv?${params.toString()}`
+    downloadFile(
+        '/positions/export/csv',
+        getExportPayload()
+    )
 }
+
 </script>

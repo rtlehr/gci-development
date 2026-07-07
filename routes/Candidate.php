@@ -16,6 +16,10 @@ Route::post('/candidates', [CandidateController::class, 'store'])
     ->name('candidates.store')
     ->middleware('permission:create_candidates');
 
+Route::post('/candidates/export/csv', [CandidateController::class, 'exportCsv'])
+    ->name('candidates.export.csv')
+    ->middleware('permission:access_candidates');
+
 Route::get('/candidates/{candidate}', [CandidateController::class, 'show'])
     ->name('candidates.show')
     ->middleware('permission:read_candidates');
@@ -40,6 +44,3 @@ Route::delete('/candidates/preferences', [CandidateController::class, 'resetPref
     ->name('candidates.preferences.reset')
     ->middleware('permission:access_candidates');
 
-Route::get('/candidates/export/csv', [CandidateController::class, 'exportCsv'])
-    ->name('candidates.export.csv')
-    ->middleware('permission:access_candidates');

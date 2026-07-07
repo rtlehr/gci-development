@@ -15,7 +15,7 @@ Route::delete('/people/preferences', [PeopleController::class, 'resetPreferences
     ->name('people.preferences.reset')
     ->middleware('permission:access_people');
 
-Route::get('/people/export/csv', [PeopleController::class, 'exportCsv'])
+Route::post('/people/export/csv', [PeopleController::class, 'exportCsv'])
     ->name('people.export.csv')
     ->middleware('permission:access_people');
 

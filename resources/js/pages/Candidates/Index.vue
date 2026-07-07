@@ -8,8 +8,12 @@
                     {{ showColumnSettings ? 'Hide Column Settings' : 'Column Settings' }}
                 </Button>
 
-                <Button variant="outline" @click="exportCsv">
-                    Export CSV
+                <Button
+                    variant="outline"
+                    :disabled="isDownloading"
+                    @click="exportCsv"
+                >
+                    {{ isDownloading ? 'Exporting...' : 'Export CSV' }}
                 </Button>
 
                 <Link href="/candidates/create" v-if="can(Permissions.CANDIDATES_CREATE)">
@@ -314,6 +318,7 @@
 import { computed, reactive, ref } from 'vue'
 import { Link, router } from '@inertiajs/vue3'
 import { useAuth } from '@/composables/useAuth'
+import { useFileDownload } from '@/composables/useFileDownload'
 
 import {
     ArrowDown,
@@ -356,6 +361,11 @@ import {
 } from '@/components/ui/table'
 
 import { Permissions } from '@/constants/permissions'
+
+const {
+    downloadFile,
+    isDownloading,
+} = useFileDownload()
 
 const { can } = useAuth()
 
@@ -459,8 +469,7 @@ const pagesToShow = computed(() => {
  */
 function applyFilters() {
     router.get('/candidates', {
-        search: filterForm.search,
-        status: filterForm.status,
+        ...getFilterPayload(),
         sort: props.sort,
         direction: props.direction,
     }, {
@@ -500,8 +509,7 @@ function sortBy(column) {
     }
 
     router.get('/candidates', {
-        search: filterForm.search,
-        status: filterForm.status,
+        ...getFilterPayload(),
         sort: column,
         direction: nextDirection,
     }, {
@@ -534,8 +542,7 @@ function getSortIcon(column) {
 function goToPage(page) {
     router.get('/candidates', {
         page,
-        search: filterForm.search,
-        status: filterForm.status,
+        ...getFilterPayload(),
         sort: props.sort,
         direction: props.direction,
     }, {
@@ -683,30 +690,29 @@ function formatCell(row, key) {
     return value
 }
 
+function getFilterPayload() {
+    return {
+        search: filterForm.search,
+        status: filterForm.status,
+    }
+}
+
+function getExportPayload() {
+    return {
+        ...getFilterPayload(),
+        visible_columns: settingsForm.visibleColumns,
+        column_order: settingsForm.columnOrder,
+    }
+}
+
 /**
- * Builds the CSV export URL using the current
- * filters and column settings, then redirects
- * the browser to the export endpoint.
+ * Exports the current candidate list as CSV.
  */
 function exportCsv() {
-    const params = new URLSearchParams()
-
-    if (filterForm.search) {
-        params.append('search', filterForm.search)
-    }
-
-    if (filterForm.status) {
-        params.append('status', filterForm.status)
-    }
-
-    settingsForm.visibleColumns.forEach((col) => {
-        params.append('visible_columns[]', col)
-    })
-
-    settingsForm.columnOrder.forEach((col) => {
-        params.append('column_order[]', col)
-    })
-
-    window.location.href = `/candidates/export/csv?${params.toString()}`
+    downloadFile(
+        '/candidates/export/csv',
+        getExportPayload()
+    )
 }
+
 </script>

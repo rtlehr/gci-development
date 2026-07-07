@@ -8,10 +8,12 @@
                     {{ showColumnSettings ? 'Hide Column Settings' : 'Column Settings' }}
                 </Button>
 
+                <!--
                 <Button variant="outline" @click="exportCsv">
                     Export CSV
                 </Button>
-
+            -->
+                
                 <Link href="/workflows/create">
                     <Button>Create Workflow</Button>
                 </Link>
