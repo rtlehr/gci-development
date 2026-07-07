@@ -23,89 +23,15 @@
         </div>
 
         <!-- Column Settings Panel -->
-        <div v-if="showColumnSettings" class="border rounded-xl p-4 bg-background space-y-4">
-            <div>
-                <h2 class="text-lg font-semibold">Column Settings</h2>
-                <p class="text-sm text-muted-foreground">
-                    Choose which columns are shown and change their order.
-                </p>
-            </div>
-
-            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <!-- Visibility -->
-                <div class="space-y-3">
-                    <h3 class="font-medium">Visible Columns</h3>
-
-                    <div
-                        v-for="col in orderedColumnDefinitions"
-                        :key="col.key"
-                        class="flex items-center justify-between rounded-lg border p-3"
-                    >
-                        <div class="flex items-center gap-3">
-                            <input
-                                :id="`visible-${col.key}`"
-                                v-model="settingsForm.visibleColumns"
-                                :value="col.key"
-                                type="checkbox"
-                                class="h-4 w-4"
-                            />
-                            <Label :for="`visible-${col.key}`">{{ col.label }}</Label>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Order -->
-                <div class="space-y-3">
-                    <h3 class="font-medium">Column Order</h3>
-
-                    <div
-                        v-for="(colKey, index) in settingsForm.columnOrder"
-                        :key="colKey"
-                        class="flex items-center justify-between rounded-lg border p-3"
-                    >
-                        <div class="font-medium">
-                            {{ getColumnLabel(colKey) }}
-                        </div>
-
-                        <div class="flex gap-2">
-                            <Button
-                                type="button"
-                                variant="outline"
-                                size="sm"
-                                :disabled="index === 0"
-                                @click="moveColumnLeft(index)"
-                            >
-                                Left
-                            </Button>
-
-                            <Button
-                                type="button"
-                                variant="outline"
-                                size="sm"
-                                :disabled="index === settingsForm.columnOrder.length - 1"
-                                @click="moveColumnRight(index)"
-                            >
-                                Right
-                            </Button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="flex gap-2">
-                <Button @click="saveColumnPreferences">
-                    Save Preferences
-                </Button>
-
-                <Button variant="outline" @click="resetColumnSettingsLocally">
-                    Reset Unsaved Changes
-                </Button>
-
-                <Button variant="outline" @click="resetPreferencesOnServer">
-                    Reset to Defaults
-                </Button>
-            </div>
-        </div>
+        <ColumnSettings
+            v-model:open="showColumnSettings"
+            :columns="columnsForSettings"
+            :default-columns="defaultColumnsForSettings"
+            @update:columns="updateColumnSettings"
+            @save="saveColumnPreferences"
+            @reset="resetColumnSettingsLocally"
+            @reset-defaults="resetPreferencesOnServer"
+        />
 
         <!-- Filters -->
         <div class="border rounded-xl p-4 bg-background">
@@ -335,6 +261,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Badge } from '@/components/ui/badge'
 import { useFileDownload } from '@/composables/useFileDownload'
+import ColumnSettings from '@/Components/Lists/ColumnSettings.vue'
 
 import {
     AlertDialog,
@@ -438,14 +365,6 @@ const activeColumns = computed(() => {
         .filter(Boolean)
 })
 
-// Returns all column definitions
-// in the current display order.
-const orderedColumnDefinitions = computed(() => {
-    return settingsForm.columnOrder
-        .map((key) => props.columns.find((col) => col.key === key))
-        .filter(Boolean)
-})
-
 // Generates a compact pagination range
 // centered around the current page.
 const pagesToShow = computed(() => {
@@ -462,6 +381,30 @@ const pagesToShow = computed(() => {
     }
 
     return pages
+})
+
+const columnsForSettings = computed(() => {
+    return settingsForm.columnOrder
+        .map((key) => {
+            const column = props.columns.find((col) => col.key === key)
+
+            if (!column) {
+                return null
+            }
+
+            return {
+                ...column,
+                visible: settingsForm.visibleColumns.includes(key),
+            }
+        })
+        .filter(Boolean)
+})
+
+const defaultColumnsForSettings = computed(() => {
+    return props.columns.map((column) => ({
+        ...column,
+        visible: true,
+    }))
 })
 
 /**
@@ -554,55 +497,20 @@ function goToPage(page) {
 }
 
 /**
- * Returns the display label for a column key.
- *
- * @param {string} key
- * @returns {string}
- */
-function getColumnLabel(key) {
-    return props.columns.find((col) => col.key === key)?.label ?? key
-}
-
-/**
- * Moves a column one position left
- * in the display order.
- *
- * @param {number} index
- */
-function moveColumnLeft(index) {
-    if (index <= 0) return
-
-    const temp = settingsForm.columnOrder[index - 1]
-
-    settingsForm.columnOrder[index - 1] = settingsForm.columnOrder[index]
-    settingsForm.columnOrder[index] = temp
-}
-
-/**
- * Moves a column one position right
- * in the display order.
- *
- * @param {number} index
- */
-function moveColumnRight(index) {
-    if (index >= settingsForm.columnOrder.length - 1) return
-
-    const temp = settingsForm.columnOrder[index + 1]
-
-    settingsForm.columnOrder[index + 1] = settingsForm.columnOrder[index]
-    settingsForm.columnOrder[index] = temp
-}
-
-/**
  * Saves the current visible columns
  * and column ordering preferences.
  */
-function saveColumnPreferences() {
+function saveColumnPreferences(updatedColumns = columnsForSettings.value) {
+    updateColumnSettings(updatedColumns)
+
     router.post('/positions/preferences', {
         visible_columns: settingsForm.visibleColumns,
         column_order: settingsForm.columnOrder,
     }, {
         preserveScroll: true,
+        onSuccess: () => {
+            showColumnSettings.value = false
+        },
     })
 }
 
@@ -785,6 +693,14 @@ function exportCsv() {
         '/positions/export/csv',
         getExportPayload()
     )
+}
+
+function updateColumnSettings(updatedColumns) {
+    settingsForm.visibleColumns = updatedColumns
+        .filter((column) => column.visible !== false)
+        .map((column) => column.key)
+
+    settingsForm.columnOrder = updatedColumns.map((column) => column.key)
 }
 
 </script>

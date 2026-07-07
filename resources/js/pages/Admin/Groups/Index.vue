@@ -4,109 +4,32 @@
             <h1 class="text-2xl font-semibold">Groups</h1>
 
             <div class="flex gap-2">
-                <Button variant="outline" @click="showColumnSettings = !showColumnSettings">
-                    {{ showColumnSettings ? 'Hide Column Settings' : 'Column Settings' }}
+                <Button variant="outline" @click="showColumnSettings = true">
+                    Column Settings
                 </Button>
 
                 <!--
                 <Button variant="outline" @click="exportCsv">
                     Export CSV
                 </Button>
-            -->
-                
+                -->
+
                 <Link href="/admin/groups/create" v-if="can('view_admin')">
                     <Button>Add Group</Button>
                 </Link>
             </div>
         </div>
 
-        <!-- Column Settings Panel -->
-        <div v-if="showColumnSettings" class="border rounded-xl p-4 bg-background space-y-4">
-            <div>
-                <h2 class="text-lg font-semibold">Column Settings</h2>
-                <p class="text-sm text-muted-foreground">
-                    Choose which columns are shown and change their order.
-                </p>
-            </div>
+        <ColumnSettings
+            v-model:open="showColumnSettings"
+            :columns="columnsForSettings"
+            :default-columns="defaultColumnsForSettings"
+            @update:columns="updateColumnSettings"
+            @save="saveColumnPreferences"
+            @reset="resetColumnSettingsLocally"
+            @reset-defaults="resetPreferencesOnServer"
+        />
 
-            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <div class="space-y-3">
-                    <h3 class="font-medium">Visible Columns</h3>
-
-                    <div
-                        v-for="col in orderedColumnDefinitions"
-                        :key="col.key"
-                        class="flex items-center justify-between rounded-lg border p-3"
-                    >
-                        <div class="flex items-center gap-3">
-                            <input
-                                :id="`visible-${col.key}`"
-                                v-model="settingsForm.visibleColumns"
-                                :value="col.key"
-                                type="checkbox"
-                                class="h-4 w-4"
-                            />
-
-                            <Label :for="`visible-${col.key}`">
-                                {{ col.label }}
-                            </Label>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="space-y-3">
-                    <h3 class="font-medium">Column Order</h3>
-
-                    <div
-                        v-for="(colKey, index) in settingsForm.columnOrder"
-                        :key="colKey"
-                        class="flex items-center justify-between rounded-lg border p-3"
-                    >
-                        <div class="font-medium">
-                            {{ getColumnLabel(colKey) }}
-                        </div>
-
-                        <div class="flex gap-2">
-                            <Button
-                                type="button"
-                                variant="outline"
-                                size="sm"
-                                :disabled="index === 0"
-                                @click="moveColumnLeft(index)"
-                            >
-                                Left
-                            </Button>
-
-                            <Button
-                                type="button"
-                                variant="outline"
-                                size="sm"
-                                :disabled="index === settingsForm.columnOrder.length - 1"
-                                @click="moveColumnRight(index)"
-                            >
-                                Right
-                            </Button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="flex gap-2">
-                <Button @click="saveColumnPreferences">
-                    Save Preferences
-                </Button>
-
-                <Button variant="outline" @click="resetColumnSettingsLocally">
-                    Reset Unsaved Changes
-                </Button>
-
-                <Button variant="outline" @click="resetPreferencesOnServer">
-                    Reset to Defaults
-                </Button>
-            </div>
-        </div>
-
-        <!-- Filters -->
         <div class="border rounded-xl p-4 bg-background">
             <form @submit.prevent="applyFilters" class="flex flex-col md:flex-row gap-4 md:items-end">
                 <div class="flex-1 space-y-2">
@@ -129,7 +52,6 @@
             </form>
         </div>
 
-        <!-- Table -->
         <div class="border rounded-xl bg-background overflow-hidden">
             <Table>
                 <TableHeader>
@@ -210,7 +132,6 @@
             </Table>
         </div>
 
-        <!-- Pagination -->
         <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
             <div class="text-sm text-muted-foreground">
                 Showing {{ groups.from ?? 0 }} to {{ groups.to ?? 0 }} of {{ groups.total ?? 0 }} groups
@@ -247,7 +168,6 @@
             </div>
         </div>
 
-        <!-- Delete Dialog -->
         <AlertDialog :open="deleteDialogOpen" @update:open="deleteDialogOpen = $event">
             <AlertDialogContent>
                 <AlertDialogHeader>
@@ -278,6 +198,7 @@
 import { computed, reactive, ref } from 'vue'
 import { Link, router } from '@inertiajs/vue3'
 import { useAuth } from '@/composables/useAuth'
+import ColumnSettings from '@/Components/Lists/ColumnSettings.vue'
 
 import {
     ArrowDown,
@@ -321,8 +242,6 @@ import {
 
 const { can } = useAuth()
 
-// Props passed from the backend containing table data,
-// column settings, active filters, and sorting state.
 const props = defineProps({
     groups: {
         type: Object,
@@ -356,28 +275,20 @@ const props = defineProps({
     },
 })
 
-// Controls visibility of the column settings panel.
 const showColumnSettings = ref(false)
 
-// Reactive search/filter form.
-// Keeps filter values synced with the UI.
 const filterForm = reactive({
     search: props.filters?.search ?? '',
 })
 
-// Reactive column settings state.
-// Allows the user to modify visible columns and display order locally.
 const settingsForm = reactive({
     visibleColumns: [...(props.visibleColumns ?? [])],
     columnOrder: [...(props.columnOrder ?? [])],
 })
 
-// Delete dialog state and currently selected group ID.
 const deleteDialogOpen = ref(false)
 const groupToDelete = ref(null)
 
-// Computed list of currently active/visible columns.
-// Applies visibility filtering while preserving user-defined order.
 const activeColumns = computed(() => {
     return settingsForm.columnOrder
         .filter((key) => settingsForm.visibleColumns.includes(key))
@@ -385,16 +296,30 @@ const activeColumns = computed(() => {
         .filter(Boolean)
 })
 
-// Computed ordered list of all column definitions.
-// Used by the column settings UI.
-const orderedColumnDefinitions = computed(() => {
+const columnsForSettings = computed(() => {
     return settingsForm.columnOrder
-        .map((key) => props.columns.find((col) => col.key === key))
+        .map((key) => {
+            const column = props.columns.find((col) => col.key === key)
+
+            if (!column) {
+                return null
+            }
+
+            return {
+                ...column,
+                visible: settingsForm.visibleColumns.includes(key),
+            }
+        })
         .filter(Boolean)
 })
 
-// Calculates pagination buttons around the current page.
-// Keeps pagination compact while showing nearby pages.
+const defaultColumnsForSettings = computed(() => {
+    return props.columns.map((column) => ({
+        ...column,
+        visible: true,
+    }))
+})
+
 const pagesToShow = computed(() => {
     const current = props.groups.current_page ?? 1
     const last = props.groups.last_page ?? 1
@@ -411,10 +336,14 @@ const pagesToShow = computed(() => {
     return pages
 })
 
-/**
- * Applies current search filters and reloads the page.
- * Preserves component state and replaces browser history entry.
- */
+function updateColumnSettings(updatedColumns) {
+    settingsForm.visibleColumns = updatedColumns
+        .filter((column) => column.visible !== false)
+        .map((column) => column.key)
+
+    settingsForm.columnOrder = updatedColumns.map((column) => column.key)
+}
+
 function applyFilters() {
     router.get('/admin/groups', {
         search: filterForm.search,
@@ -426,10 +355,6 @@ function applyFilters() {
     })
 }
 
-/**
- * Resets all search filters back to default values.
- * Keeps current sorting applied.
- */
 function resetFilters() {
     filterForm.search = ''
 
@@ -442,13 +367,6 @@ function resetFilters() {
     })
 }
 
-/**
- * Changes table sorting.
- * Toggles between ascending and descending when clicking
- * the currently active sort column.
- *
- * @param {string} column
- */
 function sortBy(column) {
     let nextDirection = 'asc'
 
@@ -466,25 +384,12 @@ function sortBy(column) {
     })
 }
 
-/**
- * Returns the correct sort icon component
- * based on the active sort state.
- *
- * @param {string} column
- * @returns {Component}
- */
 function getSortIcon(column) {
     if (props.sort !== column) return ArrowUpDown
 
     return props.direction === 'asc' ? ArrowUp : ArrowDown
 }
 
-/**
- * Navigates to a specific pagination page
- * while preserving current filters and sorting.
- *
- * @param {number} page
- */
 function goToPage(page) {
     router.get('/admin/groups', {
         page,
@@ -497,92 +402,36 @@ function goToPage(page) {
     })
 }
 
-/**
- * Returns the display label for a column key.
- * Falls back to the raw key if no definition exists.
- *
- * @param {string} key
- * @returns {string}
- */
-function getColumnLabel(key) {
-    return props.columns.find((col) => col.key === key)?.label ?? key
-}
+function saveColumnPreferences(updatedColumns = columnsForSettings.value) {
+    updateColumnSettings(updatedColumns)
 
-/**
- * Moves a column one position to the left
- * in the user-defined column order.
- *
- * @param {number} index
- */
-function moveColumnLeft(index) {
-    if (index <= 0) return
-
-    const temp = settingsForm.columnOrder[index - 1]
-    settingsForm.columnOrder[index - 1] = settingsForm.columnOrder[index]
-    settingsForm.columnOrder[index] = temp
-}
-
-/**
- * Moves a column one position to the right
- * in the user-defined column order.
- *
- * @param {number} index
- */
-function moveColumnRight(index) {
-    if (index >= settingsForm.columnOrder.length - 1) return
-
-    const temp = settingsForm.columnOrder[index + 1]
-    settingsForm.columnOrder[index + 1] = settingsForm.columnOrder[index]
-    settingsForm.columnOrder[index] = temp
-}
-
-/**
- * Saves column visibility and ordering preferences
- * to the backend for the current user.
- */
-function saveColumnPreferences() {
     router.post('/admin/groups/preferences', {
         visible_columns: settingsForm.visibleColumns,
         column_order: settingsForm.columnOrder,
     }, {
         preserveScroll: true,
+        onSuccess: () => {
+            showColumnSettings.value = false
+        },
     })
 }
 
-/**
- * Resets local unsaved column changes
- * back to the server-provided defaults.
- */
 function resetColumnSettingsLocally() {
     settingsForm.visibleColumns = [...(props.visibleColumns ?? [])]
     settingsForm.columnOrder = [...(props.columnOrder ?? [])]
 }
 
-/**
- * Resets saved column preferences on the backend
- * back to application defaults.
- */
 function resetPreferencesOnServer() {
     router.delete('/admin/groups/preferences', {
         preserveScroll: true,
     })
 }
 
-/**
- * Opens the delete confirmation dialog
- * for a specific group.
- *
- * @param {number|string} id
- */
 function openDeleteDialog(id) {
     groupToDelete.value = id
     deleteDialogOpen.value = true
 }
 
-/**
- * Confirms and performs the group deletion request.
- * Cleans up dialog state after completion.
- */
 function confirmDelete() {
     if (!groupToDelete.value) return
 
@@ -595,14 +444,6 @@ function confirmDelete() {
     })
 }
 
-/**
- * Formats table cell values for display.
- * Replaces empty values with a placeholder.
- *
- * @param {Object} row
- * @param {string} key
- * @returns {string}
- */
 function formatCell(row, key) {
     const value = row[key]
 
@@ -613,11 +454,6 @@ function formatCell(row, key) {
     return value
 }
 
-/**
- * Builds a CSV export URL using the current
- * filters, visible columns, and column ordering.
- * Redirects the browser to the export endpoint.
- */
 function exportCsv() {
     const params = new URLSearchParams()
 

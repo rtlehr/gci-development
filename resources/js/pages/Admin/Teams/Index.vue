@@ -4,8 +4,8 @@
             <h1 class="text-2xl font-semibold">Teams</h1>
 
             <div class="flex gap-2">
-                <Button variant="outline" @click="showColumnSettings = !showColumnSettings">
-                    {{ showColumnSettings ? 'Hide Column Settings' : 'Column Settings' }}
+                <Button variant="outline" @click="showColumnSettings = true">
+                    Column Settings
                 </Button>
 
                 <!--
@@ -13,99 +13,22 @@
                     Export CSV
                 </Button>
                 -->
-                
+
                 <Link href="/admin/teams/create" v-if="can('view_admin')">
                     <Button>Add Team</Button>
                 </Link>
             </div>
         </div>
 
-        <!-- Column Settings -->
-        <div v-if="showColumnSettings" class="border rounded-xl p-4 bg-background space-y-4">
-            <div>
-                <h2 class="text-lg font-semibold">Column Settings</h2>
-                <p class="text-sm text-muted-foreground">
-                    Choose which columns are shown and change their order.
-                </p>
-            </div>
-
-            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <!-- Visible Columns -->
-                <div class="space-y-3">
-                    <h3 class="font-medium">Visible Columns</h3>
-
-                    <div
-                        v-for="col in orderedColumnDefinitions"
-                        :key="col.key"
-                        class="flex items-center justify-between rounded-lg border p-3"
-                    >
-                        <div class="flex items-center gap-3">
-                            <input
-                                :id="`visible-${col.key}`"
-                                v-model="settingsForm.visibleColumns"
-                                :value="col.key"
-                                type="checkbox"
-                                class="h-4 w-4"
-                            />
-                            <Label :for="`visible-${col.key}`">
-                                {{ col.label }}
-                            </Label>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Column Order -->
-                <div class="space-y-3">
-                    <h3 class="font-medium">Column Order</h3>
-
-                    <div
-                        v-for="(colKey, index) in settingsForm.columnOrder"
-                        :key="colKey"
-                        class="flex items-center justify-between rounded-lg border p-3"
-                    >
-                        <div class="font-medium">
-                            {{ getColumnLabel(colKey) }}
-                        </div>
-
-                        <div class="flex gap-2">
-                            <Button
-                                type="button"
-                                variant="outline"
-                                size="sm"
-                                :disabled="index === 0"
-                                @click="moveColumnLeft(index)"
-                            >
-                                Left
-                            </Button>
-
-                            <Button
-                                type="button"
-                                variant="outline"
-                                size="sm"
-                                :disabled="index === settingsForm.columnOrder.length - 1"
-                                @click="moveColumnRight(index)"
-                            >
-                                Right
-                            </Button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="flex gap-2">
-                <Button @click="saveColumnPreferences">
-                    Save Preferences
-                </Button>
-
-                <Button variant="outline" @click="resetColumnSettingsLocally">
-                    Reset Unsaved Changes
-                </Button>
-
-                <Button variant="outline" @click="resetPreferencesOnServer">
-                    Reset to Defaults
-                </Button>
-            </div>
-        </div>
+        <ColumnSettings
+            v-model:open="showColumnSettings"
+            :columns="columnsForSettings"
+            :default-columns="defaultColumnsForSettings"
+            @update:columns="updateColumnSettings"
+            @save="saveColumnPreferences"
+            @reset="resetColumnSettingsLocally"
+            @reset-defaults="resetPreferencesOnServer"
+        />
 
         <!-- Filters -->
         <div class="border rounded-xl p-4 bg-background">
@@ -279,6 +202,7 @@
 import { computed, reactive, ref } from 'vue'
 import { Link, router } from '@inertiajs/vue3'
 import { useAuth } from '@/composables/useAuth'
+import ColumnSettings from '@/Components/Lists/ColumnSettings.vue'
 
 import {
     ArrowDown,
@@ -322,55 +246,84 @@ import {
 
 const { can } = useAuth()
 
-// Backend-provided table data, filters,
-// sorting state, and column configuration.
 const props = defineProps({
-    teams: Object,
-    columns: Array,
-    visibleColumns: Array,
-    columnOrder: Array,
-    filters: Object,
-    sort: String,
-    direction: String,
+    teams: {
+        type: Object,
+        required: true,
+    },
+    columns: {
+        type: Array,
+        default: () => [],
+    },
+    visibleColumns: {
+        type: Array,
+        default: () => [],
+    },
+    columnOrder: {
+        type: Array,
+        default: () => [],
+    },
+    filters: {
+        type: Object,
+        default: () => ({
+            search: '',
+        }),
+    },
+    sort: {
+        type: String,
+        default: '',
+    },
+    direction: {
+        type: String,
+        default: 'asc',
+    },
 })
 
-// Controls visibility of the column settings panel.
 const showColumnSettings = ref(false)
 
-// Local reactive filter state used by the search form.
 const filterForm = reactive({
     search: props.filters?.search ?? '',
 })
 
-// Local editable column configuration state.
 const settingsForm = reactive({
     visibleColumns: [...(props.visibleColumns ?? [])],
     columnOrder: [...(props.columnOrder ?? [])],
 })
 
-// Delete confirmation dialog state and selected team ID.
 const deleteDialogOpen = ref(false)
 const teamToDelete = ref(null)
 
-// Returns the active/visible table columns
-// in the correct user-defined order.
-const activeColumns = computed(() =>
-    settingsForm.columnOrder
-        .filter(key => settingsForm.visibleColumns.includes(key))
-        .map(key => props.columns.find(col => col.key === key))
+const activeColumns = computed(() => {
+    return settingsForm.columnOrder
+        .filter((key) => settingsForm.visibleColumns.includes(key))
+        .map((key) => props.columns.find((col) => col.key === key))
         .filter(Boolean)
-)
+})
 
-// Returns all column definitions
-// in the current display order.
-const orderedColumnDefinitions = computed(() =>
-    settingsForm.columnOrder
-        .map(key => props.columns.find(col => col.key === key))
+const columnsForSettings = computed(() => {
+    return settingsForm.columnOrder
+        .map((key) => {
+            const column = props.columns.find((col) => col.key === key)
+
+            if (!column) {
+                return null
+            }
+
+            return {
+                ...column,
+                visible: settingsForm.visibleColumns.includes(key),
+            }
+        })
         .filter(Boolean)
-)
+})
 
-// Generates a compact pagination range
-// centered around the current page.
+const defaultColumnsForSettings = computed(() => {
+    return props.columns.map((column) => ({
+        ...column,
+        visible: true,
+    }))
+})
+
 const pagesToShow = computed(() => {
     const current = props.teams.current_page ?? 1
     const last = props.teams.last_page ?? 1
@@ -381,157 +334,107 @@ const pagesToShow = computed(() => {
     return Array.from({ length: end - start + 1 }, (_, i) => start + i)
 })
 
-/**
- * Applies the current search filter
- * while preserving sorting state.
- */
+function updateColumnSettings(updatedColumns) {
+    settingsForm.visibleColumns = updatedColumns
+        .filter((column) => column.visible !== false)
+        .map((column) => column.key)
+
+    settingsForm.columnOrder = updatedColumns.map((column) => column.key)
+}
+
 function applyFilters() {
     router.get('/admin/teams', {
         search: filterForm.search,
         sort: props.sort,
         direction: props.direction,
-    }, { preserveState: true, replace: true })
+    }, {
+        preserveState: true,
+        replace: true,
+    })
 }
 
-/**
- * Clears the active search filter
- * and reloads the default results.
- */
 function resetFilters() {
     filterForm.search = ''
 
-    router.get('/admin/teams', {}, { preserveState: true, replace: true })
+    router.get('/admin/teams', {
+        sort: props.sort,
+        direction: props.direction,
+    }, {
+        preserveState: true,
+        replace: true,
+    })
 }
 
-/**
- * Updates table sorting.
- * Clicking the same column toggles asc/desc.
- *
- * @param {string} column
- */
 function sortBy(column) {
-    let next = 'asc'
+    let nextDirection = 'asc'
 
     if (props.sort === column && props.direction === 'asc') {
-        next = 'desc'
+        nextDirection = 'desc'
     }
 
     router.get('/admin/teams', {
         search: filterForm.search,
         sort: column,
-        direction: next,
-    }, { preserveState: true, replace: true })
+        direction: nextDirection,
+    }, {
+        preserveState: true,
+        replace: true,
+    })
 }
 
-/**
- * Returns the correct sorting icon component
- * for the specified column.
- *
- * @param {string} column
- * @returns {Component}
- */
 function getSortIcon(column) {
     if (props.sort !== column) return ArrowUpDown
 
     return props.direction === 'asc' ? ArrowUp : ArrowDown
 }
 
-/**
- * Navigates to a different pagination page
- * while preserving filters and sorting.
- *
- * @param {number} page
- */
 function goToPage(page) {
     router.get('/admin/teams', {
         page,
         search: filterForm.search,
         sort: props.sort,
         direction: props.direction,
-    }, { preserveState: true, replace: true })
-}
-
-/**
- * Returns the display label for a column key.
- *
- * @param {string} key
- * @returns {string}
- */
-function getColumnLabel(key) {
-    return props.columns.find(col => col.key === key)?.label ?? key
-}
-
-/**
- * Moves a column one position left
- * in the display order.
- *
- * @param {number} i
- */
-function moveColumnLeft(i) {
-    if (i === 0) return
-
-    [settingsForm.columnOrder[i - 1], settingsForm.columnOrder[i]] =
-    [settingsForm.columnOrder[i], settingsForm.columnOrder[i - 1]]
-}
-
-/**
- * Moves a column one position right
- * in the display order.
- *
- * @param {number} i
- */
-function moveColumnRight(i) {
-    if (i === settingsForm.columnOrder.length - 1) return
-
-    [settingsForm.columnOrder[i + 1], settingsForm.columnOrder[i]] =
-    [settingsForm.columnOrder[i], settingsForm.columnOrder[i + 1]]
-}
-
-/**
- * Saves the current visible columns
- * and column ordering preferences.
- */
-function saveColumnPreferences() {
-    router.post('/admin/teams/preferences', {
-        visible_columns: settingsForm.visibleColumns,
-        column_order: settingsForm.columnOrder,
+    }, {
+        preserveState: true,
+        replace: true,
     })
 }
 
-/**
- * Resets local unsaved column settings
- * back to the backend-provided defaults.
- */
+function saveColumnPreferences(updatedColumns = columnsForSettings.value) {
+    updateColumnSettings(updatedColumns)
+
+    router.post('/admin/teams/preferences', {
+        visible_columns: settingsForm.visibleColumns,
+        column_order: settingsForm.columnOrder,
+    }, {
+        preserveScroll: true,
+        onSuccess: () => {
+            showColumnSettings.value = false
+        },
+    })
+}
+
 function resetColumnSettingsLocally() {
-    settingsForm.visibleColumns = [...props.visibleColumns]
-    settingsForm.columnOrder = [...props.columnOrder]
+    settingsForm.visibleColumns = [...(props.visibleColumns ?? [])]
+    settingsForm.columnOrder = [...(props.columnOrder ?? [])]
 }
 
-/**
- * Removes saved user preferences
- * and restores application defaults.
- */
 function resetPreferencesOnServer() {
-    router.delete('/admin/teams/preferences')
+    router.delete('/admin/teams/preferences', {
+        preserveScroll: true,
+    })
 }
 
-/**
- * Opens the delete confirmation dialog
- * for the selected team.
- *
- * @param {number|string} id
- */
 function openDeleteDialog(id) {
     teamToDelete.value = id
     deleteDialogOpen.value = true
 }
 
-/**
- * Deletes the selected team
- * and resets dialog state afterward.
- */
 function confirmDelete() {
+    if (!teamToDelete.value) return
+
     router.delete(`/admin/teams/${teamToDelete.value}`, {
+        preserveScroll: true,
         onFinish: () => {
             deleteDialogOpen.value = false
             teamToDelete.value = null
@@ -539,23 +442,16 @@ function confirmDelete() {
     })
 }
 
-/**
- * Formats table cell values for display.
- * Empty values are replaced with a placeholder.
- *
- * @param {Object} row
- * @param {string} key
- * @returns {string}
- */
 function formatCell(row, key) {
-    return row[key] ?? '—'
+    const value = row[key]
+
+    if (value === null || value === undefined || value === '') {
+        return '—'
+    }
+
+    return value
 }
 
-/**
- * Builds the CSV export URL using the current
- * filters and column settings, then redirects
- * the browser to the export endpoint.
- */
 function exportCsv() {
     const params = new URLSearchParams()
 
@@ -563,13 +459,13 @@ function exportCsv() {
         params.append('search', filterForm.search)
     }
 
-    settingsForm.visibleColumns.forEach(col =>
+    settingsForm.visibleColumns.forEach((col) => {
         params.append('visible_columns[]', col)
-    )
+    })
 
-    settingsForm.columnOrder.forEach(col =>
+    settingsForm.columnOrder.forEach((col) => {
         params.append('column_order[]', col)
-    )
+    })
 
     window.location.href = `/admin/teams/export/csv?${params.toString()}`
 }

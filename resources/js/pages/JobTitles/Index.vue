@@ -11,30 +11,47 @@
                 </p>
             </div>
 
-            <Link href="/job-titles/create">
-                <Button>
-                    Create Job Title
+            <div class="flex gap-2">
+                <Button variant="outline" @click="showColumnSettings = true">
+                    Column Settings
                 </Button>
-            </Link>
+
+                <Link href="/job-titles/create">
+                    <Button>
+                        Create Job Title
+                    </Button>
+                </Link>
+            </div>
         </div>
+
+        <ColumnSettings
+            v-model:open="showColumnSettings"
+            :columns="columnsForSettings"
+            :default-columns="defaultColumnsForSettings"
+            @update:columns="updateColumnSettings"
+            @save="saveColumnPreferences"
+            @reset="resetColumnSettingsLocally"
+            @reset-defaults="resetPreferencesOnServer"
+        />
 
         <div class="border rounded-xl bg-background overflow-hidden">
             <Table>
                 <TableHeader>
                     <TableRow>
-                        <TableHead>Name</TableHead>
-                        <TableHead>Description</TableHead>
-                        <TableHead>Skills</TableHead>
-                        <TableHead>Tasks</TableHead>
-                        <TableHead>Positions</TableHead>
-                        <TableHead>Status</TableHead>
+                        <TableHead
+                            v-for="col in activeColumns"
+                            :key="col.key"
+                        >
+                            {{ col.label }}
+                        </TableHead>
+
                         <TableHead class="text-right">Actions</TableHead>
                     </TableRow>
                 </TableHeader>
 
                 <TableBody>
                     <TableRow v-if="!jobTitles.length">
-                        <TableCell colspan="7" class="text-center py-8 text-muted-foreground">
+                        <TableCell :colspan="activeColumns.length + 1" class="text-center py-8 text-muted-foreground">
                             No job titles found.
                         </TableCell>
                     </TableRow>
@@ -43,30 +60,20 @@
                         v-for="jobTitle in jobTitles"
                         :key="jobTitle.id"
                     >
-                        <TableCell class="font-medium">
-                            {{ jobTitle.name }}
-                        </TableCell>
+                        <TableCell
+                            v-for="col in activeColumns"
+                            :key="col.key"
+                            :class="col.key === 'name' ? 'font-medium' : ''"
+                        >
+                            <template v-if="col.key === 'status'">
+                                <Badge :variant="jobTitle.is_active ? 'default' : 'secondary'">
+                                    {{ jobTitle.is_active ? 'Active' : 'Inactive' }}
+                                </Badge>
+                            </template>
 
-                        <TableCell>
-                            {{ jobTitle.description || '—' }}
-                        </TableCell>
-
-                        <TableCell>
-                            {{ jobTitle.skills_count ?? 0 }}
-                        </TableCell>
-
-                        <TableCell>
-                            {{ jobTitle.tasks_count ?? 0 }}
-                        </TableCell>
-
-                        <TableCell>
-                            {{ jobTitle.positions_count ?? 0 }}
-                        </TableCell>
-
-                        <TableCell>
-                            <Badge :variant="jobTitle.is_active ? 'default' : 'secondary'">
-                                {{ jobTitle.is_active ? 'Active' : 'Inactive' }}
-                            </Badge>
+                            <template v-else>
+                                {{ formatCell(jobTitle, col.key) }}
+                            </template>
                         </TableCell>
 
                         <TableCell class="text-right">
@@ -100,7 +107,9 @@
 </template>
 
 <script setup>
+import { computed, reactive, ref } from 'vue'
 import { Link, router } from '@inertiajs/vue3'
+import ColumnSettings from '@/Components/Lists/ColumnSettings.vue'
 
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -114,32 +123,151 @@ import {
     TableRow,
 } from '@/components/ui/table'
 
-/*
-|--------------------------------------------------------------------------
-| Props
-|--------------------------------------------------------------------------
-*/
+const defaultColumns = [
+    { key: 'name', label: 'Name', sortable: false },
+    { key: 'description', label: 'Description', sortable: false },
+    { key: 'skills_count', label: 'Skills', sortable: false },
+    { key: 'tasks_count', label: 'Tasks', sortable: false },
+    { key: 'positions_count', label: 'Positions', sortable: false },
+    { key: 'status', label: 'Status', sortable: false },
+]
+
+const defaultColumnKeys = defaultColumns.map((column) => column.key)
 
 const props = defineProps({
     jobTitles: {
         type: Array,
         default: () => [],
     },
+    columns: {
+        type: Array,
+        default: () => [
+            { key: 'name', label: 'Name', sortable: false },
+            { key: 'description', label: 'Description', sortable: false },
+            { key: 'skills_count', label: 'Skills', sortable: false },
+            { key: 'tasks_count', label: 'Tasks', sortable: false },
+            { key: 'positions_count', label: 'Positions', sortable: false },
+            { key: 'is_active', label: 'Status', sortable: false },
+        ],
+    },
+    visibleColumns: {
+        type: Array,
+        default: () => [
+            'name',
+            'description',
+            'skills_count',
+            'tasks_count',
+            'positions_count',
+            'is_active',
+        ],
+    },
+    columnOrder: {
+        type: Array,
+        default: () => [
+            'name',
+            'description',
+            'skills_count',
+            'tasks_count',
+            'positions_count',
+            'is_active',
+        ],
+    },
 })
 
-/*
-|--------------------------------------------------------------------------
-| Template Data
-|--------------------------------------------------------------------------
-*/
+const showColumnSettings = ref(false)
+
+const settingsForm = reactive({
+    visibleColumns: [...(props.visibleColumns ?? defaultColumnKeys)],
+    columnOrder: [...(props.columnOrder ?? defaultColumnKeys)],
+})
 
 const jobTitles = props.jobTitles ?? []
 
-/*
-|--------------------------------------------------------------------------
-| Actions
-|--------------------------------------------------------------------------
-*/
+const activeColumns = computed(() => {
+    return settingsForm.columnOrder
+        .filter((key) => settingsForm.visibleColumns.includes(key))
+        .map((key) => props.columns.find((col) => col.key === key))
+        .filter(Boolean)
+})
+
+const columnsForSettings = computed(() => {
+    return settingsForm.columnOrder
+        .map((key) => {
+            const column = props.columns.find((col) => col.key === key)
+
+            if (!column) {
+                return null
+            }
+
+            return {
+                ...column,
+                visible: settingsForm.visibleColumns.includes(key),
+            }
+        })
+        .filter(Boolean)
+})
+
+const defaultColumnsForSettings = computed(() => {
+    return props.columns.map((column) => ({
+        ...column,
+        visible: true,
+    }))
+})
+
+function updateColumnSettings(updatedColumns) {
+    settingsForm.visibleColumns = updatedColumns
+        .filter((column) => column.visible !== false)
+        .map((column) => column.key)
+
+    settingsForm.columnOrder = updatedColumns.map((column) => column.key)
+}
+
+function saveColumnPreferences(updatedColumns = columnsForSettings.value) {
+    updateColumnSettings(updatedColumns)
+
+    router.post('/job-titles/preferences', {
+        visible_columns: settingsForm.visibleColumns,
+        column_order: settingsForm.columnOrder,
+    }, {
+        preserveScroll: true,
+        onSuccess: () => {
+            showColumnSettings.value = false
+        },
+    })
+}
+
+function resetColumnSettingsLocally() {
+    settingsForm.visibleColumns = [...(props.visibleColumns ?? defaultColumnKeys)]
+    settingsForm.columnOrder = [...(props.columnOrder ?? defaultColumnKeys)]
+}
+
+function resetPreferencesOnServer() {
+    router.delete('/job-titles/preferences', {
+        preserveScroll: true,
+    })
+}
+
+function formatCell(jobTitle, key) {
+    if (key === 'skills_count') {
+        return jobTitle.skills_count ?? 0
+    }
+
+    if (key === 'tasks_count') {
+        return jobTitle.tasks_count ?? 0
+    }
+
+    if (key === 'positions_count') {
+        return jobTitle.positions_count ?? 0
+    }
+
+    const value = jobTitle[key]
+
+    if (value === null || value === undefined || value === '') {
+        return '—'
+    }
+
+    return value
+}
 
 function deleteJobTitle(id) {
     if (!confirm('Delete this Job Title?')) {

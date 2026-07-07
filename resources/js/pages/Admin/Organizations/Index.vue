@@ -9,8 +9,8 @@
             </div>
 
             <div class="flex gap-2">
-                <Button variant="outline" @click="showColumnSettings = !showColumnSettings">
-                    {{ showColumnSettings ? 'Hide Column Settings' : 'Column Settings' }}
+                <Button variant="outline" @click="showColumnSettings = true">
+                    Column Settings
                 </Button>
 
                 <Button
@@ -27,87 +27,15 @@
             </div>
         </div>
 
-        <div v-if="showColumnSettings" class="border rounded-xl p-4 bg-background space-y-4">
-            <div>
-                <h2 class="text-lg font-semibold">Column Settings</h2>
-                <p class="text-sm text-muted-foreground">
-                    Choose which columns are shown and change their order.
-                </p>
-            </div>
-
-            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <div class="space-y-3">
-                    <h3 class="font-medium">Visible Columns</h3>
-
-                    <div
-                        v-for="col in orderedColumnDefinitions"
-                        :key="col.key"
-                        class="flex items-center justify-between rounded-lg border p-3"
-                    >
-                        <div class="flex items-center gap-3">
-                            <input
-                                :id="`visible-${col.key}`"
-                                v-model="settingsForm.visibleColumns"
-                                :value="col.key"
-                                type="checkbox"
-                                class="h-4 w-4"
-                            />
-                            <Label :for="`visible-${col.key}`">{{ col.label }}</Label>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="space-y-3">
-                    <h3 class="font-medium">Column Order</h3>
-
-                    <div
-                        v-for="(colKey, index) in settingsForm.columnOrder"
-                        :key="colKey"
-                        class="flex items-center justify-between rounded-lg border p-3"
-                    >
-                        <div class="font-medium">
-                            {{ getColumnLabel(colKey) }}
-                        </div>
-
-                        <div class="flex gap-2">
-                            <Button
-                                type="button"
-                                variant="outline"
-                                size="sm"
-                                :disabled="index === 0"
-                                @click="moveColumnLeft(index)"
-                            >
-                                Left
-                            </Button>
-
-                            <Button
-                                type="button"
-                                variant="outline"
-                                size="sm"
-                                :disabled="index === settingsForm.columnOrder.length - 1"
-                                @click="moveColumnRight(index)"
-                            >
-                                Right
-                            </Button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="flex gap-2">
-                <Button @click="saveColumnPreferences">
-                    Save Preferences
-                </Button>
-
-                <Button variant="outline" @click="resetColumnSettingsLocally">
-                    Reset Unsaved Changes
-                </Button>
-
-                <Button variant="outline" @click="resetPreferencesOnServer">
-                    Reset to Defaults
-                </Button>
-            </div>
-        </div>
+        <ColumnSettings
+            v-model:open="showColumnSettings"
+            :columns="columnsForSettings"
+            :default-columns="defaultColumnsForSettings"
+            @update:columns="updateColumnSettings"
+            @save="saveColumnPreferences"
+            @reset="resetColumnSettingsLocally"
+            @reset-defaults="resetPreferencesOnServer"
+        />
 
         <div class="border rounded-xl p-4 bg-background">
             <form @submit.prevent="applyFilters" class="flex flex-col md:flex-row gap-4 md:items-end">
@@ -277,6 +205,7 @@ import { computed, reactive, ref } from 'vue'
 import { Link, router } from '@inertiajs/vue3'
 import { useAuth } from '@/composables/useAuth'
 import { useFileDownload } from '@/composables/useFileDownload'
+import ColumnSettings from '@/Components/Lists/ColumnSettings.vue'
 
 import {
     ArrowDown,
@@ -327,7 +256,6 @@ const {
     isDownloading,
 } = useFileDownload()
 
-// Backend-provided page data and current table state.
 const props = defineProps({
     organizations: {
         type: Object,
@@ -361,25 +289,20 @@ const props = defineProps({
     },
 })
 
-// Controls whether the column settings panel is visible.
 const showColumnSettings = ref(false)
 
-// Local filter state for the search form.
 const filterForm = reactive({
     search: props.filters?.search ?? '',
 })
 
-// Local editable column preference state.
 const settingsForm = reactive({
     visibleColumns: [...(props.visibleColumns ?? [])],
     columnOrder: [...(props.columnOrder ?? [])],
 })
 
-// Delete dialog state and selected organization ID.
 const deleteDialogOpen = ref(false)
 const organizationToDelete = ref(null)
 
-// Active table columns after applying visibility settings and user-defined order.
 const activeColumns = computed(() => {
     return settingsForm.columnOrder
         .filter((key) => settingsForm.visibleColumns.includes(key))
@@ -387,14 +310,30 @@ const activeColumns = computed(() => {
         .filter(Boolean)
 })
 
-// Full ordered column list used by the column settings panel.
-const orderedColumnDefinitions = computed(() => {
+const columnsForSettings = computed(() => {
     return settingsForm.columnOrder
-        .map((key) => props.columns.find((col) => col.key === key))
+        .map((key) => {
+            const column = props.columns.find((col) => col.key === key)
+
+            if (!column) {
+                return null
+            }
+
+            return {
+                ...column,
+                visible: settingsForm.visibleColumns.includes(key),
+            }
+        })
         .filter(Boolean)
 })
 
-// Compact pagination range centered around the current page.
+const defaultColumnsForSettings = computed(() => {
+    return props.columns.map((column) => ({
+        ...column,
+        visible: true,
+    }))
+})
+
 const pagesToShow = computed(() => {
     const current = props.organizations.current_page ?? 1
     const last = props.organizations.last_page ?? 1
@@ -410,6 +349,14 @@ const pagesToShow = computed(() => {
 
     return pages
 })
+
+function updateColumnSettings(updatedColumns) {
+    settingsForm.visibleColumns = updatedColumns
+        .filter((column) => column.visible !== false)
+        .map((column) => column.key)
+
+    settingsForm.columnOrder = updatedColumns.map((column) => column.key)
+}
 
 function getFilterPayload() {
     return {
@@ -485,34 +432,17 @@ function goToPage(page) {
     })
 }
 
-function getColumnLabel(key) {
-    return props.columns.find((col) => col.key === key)?.label ?? key
-}
+function saveColumnPreferences(updatedColumns = columnsForSettings.value) {
+    updateColumnSettings(updatedColumns)
 
-function moveColumnLeft(index) {
-    if (index <= 0) return
-
-    const temp = settingsForm.columnOrder[index - 1]
-
-    settingsForm.columnOrder[index - 1] = settingsForm.columnOrder[index]
-    settingsForm.columnOrder[index] = temp
-}
-
-function moveColumnRight(index) {
-    if (index >= settingsForm.columnOrder.length - 1) return
-
-    const temp = settingsForm.columnOrder[index + 1]
-
-    settingsForm.columnOrder[index + 1] = settingsForm.columnOrder[index]
-    settingsForm.columnOrder[index] = temp
-}
-
-function saveColumnPreferences() {
     router.post('/admin/organizations/preferences', {
         visible_columns: settingsForm.visibleColumns,
         column_order: settingsForm.columnOrder,
     }, {
         preserveScroll: true,
+        onSuccess: () => {
+            showColumnSettings.value = false
+        },
     })
 }
 
