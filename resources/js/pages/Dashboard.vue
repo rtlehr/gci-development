@@ -1,21 +1,34 @@
 <script setup lang="ts">
-import { Head } from '@inertiajs/vue3';
-import DashboardAlerts from '@/components/DashboardAlerts.vue';
-import PermissionBlock from '@/components/PermissionBlock.vue';
-import PlaceholderPattern from '@/components/PlaceholderPattern.vue';
-import TicketsAssignedToMe from '@/components/TicketsAssignedToMe.vue';
-import { useAuth } from '@/composables/useAuth';
-import { dashboard } from '@/routes';
+import { Head } from '@inertiajs/vue3'
+import DashboardAlerts from '@/components/DashboardAlerts.vue'
+import PermissionBlock from '@/components/PermissionBlock.vue'
+import PlaceholderPattern from '@/components/PlaceholderPattern.vue'
+import ProjectManagerPositionsCard from '@/components/dashboard/ProjectManagerPositionsCard.vue'
+import TicketsAssignedToMe from '@/components/TicketsAssignedToMe.vue'
+import { useAuth } from '@/composables/useAuth'
+import { dashboard } from '@/routes'
 
-const { username, role, permissions } = useAuth();
+type AssignedPosition = {
+    id: number
+    position_code: string | null
+    title: string | null
+    status: string | null
+    candidates_count: number
+}
+
+const { username, role, permissions } = useAuth()
 
 withDefaults(
     defineProps<{
         alerts: any[]
         assignedTickets?: any[]
+        assignedPositions?: AssignedPosition[]
+        showProjectManagerPositions?: boolean
     }>(),
     {
         assignedTickets: () => [],
+        assignedPositions: () => [],
+        showProjectManagerPositions: false,
     },
 )
 
@@ -28,7 +41,7 @@ defineOptions({
             },
         ],
     },
-});
+})
 </script>
 
 <template>
@@ -44,7 +57,10 @@ defineOptions({
                 <p>Permissions: {{ permissions.join(', ') }}</p>
             </div>
 
-            <PermissionBlock role="admin" fallback="This section is only for admins.">
+            <PermissionBlock
+                role="admin"
+                fallback="This section is only for admins."
+            >
                 <div
                     class="relative aspect-video overflow-hidden rounded-xl border border-sidebar-border/70 p-4 dark:border-sidebar-border"
                 >
@@ -64,6 +80,11 @@ defineOptions({
                 </div>
             </PermissionBlock>
         </div>
+
+        <ProjectManagerPositionsCard
+            v-if="showProjectManagerPositions"
+            :positions="assignedPositions"
+        />
 
         <div
             class="relative min-h-[100vh] flex-1 rounded-xl border border-sidebar-border/70 dark:border-sidebar-border md:min-h-min"

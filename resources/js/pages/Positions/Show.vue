@@ -70,12 +70,14 @@ const props = withDefaults(defineProps<{
     jobTitleTasks?: GenericRecord[]
     customSkills?: GenericRecord[]
     customTasks?: GenericRecord[]
+    positionCandidates?: GenericRecord[]
     initialSection?: PositionSection
 }>(), {
     jobTitleSkills: () => [],
     jobTitleTasks: () => [],
     customSkills: () => [],
     customTasks: () => [],
+    positionCandidates: () => [],
     initialSection: 'general',
 })
 
@@ -285,7 +287,7 @@ function confirmDelete(): void {
         <div class="space-y-6">
             <PositionSectionNavigation
                 v-model="activeSection"
-                :candidate-count="assignmentCount"
+                :candidate-count="positionCandidates.length"
             />
 
             <template v-if="activeSection === 'general'">
@@ -917,192 +919,110 @@ function confirmDelete(): void {
                 <Card>
                     <CardHeader class="border-b">
                         <CardTitle class="text-lg">
-                            Current assignments
-                        </CardTitle>
-                    </CardHeader>
-
-                    <CardContent class="p-5">
-                        <div
-                            v-if="activeAssignments.length"
-                            class="grid gap-4 lg:grid-cols-2 2xl:grid-cols-3"
-                        >
-                            <div
-                                v-for="assignment in activeAssignments"
-                                :key="assignment.id"
-                                class="flex items-start justify-between gap-4 rounded-xl border p-4"
-                            >
-                                <div class="min-w-0">
-                                    <div class="font-semibold">
-                                        {{ fullName(assignment.person) }}
-                                    </div>
-
-                                    <div class="mt-2 grid gap-1 text-sm text-muted-foreground">
-                                        <span>
-                                            Person Code:
-                                            {{ assignment.person?.person_code || '—' }}
-                                        </span>
-                                        <span>
-                                            Status:
-                                            {{ assignment.assignment_status || '—' }}
-                                        </span>
-                                        <span>
-                                            Type:
-                                            {{ assignment.assignment_type || '—' }}
-                                        </span>
-                                        <span>
-                                            Start Date:
-                                            {{ formatDate(assignment.start_date) }}
-                                        </span>
-                                    </div>
-                                </div>
-
-                                <DropdownMenu v-if="can('view_admin')">
-                                    <DropdownMenuTrigger as-child>
-                                        <Button
-                                            variant="ghost"
-                                            size="icon"
-                                            aria-label="Assignment actions"
-                                        >
-                                            <MoreHorizontal class="h-4 w-4" />
-                                        </Button>
-                                    </DropdownMenuTrigger>
-
-                                    <DropdownMenuContent align="end">
-                                        <DropdownMenuLabel>
-                                            Actions
-                                        </DropdownMenuLabel>
-                                        <DropdownMenuSeparator />
-
-                                        <DropdownMenuItem as-child>
-                                            <Link
-                                                :href="`/position-assignments/${assignment.id}/edit?return_to=/positions/${position.id}?section=candidates`"
-                                            >
-                                                Edit
-                                            </Link>
-                                        </DropdownMenuItem>
-
-                                        <DropdownMenuSeparator />
-
-                                        <DropdownMenuItem
-                                            class="text-red-600 focus:text-red-600"
-                                            @click="openDeleteDialog(assignment.id)"
-                                        >
-                                            Delete
-                                        </DropdownMenuItem>
-                                    </DropdownMenuContent>
-                                </DropdownMenu>
-                            </div>
-                        </div>
-
-                        <p
-                            v-else
-                            class="py-8 text-center text-sm text-muted-foreground"
-                        >
-                            No active assignments found.
-                        </p>
-                    </CardContent>
-                </Card>
-
-                <Card>
-                    <CardHeader class="border-b">
-                        <CardTitle class="text-lg">
-                            Assignment history
+                            Position Candidates
                         </CardTitle>
                     </CardHeader>
 
                     <CardContent class="p-0">
                         <div
-                            v-if="position.assignments?.length"
+                            v-if="positionCandidates.length"
                             class="overflow-x-auto"
                         >
-                            <Table class="min-w-[900px]">
+                            <Table class="min-w-[1100px]">
                                 <TableHeader>
                                     <TableRow>
-                                        <TableHead>Person</TableHead>
-                                        <TableHead>Person Code</TableHead>
+                                        <TableHead>Candidate</TableHead>
+                                        <TableHead>Candidate Code</TableHead>
                                         <TableHead>Status</TableHead>
-                                        <TableHead>Type</TableHead>
-                                        <TableHead>Start Date</TableHead>
-                                        <TableHead>End Date</TableHead>
-                                        <TableHead
-                                            v-if="can('view_admin')"
-                                            class="text-right"
-                                        >
-                                            Actions
+                                        <TableHead>Workflow</TableHead>
+                                        <TableHead>Current Step</TableHead>
+                                        <TableHead>Submitted</TableHead>
+                                        <TableHead>Scheduled Start</TableHead>
+                                        <TableHead class="text-right">
+                                            FBR
                                         </TableHead>
                                     </TableRow>
                                 </TableHeader>
 
                                 <TableBody>
                                     <TableRow
-                                        v-for="assignment in position.assignments"
-                                        :key="assignment.id"
+                                        v-for="candidate in positionCandidates"
+                                        :key="candidate.id"
                                     >
-                                        <TableCell class="font-medium">
-                                            {{ fullName(assignment.person) }}
-                                        </TableCell>
                                         <TableCell>
-                                            {{ assignment.person?.person_code || '—' }}
-                                        </TableCell>
-                                        <TableCell>
-                                            {{ assignment.assignment_status || '—' }}
-                                        </TableCell>
-                                        <TableCell>
-                                            {{ assignment.assignment_type || '—' }}
-                                        </TableCell>
-                                        <TableCell>
-                                            {{ formatDate(assignment.start_date) }}
-                                        </TableCell>
-                                        <TableCell>
-                                            {{ formatDate(assignment.end_date) }}
+                                            <div class="font-medium">
+                                                {{ candidate.person?.full_name || 'Unknown candidate' }}
+                                            </div>
+
+                                            <div
+                                                v-if="candidate.person?.email"
+                                                class="mt-1 text-xs text-muted-foreground"
+                                            >
+                                                {{ candidate.person.email }}
+                                            </div>
                                         </TableCell>
 
-                                        <TableCell
-                                            v-if="can('view_admin')"
-                                            class="text-right"
-                                        >
-                                            <DropdownMenu>
-                                                <DropdownMenuTrigger as-child>
-                                                    <Button
-                                                        variant="ghost"
-                                                        size="icon"
-                                                        aria-label="Assignment actions"
-                                                    >
-                                                        <MoreHorizontal class="h-4 w-4" />
-                                                    </Button>
-                                                </DropdownMenuTrigger>
+                                        <TableCell>
+                                            {{ candidate.candidate_code || '—' }}
+                                        </TableCell>
 
-                                                <DropdownMenuContent align="end">
-                                                    <DropdownMenuItem as-child>
-                                                        <Link
-                                                            :href="`/position-assignments/${assignment.id}/edit?return_to=/positions/${position.id}?section=candidates`"
-                                                        >
-                                                            Edit
-                                                        </Link>
-                                                    </DropdownMenuItem>
+                                        <TableCell>
+                                            <StatusBadge
+                                                :label="candidate.status || 'Unknown'"
+                                                tone="info"
+                                            />
+                                        </TableCell>
 
-                                                    <DropdownMenuSeparator />
+                                        <TableCell>
+                                            {{ candidate.workflow?.name || '—' }}
+                                        </TableCell>
 
-                                                    <DropdownMenuItem
-                                                        class="text-red-600 focus:text-red-600"
-                                                        @click="openDeleteDialog(assignment.id)"
-                                                    >
-                                                        Delete
-                                                    </DropdownMenuItem>
-                                                </DropdownMenuContent>
-                                            </DropdownMenu>
+                                        <TableCell>
+                                            <div>
+                                                {{ candidate.workflow?.step_name || 'Not started' }}
+                                            </div>
+
+                                            <div
+                                                v-if="candidate.workflow?.step_number && candidate.workflow?.step_count"
+                                                class="mt-1 text-xs text-muted-foreground"
+                                            >
+                                                Step {{ candidate.workflow.step_number }}
+                                                of {{ candidate.workflow.step_count }}
+                                            </div>
+                                        </TableCell>
+
+                                        <TableCell>
+                                            {{ formatDate(candidate.submitted_at) }}
+                                        </TableCell>
+
+                                        <TableCell>
+                                            {{ formatDate(candidate.scheduled_start_date) }}
+                                        </TableCell>
+
+                                        <TableCell class="text-right">
+                                            {{ candidate.candidate_fbr ?? '—' }}
                                         </TableCell>
                                     </TableRow>
                                 </TableBody>
                             </Table>
                         </div>
 
-                        <p
+                        <div
                             v-else
-                            class="p-8 text-center text-sm text-muted-foreground"
+                            class="p-10 text-center"
                         >
-                            No assignment history found.
-                        </p>
+                            <Users
+                                class="mx-auto h-10 w-10 text-muted-foreground/60"
+                            />
+
+                            <h3 class="mt-4 font-semibold">
+                                No candidates assigned
+                            </h3>
+
+                            <p class="mt-1 text-sm text-muted-foreground">
+                                This position does not currently have any candidates.
+                            </p>
+                        </div>
                     </CardContent>
                 </Card>
             </template>

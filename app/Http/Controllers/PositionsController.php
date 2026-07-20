@@ -109,6 +109,9 @@ class PositionsController extends Controller
             'jobTitle.tasks',
             'customSkills',
             'customTasks',
+            'candidates.person.primaryPhoneNumber',
+            'candidates.workflow.steps',
+            'candidates.stepEvents.workflowStep',
             'currentAssignment.person',
             'assignments.person',
             'activities.user',
@@ -121,6 +124,55 @@ class PositionsController extends Controller
         $jobTitleTasks = $position->jobTitle?->tasks ?? collect();
         $customSkills = $position->customSkills ?? collect();
         $customTasks = $position->customTasks ?? collect();
+
+        $positionCandidates = $position->candidates
+            ->map(function ($candidate) {
+                $currentEvent = $candidate->stepEvents
+                    ->sortByDesc(fn ($event) => $event->completed_at
+                        ?? $event->scheduled_at
+                        ?? $event->requested_at
+                        ?? $event->updated_at)
+                    ->first();
+
+                $firstStep = $candidate->workflow?->steps
+                    ?->sortBy('step_order')
+                    ->first();
+
+                $workflowStep = $currentEvent?->workflowStep ?? $firstStep;
+
+                return [
+                    'id' => $candidate->id,
+                    'candidate_code' => $candidate->candidate_code,
+                    'status' => $candidate->status,
+                    'candidate_fbr' => $candidate->candidate_fbr,
+                    'submitted_at' => $candidate->submitted_at?->toIso8601String(),
+                    'scheduled_start_date' => $candidate->scheduled_start_date?->toDateString(),
+                    'person' => $candidate->person ? [
+                        'id' => $candidate->person->id,
+                        'full_name' => trim(
+                            ($candidate->person->preferred_name
+                                ?: $candidate->person->first_name)
+                            .' '
+                            .$candidate->person->last_name
+                        ),
+                        'email' => $candidate->person->email,
+                        'person_code' => $candidate->person->person_code,
+                        'primary_phone' => $candidate->person
+                            ->primaryPhoneNumber?->phone_number,
+                        'primary_phone_extension' => $candidate->person
+                            ->primaryPhoneNumber?->extension,
+                    ] : null,
+                    'workflow' => $candidate->workflow ? [
+                        'id' => $candidate->workflow->id,
+                        'name' => $candidate->workflow->name,
+                        'step_name' => $workflowStep?->name ?? 'Not started',
+                        'step_number' => $workflowStep?->step_order,
+                        'step_count' => $candidate->workflow->steps?->count() ?? 0,
+                        'status_code' => $currentEvent?->status_code,
+                    ] : null,
+                ];
+            })
+            ->values();
 
         /*
         |--------------------------------------------------------------------------
@@ -140,6 +192,8 @@ class PositionsController extends Controller
             'jobTitleTasks' => $jobTitleTasks,
             'customSkills' => $customSkills,
             'customTasks' => $customTasks,
+            'positionCandidates' => $positionCandidates,
+            'initialSection' => request()->query('section', 'general'),
         ]);
     }
 
