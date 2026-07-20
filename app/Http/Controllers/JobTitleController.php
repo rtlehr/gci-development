@@ -252,8 +252,10 @@ class JobTitleController extends Controller
     /**
      * Add a Skill to this Job Title.
      */
-    public function storeSkill(Request $request, JobTitle $jobTitle)
+    public function storeSkill(Request $request, int $jobTitle)
     {
+        $jobTitle = JobTitle::query()->findOrFail($jobTitle);
+
         $validated = $request->validate([
             'name' => [
                 'required',
@@ -281,11 +283,13 @@ class JobTitleController extends Controller
             ],
         ]);
 
-        $validated['job_title_id'] = $jobTitle->id;
-        $validated['sort_order'] = $validated['sort_order'] ?? 0;
-        $validated['is_active'] = $validated['is_active'] ?? true;
-
-        JobTitleSkill::create($validated);
+        $jobTitle->skills()->create([
+            'name' => $validated['name'],
+            'description' => $validated['description'] ?? null,
+            'requirement_type' => $validated['requirement_type'],
+            'sort_order' => $validated['sort_order'] ?? 0,
+            'is_active' => $validated['is_active'] ?? true,
+        ]);
 
         return redirect()
             ->route('job-titles.show', $jobTitle)
@@ -293,10 +297,85 @@ class JobTitleController extends Controller
     }
 
     /**
+     * Update a Skill assigned to this Job Title.
+     */
+    public function updateSkill(Request $request, int $jobTitle, int $skill)
+    {
+        $jobTitle = JobTitle::query()->findOrFail($jobTitle);
+        $skill = JobTitleSkill::query()->findOrFail($skill);
+
+        abort_unless(
+            (int) $skill->job_title_id === (int) $jobTitle->getKey(),
+            404
+        );
+
+        $validated = $request->validate([
+            'name' => [
+                'required',
+                'string',
+                'max:255',
+            ],
+
+            'description' => [
+                'nullable',
+                'string',
+            ],
+
+            'requirement_type' => [
+                'required',
+                'in:required,desired',
+            ],
+
+            'sort_order' => [
+                'nullable',
+                'integer',
+            ],
+
+            'is_active' => [
+                'boolean',
+            ],
+        ]);
+
+        $skill->forceFill([
+            'name' => $validated['name'],
+            'description' => $validated['description'] ?? null,
+            'requirement_type' => $validated['requirement_type'],
+            'sort_order' => $validated['sort_order'] ?? 0,
+            'is_active' => $validated['is_active'] ?? false,
+        ])->saveOrFail();
+
+        return redirect()
+            ->route('job-titles.show', $jobTitle)
+            ->with('success', 'Skill updated successfully.');
+    }
+
+    /**
+     * Delete a Job Title Skill.
+     */
+    public function destroySkill(int $jobTitle, int $skill)
+    {
+        $jobTitle = JobTitle::query()->findOrFail($jobTitle);
+        $skill = JobTitleSkill::query()->findOrFail($skill);
+
+        abort_unless(
+            (int) $skill->job_title_id === (int) $jobTitle->getKey(),
+            404
+        );
+
+        $skill->delete();
+
+        return redirect()
+            ->route('job-titles.show', $jobTitle)
+            ->with('success', 'Skill deleted successfully.');
+    }
+
+    /**
      * Add a Task to this Job Title.
      */
-    public function storeTask(Request $request, JobTitle $jobTitle)
+    public function storeTask(Request $request, int $jobTitle)
     {
+        $jobTitle = JobTitle::query()->findOrFail($jobTitle);
+
         $validated = $request->validate([
             'name' => [
                 'required',
@@ -319,11 +398,12 @@ class JobTitleController extends Controller
             ],
         ]);
 
-        $validated['job_title_id'] = $jobTitle->id;
-        $validated['sort_order'] = $validated['sort_order'] ?? 0;
-        $validated['is_active'] = $validated['is_active'] ?? true;
-
-        JobTitleTask::create($validated);
+        $jobTitle->tasks()->create([
+            'name' => $validated['name'],
+            'description' => $validated['description'] ?? null,
+            'sort_order' => $validated['sort_order'] ?? 0,
+            'is_active' => $validated['is_active'] ?? true,
+        ]);
 
         return redirect()
             ->route('job-titles.show', $jobTitle)
@@ -331,29 +411,64 @@ class JobTitleController extends Controller
     }
 
     /**
-     * Delete a Job Title Skill.
+     * Update a Task assigned to this Job Title.
      */
-    public function destroySkill(JobTitle $jobTitle, JobTitleSkill $skill)
+    public function updateTask(Request $request, int $jobTitle, int $task)
     {
-        if ($skill->job_title_id !== $jobTitle->id) {
-            abort(404);
-        }
+        $jobTitle = JobTitle::query()->findOrFail($jobTitle);
+        $task = JobTitleTask::query()->findOrFail($task);
 
-        $skill->delete();
+        abort_unless(
+            (int) $task->job_title_id === (int) $jobTitle->getKey(),
+            404
+        );
+
+        $validated = $request->validate([
+            'name' => [
+                'required',
+                'string',
+                'max:255',
+            ],
+
+            'description' => [
+                'nullable',
+                'string',
+            ],
+
+            'sort_order' => [
+                'nullable',
+                'integer',
+            ],
+
+            'is_active' => [
+                'boolean',
+            ],
+        ]);
+
+        $task->forceFill([
+            'name' => $validated['name'],
+            'description' => $validated['description'] ?? null,
+            'sort_order' => $validated['sort_order'] ?? 0,
+            'is_active' => $validated['is_active'] ?? false,
+        ])->saveOrFail();
 
         return redirect()
             ->route('job-titles.show', $jobTitle)
-            ->with('success', 'Skill deleted successfully.');
+            ->with('success', 'Task updated successfully.');
     }
 
     /**
      * Delete a Job Title Task.
      */
-    public function destroyTask(JobTitle $jobTitle, JobTitleTask $task)
+    public function destroyTask(int $jobTitle, int $task)
     {
-        if ($task->job_title_id !== $jobTitle->id) {
-            abort(404);
-        }
+        $jobTitle = JobTitle::query()->findOrFail($jobTitle);
+        $task = JobTitleTask::query()->findOrFail($task);
+
+        abort_unless(
+            (int) $task->job_title_id === (int) $jobTitle->getKey(),
+            404
+        );
 
         $task->delete();
 

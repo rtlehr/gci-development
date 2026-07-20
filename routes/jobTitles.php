@@ -47,12 +47,20 @@ Route::post('/job-titles/{jobTitle}/skills', [JobTitleController::class, 'storeS
     ->name('job-titles.skills.store')
     ->middleware('permission:update_positions');
 
+Route::put('/job-titles/{jobTitle}/skills/{skill}', [JobTitleController::class, 'updateSkill'])
+    ->name('job-titles.skills.update')
+    ->middleware('permission:update_positions');
+
 Route::delete('/job-titles/{jobTitle}/skills/{skill}', [JobTitleController::class, 'destroySkill'])
     ->name('job-titles.skills.destroy')
     ->middleware('permission:update_positions');
 
 Route::post('/job-titles/{jobTitle}/tasks', [JobTitleController::class, 'storeTask'])
     ->name('job-titles.tasks.store')
+    ->middleware('permission:update_positions');
+
+Route::put('/job-titles/{jobTitle}/tasks/{task}', [JobTitleController::class, 'updateTask'])
+    ->name('job-titles.tasks.update')
     ->middleware('permission:update_positions');
 
 Route::delete('/job-titles/{jobTitle}/tasks/{task}', [JobTitleController::class, 'destroyTask'])
