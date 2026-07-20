@@ -2,58 +2,42 @@
 
 namespace App\Http\Middleware;
 
-use App\Support\CurrentUser;
+use App\Models\Alert;
+use App\Models\Person;
+use App\Services\CurrentUserContext;
+use App\Support\RoleAbbreviation;
 use Illuminate\Http\Request;
 use Inertia\Middleware;
-use App\Models\Person;
-use App\Models\Alert;
-use App\Services\UserResolver;
-use App\Support\RoleAbbreviation;
 
 class HandleInertiaRequests extends Middleware
 {
-    /**
-     * The root template that's loaded on the first page visit.
-     *
-     * @see https://inertiajs.com/server-side-setup#root-template
-     *
-     * @var string
-     */
     protected $rootView = 'app';
 
-    /**
-     * Determines the current asset version.
-     *
-     * @see https://inertiajs.com/asset-versioning
-     */
+    public function __construct(
+        private readonly CurrentUserContext $currentUser,
+    ) {
+    }
+
     public function version(Request $request): ?string
     {
         return parent::version($request);
     }
 
-    /**
-     * Define the props that are shared by default.
-     *
-     * @see https://inertiajs.com/shared-data
-     *
-     * @return array<string, mixed>
-     */
+    /** @return array<string, mixed> */
     public function share(Request $request): array
     {
-        $shared = parent::share($request);
+        $user = $this->currentUser->user();
 
         $alertCount = 0;
         $recentAlerts = [];
 
-        try {
-            $user = app(UserResolver::class)->resolveUser();
+        if ($user) {
+            $unreadAlerts = Alert::query()
+                ->where('user_id', $user->id)
+                ->whereNull('read_at');
 
-            $alertCount = Alert::where('user_id', $user->id)
-                ->whereNull('read_at')
-                ->count();
-
-            $recentAlerts = Alert::where('user_id', $user->id)
-                ->whereNull('read_at')
+            $alertCount = (clone $unreadAlerts)->count();
+            $recentAlerts = $unreadAlerts
                 ->latest()
                 ->limit(5)
                 ->get([
@@ -65,30 +49,25 @@ class HandleInertiaRequests extends Middleware
                     'action_url',
                     'created_at',
                 ]);
-        } catch (\Throwable $e) {
-            $alertCount = 0;
-            $recentAlerts = [];
         }
 
         return [
-            ...$shared,
+            ...parent::share($request),
 
             'appLabels' => config('app_labels'),
-            
+
             'headerAlerts' => [
                 'count' => $alertCount,
                 'recent' => $recentAlerts,
             ],
 
             'auth' => [
-                'user' => CurrentUser::user($request),
+                'user' => $this->currentUser->payload(),
             ],
 
             'dev' => [
                 'debug' => config('app.debug') === true,
-
                 'isImpersonating' => session()->has('dev_person_code'),
-
                 'testUsers' => fn () => config('app.debug') === true
                     ? Person::query()
                         ->whereNotNull('user_id')
@@ -102,15 +81,15 @@ class HandleInertiaRequests extends Middleware
                             'last_name',
                             'user_id',
                         ])
-                        ->map(function ($person) {
+                        ->map(function (Person $person): array {
                             $roleAbbreviations = RoleAbbreviation::forRoles(
-                                $person->user?->roles ?? []
+                                $person->user?->roles ?? [],
                             );
 
                             return [
                                 'id' => $person->id,
                                 'person_code' => $person->person_code,
-                                'name' => trim($person->first_name . ' ' . $person->last_name),
+                                'name' => trim($person->first_name.' '.$person->last_name),
                                 'user_id' => $person->user_id,
                                 'role_abbreviations' => $roleAbbreviations,
                                 'role_display' => implode(' | ', $roleAbbreviations),

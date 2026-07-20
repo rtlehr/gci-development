@@ -2,18 +2,25 @@
 
 namespace App\Http\Middleware;
 
-use App\Support\CurrentUser;
+use App\Services\CurrentUserContext;
 use Closure;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
 
 class CheckPermission
 {
+    public function __construct(
+        private readonly CurrentUserContext $currentUser,
+    ) {
+    }
+
     public function handle(Request $request, Closure $next, string $permission): Response
     {
-        if (! CurrentUser::hasPermission($request, $permission)) {
-            abort(403, 'Unauthorized');
-        }
+        abort_unless(
+            $this->currentUser->hasPermission($permission),
+            403,
+            'Unauthorized',
+        );
 
         return $next($request);
     }

@@ -7,58 +7,71 @@ use Illuminate\Support\Facades\Cache;
 
 class PermissionService
 {
+    private const CACHE_TTL_MINUTES = 10;
+
+    /** @return array<int, string> */
     public function getUserPermissions(int $userId): array
     {
         return Cache::remember(
-            "user_permissions_{$userId}",
-            now()->addMinutes(10),
-            function () use ($userId) {
-                $user = User::with([
-                    'permissions',
-                    'roles.permissions',
-                ])->find($userId);
+            $this->cacheKey($userId),
+            now()->addMinutes(self::CACHE_TTL_MINUTES),
+            function () use ($userId): array {
+                $user = User::query()
+                    ->with(['permissions:id,name', 'roles.permissions:id,name'])
+                    ->find($userId);
 
                 if (! $user) {
                     return [];
                 }
 
-                $directPermissions = $user->permissions->pluck('name')->toArray();
-
+                $directPermissions = $user->permissions->pluck('name');
                 $rolePermissions = $user->roles
-                    ->flatMap(function ($role) {
-                        return $role->permissions->pluck('name');
-                    })
-                    ->toArray();
+                    ->flatMap(fn ($role) => $role->permissions->pluck('name'));
 
-                return collect([...$directPermissions, ...$rolePermissions])
+                return $directPermissions
+                    ->merge($rolePermissions)
+                    ->filter()
                     ->unique()
                     ->values()
-                    ->toArray();
-            }
+                    ->all();
+            },
         );
     }
 
     public function hasPermission(int $userId, string $permission): bool
     {
-        return in_array($permission, $this->getUserPermissions($userId));
+        return in_array(
+            $permission,
+            $this->getUserPermissions($userId),
+            true,
+        );
     }
 
+    /** @param array<int, string> $permissions */
     public function hasAnyPermission(int $userId, array $permissions): bool
     {
-        $userPermissions = $this->getUserPermissions($userId);
-
-        return count(array_intersect($permissions, $userPermissions)) > 0;
+        return array_intersect(
+            $permissions,
+            $this->getUserPermissions($userId),
+        ) !== [];
     }
 
+    /** @param array<int, string> $permissions */
     public function hasAllPermissions(int $userId, array $permissions): bool
     {
-        $userPermissions = $this->getUserPermissions($userId);
-
-        return count(array_diff($permissions, $userPermissions)) === 0;
+        return array_diff(
+            $permissions,
+            $this->getUserPermissions($userId),
+        ) === [];
     }
 
     public function clearUserPermissionCache(int $userId): void
     {
-        Cache::forget("user_permissions_{$userId}");
+        Cache::forget($this->cacheKey($userId));
+    }
+
+    private function cacheKey(int $userId): string
+    {
+        return "user_permissions_{$userId}";
     }
 }

@@ -6,6 +6,8 @@ use App\Models\JobTitle;
 use App\Models\Organization;
 use App\Models\Position;
 use App\Models\PositionActivity;
+use App\Models\Person;
+use App\Models\Workflow;
 use App\Models\User;
 use App\Models\UserListPreference;
 use App\Services\ListEngine;
@@ -148,6 +150,9 @@ class PositionsController extends Controller
             'jobTitle.tasks',
             'customSkills',
             'customTasks',
+            'candidates.person.primaryPhoneNumber',
+            'candidates.workflow.steps',
+            'candidates.stepEvents.workflowStep',
         ])->findOrFail($id);
 
         $jobTitleSkills = $position->jobTitle?->skills ?? collect();
@@ -179,6 +184,75 @@ class PositionsController extends Controller
 
         $projectManagers = $this->projectManagers();
 
+        $candidatePersonIds = $position->candidates
+            ->pluck('person_id')
+            ->filter()
+            ->values();
+
+        $candidateOptions = Person::query()
+            ->with('primaryPhoneNumber:id,person_id,phone_number,extension')
+            ->when($candidatePersonIds->isNotEmpty(), fn ($query) => $query->whereNotIn('id', $candidatePersonIds))
+            ->orderBy('last_name')
+            ->orderBy('first_name')
+            ->get(['id', 'first_name', 'preferred_name', 'last_name', 'email', 'person_code'])
+            ->map(fn (Person $person) => [
+                'id' => $person->id,
+                'full_name' => trim(($person->preferred_name ?: $person->first_name).' '.$person->last_name),
+                'email' => $person->email,
+                'person_code' => $person->person_code,
+                'primary_phone' => $person->primaryPhoneNumber?->phone_number,
+                'primary_phone_extension' => $person->primaryPhoneNumber?->extension,
+            ])
+            ->values();
+
+        $workflows = Workflow::query()
+            ->where('is_active', true)
+            ->orderByDesc('is_primary')
+            ->orderBy('name')
+            ->get(['id', 'name', 'code', 'is_primary'])
+            ->map(fn (Workflow $workflow) => [
+                'id' => $workflow->id,
+                'name' => $workflow->name,
+                'code' => $workflow->code,
+                'is_primary' => (bool) $workflow->is_primary,
+            ])
+            ->values();
+
+        $positionCandidates = $position->candidates
+            ->map(function ($candidate) {
+                $currentEvent = $candidate->stepEvents
+                    ->sortByDesc(fn ($event) => $event->completed_at ?? $event->scheduled_at ?? $event->requested_at ?? $event->updated_at)
+                    ->first();
+
+                $firstStep = $candidate->workflow?->steps
+                    ?->sortBy('step_order')
+                    ->first();
+
+                $workflowStep = $currentEvent?->workflowStep ?? $firstStep;
+
+                return [
+                    'id' => $candidate->id,
+                    'status' => $candidate->status,
+                    'submitted_at' => $candidate->submitted_at?->toIso8601String(),
+                    'person' => $candidate->person ? [
+                        'id' => $candidate->person->id,
+                        'full_name' => trim(($candidate->person->preferred_name ?: $candidate->person->first_name).' '.$candidate->person->last_name),
+                        'email' => $candidate->person->email,
+                        'primary_phone' => $candidate->person->primaryPhoneNumber?->phone_number,
+                        'primary_phone_extension' => $candidate->person->primaryPhoneNumber?->extension,
+                    ] : null,
+                    'workflow' => $candidate->workflow ? [
+                        'id' => $candidate->workflow->id,
+                        'name' => $candidate->workflow->name,
+                        'step_name' => $workflowStep?->name ?? 'Not started',
+                        'step_number' => $workflowStep?->step_order,
+                        'step_count' => $candidate->workflow->steps?->count() ?? 0,
+                        'status_code' => $currentEvent?->status_code,
+                    ] : null,
+                ];
+            })
+            ->values();
+
         return inertia('Positions/Edit', [
             'position' => $position,
             'organizations' => $organizations,
@@ -186,6 +260,10 @@ class PositionsController extends Controller
             'projectManagers' => $projectManagers,
             'jobTitleSkills' => $jobTitleSkills,
             'jobTitleTasks' => $jobTitleTasks,
+            'candidateOptions' => $candidateOptions,
+            'positionCandidates' => $positionCandidates,
+            'workflows' => $workflows,
+            'initialSection' => request()->query('section', 'general'),
         ]);
     }
 

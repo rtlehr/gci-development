@@ -2,6 +2,7 @@
 
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\PositionsController;
+use App\Http\Controllers\PositionCandidateController;
 
 Route::get('/positions', [PositionsController::class, 'index'])
     ->name('positions.index')
@@ -37,3 +38,7 @@ Route::put('/positions/{id}', [PositionsController::class, 'update'])
 Route::delete('/positions/{id}', [PositionsController::class, 'destroy'])
     ->name('positions.destroy')
     ->middleware('permission:delete_positions');
+
+Route::post('/positions/{id}/candidates', [PositionCandidateController::class, 'store'])
+    ->name('positions.candidates.store')
+    ->middleware('permission:create_candidates');

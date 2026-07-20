@@ -10,65 +10,162 @@ use RuntimeException;
 class UserResolver
 {
     /**
-     * Get the active person_code for the current request.
+     * Get the active person code for a non-Laravel-authenticated request.
      *
      * Resolution order:
-     * 1. Session-based development override, if DEV_USER_ENABLED=true
-     * 2. Default development/testing person_code, if DEV_USER_ENABLED=true
-     * 3. ADFS/server-provided identity value
+     * 1. Session-based development override.
+     * 2. Default development person code.
+     * 3. ADFS/server-provided identity value.
      */
     public function getPersonCode(): string|int
     {
-        /*
-         * Development/testing session override.
-         *
-         * This allows the DevUserSwitcher to impersonate another person.
-         * It is controlled by DEV_USER_ENABLED, not APP_DEBUG, so it can also
-         * be used to test production builds locally before ADFS is available.
-         */
         if (
-            config('devuser.enabled') === true &&
-            session()->has('dev_person_code')
+            config('devuser.enabled') === true
+            && session()->has('dev_person_code')
         ) {
             return session('dev_person_code');
         }
 
-        /*
-         * Default development/testing person_code.
-         *
-         * This is useful for local development and local production-build
-         * testing when ADFS/server authentication is not configured yet.
-         */
         if (config('devuser.enabled') === true) {
             $personCode = config('devuser.person_code');
 
             if (blank($personCode)) {
-                throw new RuntimeException('DEV_USER_ENABLED is true, but no DEV_PERSON_CODE is configured.');
+                throw new RuntimeException(
+                    'DEV_USER_ENABLED is true, but no DEV_PERSON_CODE is configured.'
+                );
             }
 
             return $personCode;
         }
 
-        /*
-         * Production / real authentication path.
-         *
-         * In real production, ADFS, IIS, Apache, or a reverse proxy should
-         * provide a server/header value that maps to people.person_code.
-         */
         $personCode = $this->getPersonCodeFromAdfs();
 
         if (blank($personCode)) {
-            throw new RuntimeException('No person_code was found from ADFS/server authentication.');
+            throw new RuntimeException(
+                'No person_code was found from ADFS/server authentication.'
+            );
         }
 
         return $personCode;
     }
 
     /**
-     * Attempt to read the person_code from ADFS/server variables.
+     * Return the Person associated with the supplied or authenticated User.
      *
-     * The exact key depends on how ADFS, IIS, Apache, or the reverse proxy
-     * passes claims into PHP.
+     * This is the optional lookup. Use resolvePerson() when the Person is
+     * required for the operation being performed.
+     */
+    public function findPerson(?User $user = null): ?Person
+    {
+        $user ??= Auth::user();
+
+        if ($user) {
+            return Person::query()
+                ->where('user_id', $user->id)
+                ->first();
+        }
+
+        try {
+            $personCode = $this->getPersonCode();
+        } catch (RuntimeException) {
+            return null;
+        }
+
+        return Person::query()
+            ->where('person_code', $personCode)
+            ->first();
+    }
+
+    /**
+     * Resolve a required Person model.
+     */
+    public function resolvePerson(): Person
+    {
+        $person = $this->findPerson();
+
+        if ($person) {
+            return $person;
+        }
+
+        if (Auth::check()) {
+            throw new RuntimeException(
+                'Authenticated User ['.Auth::id().'] does not have a linked Person record.'
+            );
+        }
+
+        $personCode = $this->getPersonCode();
+
+        throw new RuntimeException(
+            "No Person found for person_code [{$personCode}]."
+        );
+    }
+
+    /**
+     * Resolve the current Laravel user ID through a required Person record.
+     */
+    public function resolveUserId(): int
+    {
+        $person = $this->resolvePerson();
+
+        if (! $person->user_id) {
+            throw new RuntimeException(
+                "Person [{$person->person_code}] does not have a linked user_id."
+            );
+        }
+
+        return (int) $person->user_id;
+    }
+
+    /**
+     * Resolve the current Laravel User model.
+     *
+     * Normal Laravel authentication always takes precedence. Development and
+     * ADFS identity resolution are fallbacks for requests that have not yet
+     * established a Laravel-authenticated user.
+     */
+    public function resolveUser(): User
+    {
+        if (Auth::check()) {
+            /** @var User $user */
+            $user = Auth::user();
+
+            return $user;
+        }
+
+        $userId = $this->resolveUserId();
+        $user = User::query()->find($userId);
+
+        if (! $user) {
+            throw new RuntimeException(
+                "No User found for user_id [{$userId}]."
+            );
+        }
+
+        return $user;
+    }
+
+    /**
+     * Resolve the complete current-user context.
+     *
+     * The User is required; the Person is optional.
+     *
+     * @return array{person_code: string|int|null, person: Person|null, user_id: int, user: User}
+     */
+    public function resolve(): array
+    {
+        $user = $this->resolveUser();
+        $person = $this->findPerson($user);
+
+        return [
+            'person_code' => $person?->person_code,
+            'person' => $person,
+            'user_id' => $user->id,
+            'user' => $user,
+        ];
+    }
+
+    /**
+     * Read the person code supplied by ADFS, IIS, Apache, or a reverse proxy.
      */
     protected function getPersonCodeFromAdfs(): ?string
     {
@@ -80,91 +177,5 @@ class UserResolver
             ?? request()->server('LOGON_USER')
             ?? request()->server('REMOTE_USER')
             ?? null;
-    }
-
-    /**
-     * Resolve the current Person record from person_code.
-     */
-    public function resolvePerson(): Person
-    {
-        $personCode = $this->getPersonCode();
-
-        $person = Person::query()
-            ->where('person_code', $personCode)
-            ->first();
-
-        if (! $person) {
-            throw new RuntimeException("No Person found for person_code [{$personCode}].");
-        }
-
-        return $person;
-    }
-
-    /**
-     * Resolve the current Laravel user_id from the linked Person record.
-     */
-    public function resolveUserId(): int
-    {
-        $person = $this->resolvePerson();
-
-        if (! $person->user_id) {
-            throw new RuntimeException("Person [{$person->person_code}] does not have a linked user_id.");
-        }
-
-        return (int) $person->user_id;
-    }
-
-    /**
-     * Resolve the linked Laravel User model.
-     */
-    public function resolveUser(): User
-    {
-        // Tests and normal Laravel authentication should always take precedence
-        // over the development/ADFS identity resolver. This keeps actingAs()
-        // deterministic and prevents DEV_PERSON_CODE from leaking into tests.
-        if (Auth::check()) {
-            /** @var User $user */
-            $user = Auth::user();
-
-            return $user;
-        }
-
-        $userId = $this->resolveUserId();
-
-        $user = User::query()->find($userId);
-
-        if (! $user) {
-            throw new RuntimeException("No User found for user_id [{$userId}].");
-        }
-
-        return $user;
-    }
-
-    /**
-     * Resolve the full current-user context.
-     */
-    public function resolve(): array
-    {
-        $user = $this->resolveUser();
-
-        // An authenticated Laravel user may not have a Person record in an
-        // isolated test. Return the linked person when one exists.
-        $person = Person::query()->where('user_id', $user->id)->first();
-
-        if (! $person) {
-            return [
-                'person_code' => null,
-                'person' => null,
-                'user_id' => $user->id,
-                'user' => $user,
-            ];
-        }
-
-        return [
-            'person_code' => $person->person_code,
-            'person' => $person,
-            'user_id' => $user->id,
-            'user' => $user,
-        ];
     }
 }

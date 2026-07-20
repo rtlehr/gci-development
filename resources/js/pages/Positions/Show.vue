@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { Link, router } from '@inertiajs/vue3'
 import {
     Award,
@@ -21,12 +21,20 @@ import { useAuth } from '@/composables/useAuth'
 import DetailItem from '@/components/DetailItem.vue'
 import PageContainer from '@/components/layout/PageContainer.vue'
 import PageHeader from '@/components/layout/PageHeader.vue'
+import PositionSectionNavigation, {
+    type PositionSection,
+} from '@/components/positions/PositionSectionNavigation.vue'
 import StatCard from '@/components/data/StatCard.vue'
 import StatusBadge from '@/components/data/StatusBadge.vue'
 import DetailCard from '@/components/show/DetailCard.vue'
 import FlagItem from '@/components/show/FlagItem.vue'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import {
+    Card,
+    CardContent,
+    CardHeader,
+    CardTitle,
+} from '@/components/ui/card'
 import {
     AlertDialog,
     AlertDialogAction,
@@ -45,7 +53,14 @@ import {
     DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
+import {
+    Table,
+    TableBody,
+    TableCell,
+    TableHead,
+    TableHeader,
+    TableRow,
+} from '@/components/ui/table'
 
 type GenericRecord = Record<string, any>
 
@@ -55,57 +70,129 @@ const props = withDefaults(defineProps<{
     jobTitleTasks?: GenericRecord[]
     customSkills?: GenericRecord[]
     customTasks?: GenericRecord[]
+    initialSection?: PositionSection
 }>(), {
     jobTitleSkills: () => [],
     jobTitleTasks: () => [],
     customSkills: () => [],
     customTasks: () => [],
+    initialSection: 'general',
 })
 
 const { can } = useAuth()
+const activeSection = ref<PositionSection>(props.initialSection)
 const deleteDialogOpen = ref(false)
 const assignmentToDelete = ref<number | null>(null)
 
-const activeAssignments = computed(() => (props.position.assignments ?? []).filter((assignment: GenericRecord) => {
-    const status = String(assignment.assignment_status ?? '').toLowerCase()
-    return status === 'active' || !assignment.end_date
-}))
+watch(activeSection, (section) => {
+    const url = new URL(window.location.href)
+    url.searchParams.set('section', section)
+    window.history.replaceState({}, '', url)
+})
+
+const activeAssignments = computed(() =>
+    (props.position.assignments ?? []).filter((assignment: GenericRecord) => {
+        const status = String(assignment.assignment_status ?? '').toLowerCase()
+
+        return status === 'active' || !assignment.end_date
+    }),
+)
+
+const requiredJobTitleSkills = computed(() =>
+    props.jobTitleSkills.filter((skill) => skill.requirement_type !== 'desired'),
+)
+
+const desiredJobTitleSkills = computed(() =>
+    props.jobTitleSkills.filter((skill) => skill.requirement_type === 'desired'),
+)
+
+const requiredCustomSkills = computed(() =>
+    props.customSkills.filter((skill) => skill.requirement_type !== 'desired'),
+)
+
+const desiredCustomSkills = computed(() =>
+    props.customSkills.filter((skill) => skill.requirement_type === 'desired'),
+)
+
+const requiredJobTitleTasks = computed(() =>
+    props.jobTitleTasks.filter((task) => task.requirement_type !== 'desired'),
+)
+
+const desiredJobTitleTasks = computed(() =>
+    props.jobTitleTasks.filter((task) => task.requirement_type === 'desired'),
+)
 
 const statusTone = computed(() => {
     const status = String(props.position.status ?? '').toLowerCase()
-    if (['filled', 'active', 'approved'].includes(status)) return 'success'
-    if (['in process', 'pending', 'on hold'].includes(status)) return 'warning'
-    if (['closed', 'cancelled', 'canceled'].includes(status)) return 'danger'
+
+    if (['filled', 'active', 'approved'].includes(status)) {
+        return 'success'
+    }
+
+    if (['in process', 'pending', 'on hold'].includes(status)) {
+        return 'warning'
+    }
+
+    if (['closed', 'cancelled', 'canceled'].includes(status)) {
+        return 'danger'
+    }
+
     return 'info'
 })
 
 const assignmentCount = computed(() => props.position.assignments?.length ?? 0)
-const skillCount = computed(() => props.jobTitleSkills.length + props.customSkills.length)
-const taskCount = computed(() => props.jobTitleTasks.length + props.customTasks.length)
+const skillCount = computed(
+    () => props.jobTitleSkills.length + props.customSkills.length,
+)
+const taskCount = computed(
+    () => props.jobTitleTasks.length + props.customTasks.length,
+)
 
 function formatDate(value: unknown): string {
-    if (!value) return '—'
+    if (!value) {
+        return '—'
+    }
+
     const date = new Date(String(value))
-    return Number.isNaN(date.getTime()) ? String(value) : date.toLocaleDateString()
+
+    return Number.isNaN(date.getTime())
+        ? String(value)
+        : date.toLocaleDateString()
 }
 
 function formatDateTime(value: unknown): string {
-    if (!value) return '—'
+    if (!value) {
+        return '—'
+    }
+
     const date = new Date(String(value))
-    return Number.isNaN(date.getTime()) ? String(value) : date.toLocaleString()
+
+    return Number.isNaN(date.getTime())
+        ? String(value)
+        : date.toLocaleString()
 }
 
-function organizationName(organization: GenericRecord | null | undefined): string {
+function organizationName(
+    organization: GenericRecord | null | undefined,
+): string {
     return organization?.full_path || organization?.name || '—'
 }
 
 function formatFieldName(fieldName: string | null | undefined): string {
-    if (!fieldName) return '—'
-    return fieldName.replaceAll('_', ' ').replace(/\b\w/g, (char) => char.toUpperCase())
+    if (!fieldName) {
+        return '—'
+    }
+
+    return fieldName
+        .replaceAll('_', ' ')
+        .replace(/\b\w/g, (character) => character.toUpperCase())
 }
 
 function fullName(person: GenericRecord | null | undefined): string {
-    if (!person) return '—'
+    if (!person) {
+        return '—'
+    }
+
     return `${person.first_name ?? ''} ${person.last_name ?? ''}`.trim() || '—'
 }
 
@@ -115,9 +202,14 @@ function openDeleteDialog(id: number): void {
 }
 
 function confirmDelete(): void {
-    if (!assignmentToDelete.value) return
+    if (!assignmentToDelete.value) {
+        return
+    }
+
     router.delete(`/position-assignments/${assignmentToDelete.value}`, {
-        data: { return_to: `/positions/${props.position.id}` },
+        data: {
+            return_to: `/positions/${props.position.id}`,
+        },
         preserveScroll: true,
         onFinish: () => {
             deleteDialogOpen.value = false
@@ -138,193 +230,912 @@ function confirmDelete(): void {
         >
             <template #meta>
                 <div class="flex flex-wrap items-center gap-2 pt-1">
-                    <StatusBadge :label="position.status || 'Unknown'" :tone="statusTone" />
-                    <span v-if="position.location" class="inline-flex items-center gap-1 text-sm text-muted-foreground">
-                        <MapPin class="h-4 w-4" aria-hidden="true" /> {{ position.location }}
+                    <StatusBadge
+                        :label="position.status || 'Unknown'"
+                        :tone="statusTone"
+                    />
+
+                    <span
+                        v-if="position.location"
+                        class="inline-flex items-center gap-1 text-sm text-muted-foreground"
+                    >
+                        <MapPin
+                            class="h-4 w-4"
+                            aria-hidden="true"
+                        />
+                        {{ position.location }}
                     </span>
-                    <span v-if="position.component" class="inline-flex items-center gap-1 text-sm text-muted-foreground">
-                        <Building2 class="h-4 w-4" aria-hidden="true" /> {{ position.component }}
+
+                    <span
+                        v-if="position.component"
+                        class="inline-flex items-center gap-1 text-sm text-muted-foreground"
+                    >
+                        <Building2
+                            class="h-4 w-4"
+                            aria-hidden="true"
+                        />
+                        {{ position.component }}
                     </span>
                 </div>
             </template>
+
             <template #actions>
-                <Link v-if="can('view_admin')" :href="`/position-assignments/create?position_id=${position.id}`">
-                    <Button variant="outline"><Plus class="mr-2 h-4 w-4" />Add Assignment</Button>
+                <Link
+                    v-if="can('view_admin')"
+                    :href="`/position-assignments/create?position_id=${position.id}`"
+                >
+                    <Button variant="outline">
+                        <Plus class="mr-2 h-4 w-4" />
+                        Add Assignment
+                    </Button>
                 </Link>
-                <Link v-if="can('view_admin')" :href="`/positions/${position.id}/edit`">
-                    <Button><Pencil class="mr-2 h-4 w-4" />Edit Position</Button>
+
+                <Link
+                    v-if="can('view_admin')"
+                    :href="`/positions/${position.id}/edit?section=${activeSection}`"
+                >
+                    <Button>
+                        <Pencil class="mr-2 h-4 w-4" />
+                        Edit Position
+                    </Button>
                 </Link>
             </template>
         </PageHeader>
 
-        <section class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4" aria-label="Position summary">
-            <StatCard label="Active assignments" :value="activeAssignments.length" description="Currently assigned people" :icon="Users" />
-            <StatCard label="Skills" :value="skillCount" description="Default and custom skills" :icon="Wrench" />
-            <StatCard label="Tasks" :value="taskCount" description="Default and custom tasks" :icon="ClipboardList" />
-            <StatCard label="Assignment history" :value="assignmentCount" description="All recorded assignments" :icon="FileClock" />
-        </section>
+        <div class="space-y-6">
+            <PositionSectionNavigation
+                v-model="activeSection"
+                :candidate-count="assignmentCount"
+            />
 
-        <section class="grid gap-6 xl:grid-cols-3">
-            <DetailCard title="Position information" description="Core staffing and classification details" :icon="BriefcaseBusiness" class="xl:col-span-2">
-                <div class="grid gap-x-8 gap-y-5 sm:grid-cols-2 lg:grid-cols-3">
-                    <DetailItem label="Job Title" :value="position.job_title" />
-                    <DetailItem label="Experience Level" :value="position.experience_level" />
-                    <DetailItem label="Labor Category" :value="position.labor_category" />
-                    <DetailItem label="Component" :value="position.component" />
-                    <DetailItem label="Location" :value="position.location" />
-                    <DetailItem label="Building" :value="position.building" />
-                    <DetailItem label="Project Team" :value="position.project_team_name" />
-                    <DetailItem label="Customer Lead" :value="position.customer_lead_name" />
-                    <DetailItem label="Customer Created" :value="formatDate(position.customer_created_at)" />
-                </div>
-            </DetailCard>
+            <template v-if="activeSection === 'general'">
+                <section
+                    class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4"
+                    aria-label="Position summary"
+                >
+                    <StatCard
+                        label="Active assignments"
+                        :value="activeAssignments.length"
+                        description="Currently assigned people"
+                        :icon="Users"
+                    />
 
-            <DetailCard title="Flags and risk" description="Operational requirements and closure indicators" :icon="Flag">
-                <div class="grid gap-3 sm:grid-cols-2 xl:grid-cols-1">
-                    <FlagItem label="Essential position" :active="Boolean(position.is_essential)" />
-                    <FlagItem label="Travel required" :active="Boolean(position.travel_required)" />
-                    <FlagItem label="High risk role" :active="Boolean(position.high_risk_role)" />
-                    <FlagItem label="Requested to close" :active="Boolean(position.request_to_close)" />
-                </div>
-            </DetailCard>
-        </section>
+                    <StatCard
+                        label="Skills"
+                        :value="skillCount"
+                        description="Default and custom skills"
+                        :icon="Wrench"
+                    />
 
-        <DetailCard title="Organizations" description="Ownership, sponsorship, and funding relationships" :icon="Building2">
-            <div class="grid gap-x-8 gap-y-5 md:grid-cols-3">
-                <DetailItem label="Position Organization" :value="organizationName(position.position_organization)" />
-                <DetailItem label="Sponsoring Organization" :value="organizationName(position.sponsoring_organization)" />
-                <DetailItem label="Funding Organization" :value="organizationName(position.funding_organization)" />
-            </div>
-        </DetailCard>
+                    <StatCard
+                        label="Tasks"
+                        :value="taskCount"
+                        description="Default and custom tasks"
+                        :icon="ClipboardList"
+                    />
 
-        <section class="grid gap-6 xl:grid-cols-2">
-            <DetailCard title="Skills" description="Job-title defaults and position-specific additions" :icon="Award">
-                <div class="space-y-6">
-                    <div v-for="group in [{ title: 'Job Title Skills', items: jobTitleSkills }, { title: 'Custom Position Skills', items: customSkills }]" :key="group.title">
-                        <h3 class="mb-3 text-sm font-semibold">{{ group.title }}</h3>
-                        <div v-if="group.items.length" class="grid gap-3 sm:grid-cols-2">
-                            <div v-for="skill in group.items" :key="skill.id" class="rounded-lg border bg-muted/10 p-4">
-                                <div class="flex items-center gap-2"><div class="font-medium">{{ skill.name }}</div><span class="rounded-full border px-2 py-0.5 text-xs">{{ skill.requirement_type === 'desired' ? 'Desired' : 'Required' }}</span></div>
-                                <p class="mt-1 text-sm text-muted-foreground">{{ skill.description || 'No description provided.' }}</p>
+                    <StatCard
+                        label="Assignment history"
+                        :value="assignmentCount"
+                        description="All recorded assignments"
+                        :icon="FileClock"
+                    />
+                </section>
+
+                <section class="grid gap-6 xl:grid-cols-3">
+                    <DetailCard
+                        title="Position information"
+                        description="Core staffing and classification details"
+                        :icon="BriefcaseBusiness"
+                        class="xl:col-span-2"
+                    >
+                        <div class="grid gap-x-8 gap-y-5 sm:grid-cols-2 lg:grid-cols-3">
+                            <DetailItem
+                                label="Position Code"
+                                :value="position.position_code"
+                            />
+                            <DetailItem
+                                label="Status"
+                                :value="position.status"
+                            />
+                            <DetailItem
+                                label="Job Title"
+                                :value="position.job_title"
+                            />
+                            <DetailItem
+                                label="Experience Level"
+                                :value="position.experience_level"
+                            />
+                            <DetailItem
+                                label="Labor Category"
+                                :value="position.labor_category"
+                            />
+                            <DetailItem
+                                label="Team Name"
+                                :value="position.team_name"
+                            />
+                            <DetailItem
+                                label="Project Manager"
+                                :value="position.project_manager_name"
+                            />
+                            <DetailItem
+                                label="Component"
+                                :value="position.component"
+                            />
+                            <DetailItem
+                                label="Location"
+                                :value="position.location"
+                            />
+                            <DetailItem
+                                label="Building"
+                                :value="position.building"
+                            />
+                            <DetailItem
+                                label="Project Team"
+                                :value="position.project_team_name"
+                            />
+                            <DetailItem
+                                label="Customer Lead"
+                                :value="position.customer_lead_name"
+                            />
+                            <DetailItem
+                                label="Customer Created"
+                                :value="formatDate(position.customer_created_at)"
+                            />
+                        </div>
+                    </DetailCard>
+
+                    <DetailCard
+                        title="Flags and risk"
+                        description="Operational requirements and closure indicators"
+                        :icon="Flag"
+                    >
+                        <div class="grid gap-3 sm:grid-cols-2 xl:grid-cols-1">
+                            <FlagItem
+                                label="Essential position"
+                                :active="Boolean(position.is_essential)"
+                            />
+                            <FlagItem
+                                label="Travel required"
+                                :active="Boolean(position.travel_required)"
+                            />
+                            <FlagItem
+                                label="High risk role"
+                                :active="Boolean(position.high_risk_role)"
+                            />
+                            <FlagItem
+                                label="Requested to close"
+                                :active="Boolean(position.request_to_close)"
+                            />
+                        </div>
+                    </DetailCard>
+                </section>
+
+                <DetailCard
+                    title="Organizations"
+                    description="Ownership, sponsorship, and funding relationships"
+                    :icon="Building2"
+                >
+                    <div class="grid gap-x-8 gap-y-5 md:grid-cols-3">
+                        <DetailItem
+                            label="Position Organization"
+                            :value="organizationName(position.position_organization)"
+                        />
+                        <DetailItem
+                            label="Sponsoring Organization"
+                            :value="organizationName(position.sponsoring_organization)"
+                        />
+                        <DetailItem
+                            label="Funding Organization"
+                            :value="organizationName(position.funding_organization)"
+                        />
+                    </div>
+                </DetailCard>
+
+                <section class="grid gap-6 xl:grid-cols-2">
+                    <DetailCard
+                        title="Mission description"
+                        :icon="BriefcaseBusiness"
+                    >
+                        <p class="whitespace-pre-line text-sm leading-6">
+                            {{ position.mission_description || 'No mission description available.' }}
+                        </p>
+                    </DetailCard>
+
+                    <DetailCard
+                        title="Funding information"
+                        :icon="Building2"
+                    >
+                        <p class="whitespace-pre-line text-sm leading-6">
+                            {{ position.funding_info || 'No funding information available.' }}
+                        </p>
+                    </DetailCard>
+                </section>
+
+                <section class="grid gap-6 xl:grid-cols-2">
+                    <DetailCard
+                        title="Closure workflow"
+                        :icon="CalendarDays"
+                    >
+                        <div class="grid gap-x-8 gap-y-5 sm:grid-cols-2">
+                            <DetailItem
+                                label="Requested To Close"
+                                :value="position.request_to_close ? 'Yes' : 'No'"
+                            />
+                            <DetailItem
+                                label="Scheduled To Close"
+                                :value="formatDate(position.scheduled_to_close)"
+                            />
+                            <DetailItem
+                                label="Close Date"
+                                :value="formatDate(position.close_date)"
+                            />
+                            <DetailItem
+                                label="Close Reason"
+                                :value="position.close_reason"
+                            />
+                        </div>
+                    </DetailCard>
+
+                    <DetailCard
+                        title="Additional information"
+                        :icon="ClipboardList"
+                    >
+                        <div class="space-y-5">
+                            <div class="grid gap-x-8 gap-y-5 sm:grid-cols-2">
+                                <DetailItem
+                                    label="Customer Lead"
+                                    :value="position.customer_lead_name"
+                                />
+                                <DetailItem
+                                    label="Customer Created At"
+                                    :value="formatDate(position.customer_created_at)"
+                                />
+                            </div>
+
+                            <div>
+                                <h3 class="text-sm font-medium text-muted-foreground">
+                                    Notes
+                                </h3>
+                                <p class="mt-1 whitespace-pre-line text-sm leading-6">
+                                    {{ position.notes || 'No notes available.' }}
+                                </p>
                             </div>
                         </div>
-                        <p v-else class="text-sm text-muted-foreground">No items have been added.</p>
-                    </div>
-                </div>
-            </DetailCard>
+                    </DetailCard>
+                </section>
 
-            <DetailCard title="Tasks" description="Expected duties and position-specific responsibilities" :icon="ClipboardList">
-                <div class="space-y-6">
-                    <div v-for="group in [{ title: 'Job Title Tasks', items: jobTitleTasks }, { title: 'Custom Position Tasks', items: customTasks }]" :key="group.title">
-                        <h3 class="mb-3 text-sm font-semibold">{{ group.title }}</h3>
-                        <div v-if="group.items.length" class="grid gap-3 sm:grid-cols-2">
-                            <div v-for="task in group.items" :key="task.id" class="rounded-lg border bg-muted/10 p-4">
-                                <div class="font-medium">{{ task.name }}</div>
-                                <p class="mt-1 text-sm text-muted-foreground">{{ task.description || 'No description provided.' }}</p>
+                <Card>
+                    <CardHeader class="border-b">
+                        <CardTitle class="text-lg">
+                            Position change history
+                        </CardTitle>
+                    </CardHeader>
+
+                    <CardContent class="p-0">
+                        <div
+                            v-if="position.activities?.length"
+                            class="overflow-x-auto"
+                        >
+                            <Table class="min-w-[1000px]">
+                                <TableHeader>
+                                    <TableRow>
+                                        <TableHead>Date</TableHead>
+                                        <TableHead>User</TableHead>
+                                        <TableHead>Action</TableHead>
+                                        <TableHead>Field</TableHead>
+                                        <TableHead>Old Value</TableHead>
+                                        <TableHead>New Value</TableHead>
+                                    </TableRow>
+                                </TableHeader>
+
+                                <TableBody>
+                                    <TableRow
+                                        v-for="activity in position.activities"
+                                        :key="activity.id"
+                                    >
+                                        <TableCell class="whitespace-nowrap">
+                                            {{ formatDateTime(activity.created_at) }}
+                                        </TableCell>
+                                        <TableCell>
+                                            {{ activity.user?.name || activity.user?.username || 'System' }}
+                                        </TableCell>
+                                        <TableCell>
+                                            {{ activity.action || '—' }}
+                                        </TableCell>
+                                        <TableCell>
+                                            {{ formatFieldName(activity.field_name) }}
+                                        </TableCell>
+                                        <TableCell class="max-w-xs whitespace-normal">
+                                            {{ activity.old_value || '—' }}
+                                        </TableCell>
+                                        <TableCell class="max-w-xs whitespace-normal">
+                                            {{ activity.new_value || '—' }}
+                                        </TableCell>
+                                    </TableRow>
+                                </TableBody>
+                            </Table>
+                        </div>
+
+                        <p
+                            v-else
+                            class="p-8 text-center text-sm text-muted-foreground"
+                        >
+                            No position changes have been recorded.
+                        </p>
+                    </CardContent>
+                </Card>
+            </template>
+
+            <template v-else-if="activeSection === 'requirements'">
+                <DetailCard
+                    title="Skills"
+                    description="Default job-title skills and position-specific additions"
+                    :icon="Award"
+                >
+                    <div class="space-y-6">
+                        <div>
+                            <h3 class="text-sm font-semibold">
+                                Default Skills
+                            </h3>
+
+                            <div
+                                v-if="jobTitleSkills.length"
+                                class="mt-3 grid gap-4 lg:grid-cols-2"
+                            >
+                                <div class="rounded-lg border bg-muted/30 p-4">
+                                    <h4 class="text-sm font-semibold">
+                                        Required Skills ({{ requiredJobTitleSkills.length }})
+                                    </h4>
+
+                                    <ol
+                                        v-if="requiredJobTitleSkills.length"
+                                        class="mt-3 list-decimal space-y-3 pl-6 text-sm"
+                                    >
+                                        <li
+                                            v-for="skill in requiredJobTitleSkills"
+                                            :key="skill.id"
+                                            class="pl-1"
+                                        >
+                                            <p class="font-medium">
+                                                {{ skill.name }}
+                                            </p>
+                                            <p
+                                                v-if="skill.description"
+                                                class="mt-1 text-xs text-muted-foreground"
+                                            >
+                                                {{ skill.description }}
+                                            </p>
+                                        </li>
+                                    </ol>
+
+                                    <p
+                                        v-else
+                                        class="mt-3 text-sm text-muted-foreground"
+                                    >
+                                        No required skills are assigned.
+                                    </p>
+                                </div>
+
+                                <div class="rounded-lg border bg-muted/30 p-4">
+                                    <h4 class="text-sm font-semibold">
+                                        Desired Skills ({{ desiredJobTitleSkills.length }})
+                                    </h4>
+
+                                    <ol
+                                        v-if="desiredJobTitleSkills.length"
+                                        class="mt-3 list-decimal space-y-3 pl-6 text-sm"
+                                    >
+                                        <li
+                                            v-for="skill in desiredJobTitleSkills"
+                                            :key="skill.id"
+                                            class="pl-1"
+                                        >
+                                            <p class="font-medium">
+                                                {{ skill.name }}
+                                            </p>
+                                            <p
+                                                v-if="skill.description"
+                                                class="mt-1 text-xs text-muted-foreground"
+                                            >
+                                                {{ skill.description }}
+                                            </p>
+                                        </li>
+                                    </ol>
+
+                                    <p
+                                        v-else
+                                        class="mt-3 text-sm text-muted-foreground"
+                                    >
+                                        No desired skills are assigned.
+                                    </p>
+                                </div>
+                            </div>
+
+                            <p
+                                v-else
+                                class="mt-2 text-sm text-muted-foreground"
+                            >
+                                No default skills are assigned to this job title.
+                            </p>
+                        </div>
+
+                        <div class="border-t pt-5">
+                            <h3 class="text-sm font-semibold">
+                                Custom Position Skills
+                            </h3>
+
+                            <div
+                                v-if="customSkills.length"
+                                class="mt-3 grid gap-4 lg:grid-cols-2"
+                            >
+                                <div class="rounded-lg border p-4">
+                                    <h4 class="text-sm font-semibold">
+                                        Required Skills ({{ requiredCustomSkills.length }})
+                                    </h4>
+
+                                    <ol
+                                        v-if="requiredCustomSkills.length"
+                                        class="mt-3 list-decimal space-y-3 pl-6 text-sm"
+                                    >
+                                        <li
+                                            v-for="skill in requiredCustomSkills"
+                                            :key="skill.id"
+                                            class="pl-1"
+                                        >
+                                            <p class="font-medium">
+                                                {{ skill.name }}
+                                            </p>
+                                            <p
+                                                v-if="skill.description"
+                                                class="mt-1 text-xs text-muted-foreground"
+                                            >
+                                                {{ skill.description }}
+                                            </p>
+                                        </li>
+                                    </ol>
+
+                                    <p
+                                        v-else
+                                        class="mt-3 text-sm text-muted-foreground"
+                                    >
+                                        No required custom skills have been added.
+                                    </p>
+                                </div>
+
+                                <div class="rounded-lg border p-4">
+                                    <h4 class="text-sm font-semibold">
+                                        Desired Skills ({{ desiredCustomSkills.length }})
+                                    </h4>
+
+                                    <ol
+                                        v-if="desiredCustomSkills.length"
+                                        class="mt-3 list-decimal space-y-3 pl-6 text-sm"
+                                    >
+                                        <li
+                                            v-for="skill in desiredCustomSkills"
+                                            :key="skill.id"
+                                            class="pl-1"
+                                        >
+                                            <p class="font-medium">
+                                                {{ skill.name }}
+                                            </p>
+                                            <p
+                                                v-if="skill.description"
+                                                class="mt-1 text-xs text-muted-foreground"
+                                            >
+                                                {{ skill.description }}
+                                            </p>
+                                        </li>
+                                    </ol>
+
+                                    <p
+                                        v-else
+                                        class="mt-3 text-sm text-muted-foreground"
+                                    >
+                                        No desired custom skills have been added.
+                                    </p>
+                                </div>
+                            </div>
+
+                            <p
+                                v-else
+                                class="mt-2 text-sm text-muted-foreground"
+                            >
+                                No custom skills have been added.
+                            </p>
+                        </div>
+                    </div>
+                </DetailCard>
+
+                <DetailCard
+                    title="Tasks"
+                    description="Default job-title tasks and position-specific responsibilities"
+                    :icon="ClipboardList"
+                >
+                    <div class="space-y-6">
+                        <div>
+                            <h3 class="text-sm font-semibold">
+                                Default Tasks
+                            </h3>
+
+                            <div
+                                v-if="jobTitleTasks.length"
+                                class="mt-3 grid gap-4 lg:grid-cols-2"
+                            >
+                                <div class="rounded-lg border bg-muted/30 p-4">
+                                    <h4 class="text-sm font-semibold">
+                                        Required Tasks ({{ requiredJobTitleTasks.length }})
+                                    </h4>
+
+                                    <ol
+                                        v-if="requiredJobTitleTasks.length"
+                                        class="mt-3 list-decimal space-y-3 pl-6 text-sm"
+                                    >
+                                        <li
+                                            v-for="task in requiredJobTitleTasks"
+                                            :key="task.id"
+                                            class="pl-1"
+                                        >
+                                            <p class="font-medium">
+                                                {{ task.name }}
+                                            </p>
+                                            <p
+                                                v-if="task.description"
+                                                class="mt-1 text-xs text-muted-foreground"
+                                            >
+                                                {{ task.description }}
+                                            </p>
+                                        </li>
+                                    </ol>
+
+                                    <p
+                                        v-else
+                                        class="mt-3 text-sm text-muted-foreground"
+                                    >
+                                        No required tasks are assigned.
+                                    </p>
+                                </div>
+
+                                <div class="rounded-lg border bg-muted/30 p-4">
+                                    <h4 class="text-sm font-semibold">
+                                        Desired Tasks ({{ desiredJobTitleTasks.length }})
+                                    </h4>
+
+                                    <ol
+                                        v-if="desiredJobTitleTasks.length"
+                                        class="mt-3 list-decimal space-y-3 pl-6 text-sm"
+                                    >
+                                        <li
+                                            v-for="task in desiredJobTitleTasks"
+                                            :key="task.id"
+                                            class="pl-1"
+                                        >
+                                            <p class="font-medium">
+                                                {{ task.name }}
+                                            </p>
+                                            <p
+                                                v-if="task.description"
+                                                class="mt-1 text-xs text-muted-foreground"
+                                            >
+                                                {{ task.description }}
+                                            </p>
+                                        </li>
+                                    </ol>
+
+                                    <p
+                                        v-else
+                                        class="mt-3 text-sm text-muted-foreground"
+                                    >
+                                        No desired tasks are assigned.
+                                    </p>
+                                </div>
+                            </div>
+
+                            <p
+                                v-else
+                                class="mt-2 text-sm text-muted-foreground"
+                            >
+                                No default tasks are assigned to this job title.
+                            </p>
+                        </div>
+
+                        <div class="border-t pt-5">
+                            <h3 class="text-sm font-semibold">
+                                Custom Position Tasks ({{ customTasks.length }})
+                            </h3>
+
+                            <ol
+                                v-if="customTasks.length"
+                                class="mt-3 list-decimal space-y-3 pl-6 text-sm"
+                            >
+                                <li
+                                    v-for="task in customTasks"
+                                    :key="task.id"
+                                    class="pl-1"
+                                >
+                                    <div class="rounded-lg border p-4">
+                                        <p class="font-medium">
+                                            {{ task.name }}
+                                        </p>
+                                        <p
+                                            v-if="task.description"
+                                            class="mt-1 text-xs text-muted-foreground"
+                                        >
+                                            {{ task.description }}
+                                        </p>
+                                    </div>
+                                </li>
+                            </ol>
+
+                            <p
+                                v-else
+                                class="mt-2 text-sm text-muted-foreground"
+                            >
+                                No custom tasks have been added.
+                            </p>
+                        </div>
+                    </div>
+                </DetailCard>
+
+                <DetailCard
+                    title="Requirements and qualifications"
+                    :icon="ShieldCheck"
+                >
+                    <div class="space-y-5">
+                        <div>
+                            <h3 class="text-sm font-medium text-muted-foreground">
+                                Certifications Required
+                            </h3>
+                            <p class="mt-1 whitespace-pre-line text-sm">
+                                {{ position.certifications_required || 'None provided.' }}
+                            </p>
+                        </div>
+
+                        <div>
+                            <h3 class="text-sm font-medium text-muted-foreground">
+                                Training Required
+                            </h3>
+                            <p class="mt-1 whitespace-pre-line text-sm">
+                                {{ position.training_required || 'None provided.' }}
+                            </p>
+                        </div>
+
+                        <div>
+                            <h3 class="text-sm font-medium text-muted-foreground">
+                                Experience
+                            </h3>
+                            <p class="mt-1 whitespace-pre-line text-sm">
+                                {{ position.experience || 'None provided.' }}
+                            </p>
+                        </div>
+                    </div>
+                </DetailCard>
+            </template>
+
+            <template v-else-if="activeSection === 'candidates'">
+                <Card>
+                    <CardHeader class="border-b">
+                        <CardTitle class="text-lg">
+                            Current assignments
+                        </CardTitle>
+                    </CardHeader>
+
+                    <CardContent class="p-5">
+                        <div
+                            v-if="activeAssignments.length"
+                            class="grid gap-4 lg:grid-cols-2 2xl:grid-cols-3"
+                        >
+                            <div
+                                v-for="assignment in activeAssignments"
+                                :key="assignment.id"
+                                class="flex items-start justify-between gap-4 rounded-xl border p-4"
+                            >
+                                <div class="min-w-0">
+                                    <div class="font-semibold">
+                                        {{ fullName(assignment.person) }}
+                                    </div>
+
+                                    <div class="mt-2 grid gap-1 text-sm text-muted-foreground">
+                                        <span>
+                                            Person Code:
+                                            {{ assignment.person?.person_code || '—' }}
+                                        </span>
+                                        <span>
+                                            Status:
+                                            {{ assignment.assignment_status || '—' }}
+                                        </span>
+                                        <span>
+                                            Type:
+                                            {{ assignment.assignment_type || '—' }}
+                                        </span>
+                                        <span>
+                                            Start Date:
+                                            {{ formatDate(assignment.start_date) }}
+                                        </span>
+                                    </div>
+                                </div>
+
+                                <DropdownMenu v-if="can('view_admin')">
+                                    <DropdownMenuTrigger as-child>
+                                        <Button
+                                            variant="ghost"
+                                            size="icon"
+                                            aria-label="Assignment actions"
+                                        >
+                                            <MoreHorizontal class="h-4 w-4" />
+                                        </Button>
+                                    </DropdownMenuTrigger>
+
+                                    <DropdownMenuContent align="end">
+                                        <DropdownMenuLabel>
+                                            Actions
+                                        </DropdownMenuLabel>
+                                        <DropdownMenuSeparator />
+
+                                        <DropdownMenuItem as-child>
+                                            <Link
+                                                :href="`/position-assignments/${assignment.id}/edit?return_to=/positions/${position.id}?section=candidates`"
+                                            >
+                                                Edit
+                                            </Link>
+                                        </DropdownMenuItem>
+
+                                        <DropdownMenuSeparator />
+
+                                        <DropdownMenuItem
+                                            class="text-red-600 focus:text-red-600"
+                                            @click="openDeleteDialog(assignment.id)"
+                                        >
+                                            Delete
+                                        </DropdownMenuItem>
+                                    </DropdownMenuContent>
+                                </DropdownMenu>
                             </div>
                         </div>
-                        <p v-else class="text-sm text-muted-foreground">No items have been added.</p>
-                    </div>
-                </div>
-            </DetailCard>
-        </section>
 
-        <section class="grid gap-6 xl:grid-cols-2">
-            <DetailCard title="Requirements and qualifications" :icon="ShieldCheck">
-                <div class="space-y-5">
-                    <div><h3 class="text-sm font-medium text-muted-foreground">Certifications Required</h3><p class="mt-1 whitespace-pre-line text-sm">{{ position.certifications_required || 'None provided.' }}</p></div>
-                    <div><h3 class="text-sm font-medium text-muted-foreground">Training Required</h3><p class="mt-1 whitespace-pre-line text-sm">{{ position.training_required || 'None provided.' }}</p></div>
-                    <div><h3 class="text-sm font-medium text-muted-foreground">Experience</h3><p class="mt-1 whitespace-pre-line text-sm">{{ position.experience || 'None provided.' }}</p></div>
-                </div>
-            </DetailCard>
-            <div class="grid gap-6">
-                <DetailCard title="Mission description" :icon="BriefcaseBusiness"><p class="whitespace-pre-line text-sm leading-6">{{ position.mission_description || 'No mission description available.' }}</p></DetailCard>
-                <DetailCard title="Funding information" :icon="Building2"><p class="whitespace-pre-line text-sm leading-6">{{ position.funding_info || 'No funding information available.' }}</p></DetailCard>
-            </div>
-        </section>
+                        <p
+                            v-else
+                            class="py-8 text-center text-sm text-muted-foreground"
+                        >
+                            No active assignments found.
+                        </p>
+                    </CardContent>
+                </Card>
 
-        <section class="grid gap-6 xl:grid-cols-2">
-            <DetailCard title="Closure workflow" :icon="CalendarDays">
-                <div class="grid gap-x-8 gap-y-5 sm:grid-cols-2">
-                    <DetailItem label="Requested To Close" :value="position.request_to_close ? 'Yes' : 'No'" />
-                    <DetailItem label="Scheduled To Close" :value="formatDate(position.scheduled_to_close)" />
-                    <DetailItem label="Close Date" :value="formatDate(position.close_date)" />
-                    <DetailItem label="Close Reason" :value="position.close_reason" />
-                </div>
-            </DetailCard>
-            <DetailCard title="Additional information" :icon="ClipboardList">
-                <div class="space-y-5">
-                    <div class="grid gap-x-8 gap-y-5 sm:grid-cols-2">
-                        <DetailItem label="Customer Lead" :value="position.customer_lead_name" />
-                        <DetailItem label="Customer Created At" :value="formatDate(position.customer_created_at)" />
-                    </div>
-                    <div><h3 class="text-sm font-medium text-muted-foreground">Notes</h3><p class="mt-1 whitespace-pre-line text-sm leading-6">{{ position.notes || 'No notes available.' }}</p></div>
-                </div>
-            </DetailCard>
-        </section>
+                <Card>
+                    <CardHeader class="border-b">
+                        <CardTitle class="text-lg">
+                            Assignment history
+                        </CardTitle>
+                    </CardHeader>
 
-        <Card>
-            <CardHeader class="border-b"><CardTitle class="text-lg">Current assignments</CardTitle></CardHeader>
-            <CardContent class="p-5">
-                <div v-if="activeAssignments.length" class="grid gap-4 lg:grid-cols-2 2xl:grid-cols-3">
-                    <div v-for="assignment in activeAssignments" :key="assignment.id" class="flex items-start justify-between gap-4 rounded-xl border p-4">
-                        <div class="min-w-0">
-                            <div class="font-semibold">{{ fullName(assignment.person) }}</div>
-                            <div class="mt-2 grid gap-1 text-sm text-muted-foreground">
-                                <span>Person Code: {{ assignment.person?.person_code || '—' }}</span>
-                                <span>Status: {{ assignment.assignment_status || '—' }}</span>
-                                <span>Type: {{ assignment.assignment_type || '—' }}</span>
-                                <span>Start Date: {{ formatDate(assignment.start_date) }}</span>
-                            </div>
+                    <CardContent class="p-0">
+                        <div
+                            v-if="position.assignments?.length"
+                            class="overflow-x-auto"
+                        >
+                            <Table class="min-w-[900px]">
+                                <TableHeader>
+                                    <TableRow>
+                                        <TableHead>Person</TableHead>
+                                        <TableHead>Person Code</TableHead>
+                                        <TableHead>Status</TableHead>
+                                        <TableHead>Type</TableHead>
+                                        <TableHead>Start Date</TableHead>
+                                        <TableHead>End Date</TableHead>
+                                        <TableHead
+                                            v-if="can('view_admin')"
+                                            class="text-right"
+                                        >
+                                            Actions
+                                        </TableHead>
+                                    </TableRow>
+                                </TableHeader>
+
+                                <TableBody>
+                                    <TableRow
+                                        v-for="assignment in position.assignments"
+                                        :key="assignment.id"
+                                    >
+                                        <TableCell class="font-medium">
+                                            {{ fullName(assignment.person) }}
+                                        </TableCell>
+                                        <TableCell>
+                                            {{ assignment.person?.person_code || '—' }}
+                                        </TableCell>
+                                        <TableCell>
+                                            {{ assignment.assignment_status || '—' }}
+                                        </TableCell>
+                                        <TableCell>
+                                            {{ assignment.assignment_type || '—' }}
+                                        </TableCell>
+                                        <TableCell>
+                                            {{ formatDate(assignment.start_date) }}
+                                        </TableCell>
+                                        <TableCell>
+                                            {{ formatDate(assignment.end_date) }}
+                                        </TableCell>
+
+                                        <TableCell
+                                            v-if="can('view_admin')"
+                                            class="text-right"
+                                        >
+                                            <DropdownMenu>
+                                                <DropdownMenuTrigger as-child>
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="icon"
+                                                        aria-label="Assignment actions"
+                                                    >
+                                                        <MoreHorizontal class="h-4 w-4" />
+                                                    </Button>
+                                                </DropdownMenuTrigger>
+
+                                                <DropdownMenuContent align="end">
+                                                    <DropdownMenuItem as-child>
+                                                        <Link
+                                                            :href="`/position-assignments/${assignment.id}/edit?return_to=/positions/${position.id}?section=candidates`"
+                                                        >
+                                                            Edit
+                                                        </Link>
+                                                    </DropdownMenuItem>
+
+                                                    <DropdownMenuSeparator />
+
+                                                    <DropdownMenuItem
+                                                        class="text-red-600 focus:text-red-600"
+                                                        @click="openDeleteDialog(assignment.id)"
+                                                    >
+                                                        Delete
+                                                    </DropdownMenuItem>
+                                                </DropdownMenuContent>
+                                            </DropdownMenu>
+                                        </TableCell>
+                                    </TableRow>
+                                </TableBody>
+                            </Table>
                         </div>
-                        <DropdownMenu>
-                            <DropdownMenuTrigger as-child><Button variant="ghost" size="icon" aria-label="Assignment actions"><MoreHorizontal class="h-4 w-4" /></Button></DropdownMenuTrigger>
-                            <DropdownMenuContent align="end">
-                                <DropdownMenuLabel>Actions</DropdownMenuLabel><DropdownMenuSeparator />
-                                <DropdownMenuItem as-child><Link :href="`/position-assignments/${assignment.id}/edit?return_to=/positions/${position.id}`">Edit</Link></DropdownMenuItem>
-                                <DropdownMenuSeparator />
-                                <DropdownMenuItem class="text-red-600 focus:text-red-600" @click="openDeleteDialog(assignment.id)">Delete</DropdownMenuItem>
-                            </DropdownMenuContent>
-                        </DropdownMenu>
-                    </div>
-                </div>
-                <p v-else class="py-8 text-center text-sm text-muted-foreground">No active assignments found.</p>
-            </CardContent>
-        </Card>
 
-        <Card>
-            <CardHeader class="border-b"><CardTitle class="text-lg">Assignment history</CardTitle></CardHeader>
-            <CardContent class="p-0">
-                <div v-if="position.assignments?.length" class="overflow-x-auto">
-                    <Table class="min-w-[900px]">
-                        <TableHeader><TableRow><TableHead>Person</TableHead><TableHead>Person Code</TableHead><TableHead>Status</TableHead><TableHead>Type</TableHead><TableHead>Start Date</TableHead><TableHead>End Date</TableHead><TableHead class="text-right">Actions</TableHead></TableRow></TableHeader>
-                        <TableBody>
-                            <TableRow v-for="assignment in position.assignments" :key="assignment.id">
-                                <TableCell class="font-medium">{{ fullName(assignment.person) }}</TableCell><TableCell>{{ assignment.person?.person_code || '—' }}</TableCell><TableCell>{{ assignment.assignment_status || '—' }}</TableCell><TableCell>{{ assignment.assignment_type || '—' }}</TableCell><TableCell>{{ formatDate(assignment.start_date) }}</TableCell><TableCell>{{ formatDate(assignment.end_date) }}</TableCell>
-                                <TableCell class="text-right"><DropdownMenu><DropdownMenuTrigger as-child><Button variant="ghost" size="icon" aria-label="Assignment actions"><MoreHorizontal class="h-4 w-4" /></Button></DropdownMenuTrigger><DropdownMenuContent align="end"><DropdownMenuItem as-child><Link :href="`/position-assignments/${assignment.id}/edit?return_to=/positions/${position.id}`">Edit</Link></DropdownMenuItem><DropdownMenuSeparator /><DropdownMenuItem class="text-red-600 focus:text-red-600" @click="openDeleteDialog(assignment.id)">Delete</DropdownMenuItem></DropdownMenuContent></DropdownMenu></TableCell>
-                            </TableRow>
-                        </TableBody>
-                    </Table>
-                </div>
-                <p v-else class="p-8 text-center text-sm text-muted-foreground">No assignment history found.</p>
-            </CardContent>
-        </Card>
+                        <p
+                            v-else
+                            class="p-8 text-center text-sm text-muted-foreground"
+                        >
+                            No assignment history found.
+                        </p>
+                    </CardContent>
+                </Card>
+            </template>
+        </div>
 
-        <Card>
-            <CardHeader class="border-b"><CardTitle class="text-lg">Position change history</CardTitle></CardHeader>
-            <CardContent class="p-0">
-                <div v-if="position.activities?.length" class="overflow-x-auto">
-                    <Table class="min-w-[1000px]">
-                        <TableHeader><TableRow><TableHead>Date</TableHead><TableHead>User</TableHead><TableHead>Action</TableHead><TableHead>Field</TableHead><TableHead>Old Value</TableHead><TableHead>New Value</TableHead></TableRow></TableHeader>
-                        <TableBody><TableRow v-for="activity in position.activities" :key="activity.id"><TableCell class="whitespace-nowrap">{{ formatDateTime(activity.created_at) }}</TableCell><TableCell>{{ activity.user?.name || activity.user?.username || 'System' }}</TableCell><TableCell>{{ activity.action || '—' }}</TableCell><TableCell>{{ formatFieldName(activity.field_name) }}</TableCell><TableCell class="max-w-xs whitespace-normal">{{ activity.old_value || '—' }}</TableCell><TableCell class="max-w-xs whitespace-normal">{{ activity.new_value || '—' }}</TableCell></TableRow></TableBody>
-                    </Table>
-                </div>
-                <p v-else class="p-8 text-center text-sm text-muted-foreground">No position changes have been recorded.</p>
-            </CardContent>
-        </Card>
+        <AlertDialog
+            :open="deleteDialogOpen"
+            @update:open="deleteDialogOpen = $event"
+        >
+            <AlertDialogContent>
+                <AlertDialogHeader>
+                    <AlertDialogTitle>
+                        Delete Assignment?
+                    </AlertDialogTitle>
+                    <AlertDialogDescription>
+                        This action cannot be undone. This will permanently delete
+                        the assignment.
+                    </AlertDialogDescription>
+                </AlertDialogHeader>
 
-        <AlertDialog :open="deleteDialogOpen" @update:open="deleteDialogOpen = $event">
-            <AlertDialogContent><AlertDialogHeader><AlertDialogTitle>Delete Assignment?</AlertDialogTitle><AlertDialogDescription>This action cannot be undone. This will permanently delete the assignment.</AlertDialogDescription></AlertDialogHeader><AlertDialogFooter><AlertDialogCancel @click="deleteDialogOpen = false">Cancel</AlertDialogCancel><AlertDialogAction class="bg-red-600 text-white hover:bg-red-700" @click="confirmDelete">Delete</AlertDialogAction></AlertDialogFooter></AlertDialogContent>
+                <AlertDialogFooter>
+                    <AlertDialogCancel @click="deleteDialogOpen = false">
+                        Cancel
+                    </AlertDialogCancel>
+
+                    <AlertDialogAction
+                        class="bg-red-600 text-white hover:bg-red-700"
+                        @click="confirmDelete"
+                    >
+                        Delete
+                    </AlertDialogAction>
+                </AlertDialogFooter>
+            </AlertDialogContent>
         </AlertDialog>
     </PageContainer>
 </template>
