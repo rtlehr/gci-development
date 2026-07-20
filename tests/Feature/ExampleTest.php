@@ -1,7 +1,20 @@
 <?php
 
-test('guests are redirected to the login page from home', function () {
-    $response = $this->get(route('home'));
+use App\Models\User;
+use Inertia\Testing\AssertableInertia as Assert;
 
-    $response->assertRedirect(route('login'));
+test('authenticated users can visit the home route', function () {
+    $user = User::factory()->create();
+
+    $response = $this
+        ->actingAs($user)
+        ->get(route('home'));
+
+    $response
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->component('Dashboard')
+            ->has('alerts')
+            ->has('assignedTickets')
+        );
 });

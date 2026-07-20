@@ -1,14 +1,14 @@
 <script setup lang="ts">
-import { Link, useForm } from '@inertiajs/vue3'
+import { useForm } from '@inertiajs/vue3'
+import FormActions from '@/components/forms/FormActions.vue'
+import FormField from '@/components/forms/FormField.vue'
+import FormSection from '@/components/forms/FormSection.vue'
+import ValidationSummary from '@/components/forms/ValidationSummary.vue'
 import PageContainer from '@/components/layout/PageContainer.vue'
 import PageHeader from '@/components/layout/PageHeader.vue'
-import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
 
-const form = useForm({
-    group_name: '',
-})
+const form = useForm({ group_name: '' })
 
 function submit(): void {
     form.post('/admin/groups')
@@ -26,31 +26,39 @@ function submit(): void {
         />
 
         <form class="space-y-6" @submit.prevent="submit">
-            <div class="space-y-4 rounded-xl border bg-background p-6">
-                <div class="space-y-2">
-                    <Label for="group_name">Group Name</Label>
-                    <Input
-                        id="group_name"
-                        v-model="form.group_name"
-                        type="text"
-                        autocomplete="off"
-                        autofocus
-                    />
-                    <p v-if="form.errors.group_name" class="text-sm text-destructive">
-                        {{ form.errors.group_name }}
-                    </p>
-                </div>
-            </div>
+            <ValidationSummary :errors="form.errors" />
 
-            <div class="flex flex-wrap gap-3">
-                <Button type="submit" :disabled="form.processing">
-                    {{ form.processing ? 'Saving...' : 'Save Group' }}
-                </Button>
+            <FormSection
+                title="Group Details"
+                description="Enter the display name used throughout IRAD."
+            >
+                <FormField
+                    label="Group Name"
+                    for-id="group_name"
+                    :error="form.errors.group_name"
+                    description="Use a short, recognizable name."
+                    required
+                >
+                    <template #default="{ describedBy, invalid }">
+                        <Input
+                            id="group_name"
+                            v-model="form.group_name"
+                            type="text"
+                            autocomplete="off"
+                            autofocus
+                            :aria-describedby="describedBy"
+                            :aria-invalid="invalid"
+                        />
+                    </template>
+                </FormField>
+            </FormSection>
 
-                <Link href="/admin/groups">
-                    <Button type="button" variant="outline">Cancel</Button>
-                </Link>
-            </div>
+            <FormActions
+                cancel-href="/admin/groups"
+                submit-label="Save Group"
+                :processing="form.processing"
+                :dirty="form.isDirty"
+            />
         </form>
     </PageContainer>
 </template>
