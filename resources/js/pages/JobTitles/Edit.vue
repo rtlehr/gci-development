@@ -1,22 +1,18 @@
 <template>
-    <div class="p-6 max-w-3xl space-y-6">
-        <div class="flex items-center justify-between">
-            <div>
-                <h1 class="text-2xl font-semibold">
-                    Edit Job Title
-                </h1>
-
-                <p class="text-sm text-muted-foreground mt-1">
-                    Update this Job Title.
-                </p>
-            </div>
-
-            <Link href="/job-titles">
-                <Button variant="outline">
-                    Back to List
-                </Button>
-            </Link>
-        </div>
+    <PageContainer size="default">
+        <PageHeader
+            title="Edit Job Title"
+            :description="`Update ${jobTitle.name}.`"
+            eyebrow="Positions"
+            back-href="/job-titles"
+            back-label="Job Titles"
+        >
+            <template #status>
+                <Badge :variant="jobTitle.is_active ? 'default' : 'secondary'">
+                    {{ jobTitle.is_active ? 'Active' : 'Inactive' }}
+                </Badge>
+            </template>
+        </PageHeader>
 
         <div class="border rounded-xl p-6 bg-background">
             <form
@@ -121,11 +117,14 @@
                 </div>
             </form>
         </div>
-    </div>
+    </PageContainer>
 </template>
 
 <script setup>
 import { Link, useForm } from '@inertiajs/vue3'
+import PageContainer from '@/components/layout/PageContainer.vue'
+import PageHeader from '@/components/layout/PageHeader.vue'
+import { Badge } from '@/components/ui/badge'
 
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'

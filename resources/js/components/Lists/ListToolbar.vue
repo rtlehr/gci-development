@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { Link } from '@inertiajs/vue3'
 import { Download, Plus, Settings2 } from 'lucide-vue-next'
+import PageHeader from '@/components/layout/PageHeader.vue'
 import { Button } from '@/components/ui/button'
 
 withDefaults(defineProps<{
@@ -39,18 +40,25 @@ const emit = defineEmits<{
 </script>
 
 <template>
-    <header class="flex flex-col gap-4 border-b pb-5 lg:flex-row lg:items-start lg:justify-between">
-        <div class="min-w-0">
-            <p v-if="eyebrow" class="mb-1 text-sm font-semibold uppercase tracking-wide text-primary">
-                {{ eyebrow }}
-            </p>
-            <h1 class="text-2xl font-semibold tracking-tight sm:text-3xl">{{ title }}</h1>
-            <p v-if="description" class="mt-1 max-w-3xl text-sm text-muted-foreground sm:text-base">
-                {{ description }}
-            </p>
-        </div>
+    <PageHeader
+        :title="title"
+        :description="description"
+        :eyebrow="eyebrow"
+        :show-help="showHelp"
+    >
+        <template v-if="$slots.breadcrumbs" #breadcrumbs>
+            <slot name="breadcrumbs" />
+        </template>
 
-        <div class="flex flex-wrap items-center gap-2">
+        <template v-if="$slots.status" #status>
+            <slot name="status" />
+        </template>
+
+        <template v-if="$slots.meta" #meta>
+            <slot name="meta" />
+        </template>
+
+        <template #actions>
             <slot name="before-actions" />
 
             <Button
@@ -81,6 +89,7 @@ const emit = defineEmits<{
                 </Button>
             </Link>
 
-        </div>
-    </header>
+            <slot name="after-actions" />
+        </template>
+    </PageHeader>
 </template>

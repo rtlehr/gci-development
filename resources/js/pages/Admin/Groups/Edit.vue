@@ -1,86 +1,68 @@
+<script setup lang="ts">
+import { Link, useForm } from '@inertiajs/vue3'
+import PageContainer from '@/components/layout/PageContainer.vue'
+import PageHeader from '@/components/layout/PageHeader.vue'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+
+type Group = {
+    id: number
+    group_name: string | null
+}
+
+const props = defineProps<{
+    group: Group
+}>()
+
+const form = useForm({
+    group_name: props.group.group_name ?? '',
+})
+
+function submit(): void {
+    form.put(`/admin/groups/${props.group.id}`)
+}
+</script>
+
 <template>
-    <!-- Main page container -->
-    <div class="p-6 space-y-6">
+    <PageContainer size="default">
+        <PageHeader
+            title="Edit Group"
+            :description="`Update ${group.group_name || 'this group'}.`"
+            eyebrow="Administration"
+            back-href="/admin/groups"
+            back-label="Groups"
+        >
+            <template #meta>
+                <span>Group ID: {{ group.id }}</span>
+            </template>
+        </PageHeader>
 
-        <!-- Page header card -->
-        <div class="rounded-2xl border bg-background p-6 shadow-sm">
-            <h1 class="text-2xl font-semibold">Edit Group</h1>
-
-            <!-- Page description -->
-            <p class="mt-1 text-sm text-muted-foreground">
-                Update this group.
-            </p>
-        </div>
-
-        <!-- Group edit form -->
-        <form @submit.prevent="submit" class="space-y-6">
-
-            <!-- Main form card -->
-            <div class="rounded-2xl border bg-background p-6 shadow-sm space-y-4">
-
-                <!-- Group Name field -->
-                <div>
+        <form class="space-y-6" @submit.prevent="submit">
+            <div class="space-y-4 rounded-xl border bg-background p-6">
+                <div class="space-y-2">
                     <Label for="group_name">Group Name</Label>
-
-                    <!-- Two-way bound input field initialized from the existing group -->
                     <Input
                         id="group_name"
                         v-model="form.group_name"
                         type="text"
-                        class="mt-1"
+                        autocomplete="off"
                     />
-
-                    <!-- Validation error message -->
-                    <p v-if="form.errors.group_name" class="mt-1 text-sm text-red-600">
+                    <p v-if="form.errors.group_name" class="text-sm text-destructive">
                         {{ form.errors.group_name }}
                     </p>
                 </div>
             </div>
 
-            <!-- Form action buttons -->
-            <div class="flex gap-2">
-
-                <!-- Submit button -->
+            <div class="flex flex-wrap gap-3">
                 <Button type="submit" :disabled="form.processing">
-                    Update Group
+                    {{ form.processing ? 'Saving...' : 'Update Group' }}
                 </Button>
 
-                <!-- Cancel button navigates back to group list -->
                 <Link href="/admin/groups">
-                    <Button type="button" variant="outline">
-                        Cancel
-                    </Button>
+                    <Button type="button" variant="outline">Cancel</Button>
                 </Link>
             </div>
         </form>
-    </div>
+    </PageContainer>
 </template>
-
-<script setup>
-// Inertia helpers for navigation and form handling
-import { Link, useForm } from '@inertiajs/vue3'
-
-// Shared UI components
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-
-// Existing group record passed in from the backend
-const props = defineProps({
-    group: Object,
-})
-
-// Reactive Inertia form object
-const form = useForm({
-
-    // Start with the current group name, or blank if missing
-    group_name: props.group.group_name ?? '',
-})
-
-// Handles form submission
-function submit() {
-
-    // Submit updated group data to the backend update route
-    form.put(`/admin/groups/${props.group.id}`)
-}
-</script>

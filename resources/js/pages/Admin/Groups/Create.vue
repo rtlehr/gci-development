@@ -1,85 +1,56 @@
+<script setup lang="ts">
+import { Link, useForm } from '@inertiajs/vue3'
+import PageContainer from '@/components/layout/PageContainer.vue'
+import PageHeader from '@/components/layout/PageHeader.vue'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+
+const form = useForm({
+    group_name: '',
+})
+
+function submit(): void {
+    form.post('/admin/groups')
+}
+</script>
+
 <template>
-    <!-- Main page container -->
-    <div class="p-6 space-y-6">
+    <PageContainer size="default">
+        <PageHeader
+            title="Create Group"
+            description="Add a group that can be used to organize people and application access."
+            eyebrow="Administration"
+            back-href="/admin/groups"
+            back-label="Groups"
+        />
 
-        <!-- Page header card -->
-        <div class="rounded-2xl border bg-background p-6 shadow-sm">
-
-            <!-- Page title -->
-            <h1 class="text-2xl font-semibold">Create Group</h1>
-
-            <!-- Page description -->
-            <p class="mt-1 text-sm text-muted-foreground">
-                Add a new group.
-            </p>
-        </div>
-
-        <!-- Group creation form -->
-        <form @submit.prevent="submit" class="space-y-6">
-
-            <!-- Main form card -->
-            <div class="rounded-2xl border bg-background p-6 shadow-sm space-y-4">
-
-                <!-- Group Name field -->
-                <div>
+        <form class="space-y-6" @submit.prevent="submit">
+            <div class="space-y-4 rounded-xl border bg-background p-6">
+                <div class="space-y-2">
                     <Label for="group_name">Group Name</Label>
-
-                    <!-- Two-way bound input field -->
                     <Input
                         id="group_name"
                         v-model="form.group_name"
                         type="text"
-                        class="mt-1"
+                        autocomplete="off"
+                        autofocus
                     />
-
-                    <!-- Validation error message -->
-                    <p v-if="form.errors.group_name" class="mt-1 text-sm text-red-600">
+                    <p v-if="form.errors.group_name" class="text-sm text-destructive">
                         {{ form.errors.group_name }}
                     </p>
                 </div>
             </div>
 
-            <!-- Form action buttons -->
-            <div class="flex gap-2">
-
-                <!-- Submit button -->
+            <div class="flex flex-wrap gap-3">
                 <Button type="submit" :disabled="form.processing">
-
-                    <!-- Disable button while form is submitting -->
-                    Save Group
+                    {{ form.processing ? 'Saving...' : 'Save Group' }}
                 </Button>
 
-                <!-- Cancel button navigates back to group list -->
                 <Link href="/admin/groups">
-                    <Button type="button" variant="outline">
-                        Cancel
-                    </Button>
+                    <Button type="button" variant="outline">Cancel</Button>
                 </Link>
             </div>
         </form>
-    </div>
+    </PageContainer>
 </template>
-
-<script setup>
-// Inertia helpers for navigation and form handling
-import { Link, useForm } from '@inertiajs/vue3'
-
-// Shared UI components
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-
-// Reactive Inertia form object
-const form = useForm({
-
-    // Group name field
-    group_name: '',
-})
-
-// Handles form submission
-function submit() {
-
-    // Submit form data to the backend create route
-    form.post('/admin/groups')
-}
-</script>

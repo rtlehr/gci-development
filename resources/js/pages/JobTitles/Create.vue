@@ -1,5 +1,7 @@
 <script setup lang="ts">
 import { Link, useForm } from '@inertiajs/vue3';
+import PageContainer from '@/components/layout/PageContainer.vue';
+import PageHeader from '@/components/layout/PageHeader.vue';
 import { computed } from 'vue';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -37,19 +39,14 @@ function submit(): void {
 </script>
 
 <template>
-    <div class="max-w-3xl space-y-6 p-6">
-        <div class="flex items-center justify-between">
-            <div>
-                <h1 class="text-2xl font-semibold">Create Job Title</h1>
-                <p class="mt-1 text-sm text-muted-foreground">
-                    Add a new master Job Title.
-                </p>
-            </div>
-
-            <Link href="/job-titles">
-                <Button variant="outline">Back to List</Button>
-            </Link>
-        </div>
+    <PageContainer size="default">
+        <PageHeader
+            title="Create Job Title"
+            description="Add a new master Job Title and optionally copy requirements from an existing title."
+            eyebrow="Positions"
+            back-href="/job-titles"
+            back-label="Job Titles"
+        />
 
         <div class="rounded-xl border bg-background p-6">
             <form class="space-y-6" @submit.prevent="submit">
@@ -167,5 +164,5 @@ function submit(): void {
                 </div>
             </form>
         </div>
-    </div>
+    </PageContainer>
 </template>

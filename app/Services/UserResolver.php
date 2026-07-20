@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\Person;
 use App\Models\User;
+use Illuminate\Support\Facades\Auth;
 use RuntimeException;
 
 class UserResolver
@@ -118,6 +119,16 @@ class UserResolver
      */
     public function resolveUser(): User
     {
+        // Tests and normal Laravel authentication should always take precedence
+        // over the development/ADFS identity resolver. This keeps actingAs()
+        // deterministic and prevents DEV_PERSON_CODE from leaking into tests.
+        if (Auth::check()) {
+            /** @var User $user */
+            $user = Auth::user();
+
+            return $user;
+        }
+
         $userId = $this->resolveUserId();
 
         $user = User::query()->find($userId);
@@ -134,8 +145,20 @@ class UserResolver
      */
     public function resolve(): array
     {
-        $person = $this->resolvePerson();
         $user = $this->resolveUser();
+
+        // An authenticated Laravel user may not have a Person record in an
+        // isolated test. Return the linked person when one exists.
+        $person = Person::query()->where('user_id', $user->id)->first();
+
+        if (! $person) {
+            return [
+                'person_code' => null,
+                'person' => null,
+                'user_id' => $user->id,
+                'user' => $user,
+            ];
+        }
 
         return [
             'person_code' => $person->person_code,

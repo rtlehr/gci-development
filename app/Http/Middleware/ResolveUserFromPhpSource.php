@@ -2,33 +2,59 @@
 
 namespace App\Http\Middleware;
 
+use App\Models\Person;
+use App\Models\User;
 use Closure;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use App\Models\User;
-use App\Models\Person;
+use Symfony\Component\HttpFoundation\Response;
 
 class ResolveUserFromPhpSource
 {
-    public function handle(Request $request, Closure $next)
+    public function handle(Request $request, Closure $next): Response
     {
+        /*
+         * Automated tests must use Laravel's normal authentication behavior.
+         *
+         * This preserves:
+         * - actingAs()
+         * - guest assertions
+         * - Fortify registration login
+         * - password reset/authentication tests
+         *
+         * It also prevents DEV_PERSON_CODE from leaking into the test suite.
+         */
+        if (app()->environment('testing')) {
+            return $next($request);
+        }
+
+        /*
+         * Never replace a user who has already authenticated normally.
+         */
         if (Auth::check()) {
             return $next($request);
         }
 
-        $personCode = $this->getPersonCodeFromPhpSource();
-
-        if (!$personCode) {
+        if (! config('devuser.enabled')) {
             return $next($request);
         }
 
-        $person = Person::where('person_code', $personCode)->first();
+        $personCode = session('dev_person_code')
+            ?? config('devuser.person_code');
 
-        if (!$person || !$person->user_id) {
+        if (blank($personCode)) {
             return $next($request);
         }
 
-        $user = User::find($person->user_id);
+        $person = Person::query()
+            ->where('person_code', $personCode)
+            ->first();
+
+        if (! $person?->user_id) {
+            return $next($request);
+        }
+
+        $user = User::query()->find($person->user_id);
 
         if ($user) {
             Auth::login($user);
@@ -36,12 +62,5 @@ class ResolveUserFromPhpSource
         }
 
         return $next($request);
-    }
-
-    protected function getPersonCodeFromPhpSource(): ?int
-    {
-        $data = include base_path('config/devuser.php');
-
-        return $data['person_code'] ?? null;
     }
 }
