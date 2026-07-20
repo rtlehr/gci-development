@@ -10,19 +10,22 @@ defineProps<{
 </script>
 
 <template>
-    <Card class="h-full">
+    <Card class="h-full overflow-hidden">
         <CardHeader class="space-y-1 border-b bg-muted/20 pb-4">
-            <div class="flex items-start gap-3">
-                <div v-if="icon" class="rounded-lg border bg-background p-2 text-muted-foreground">
-                    <component :is="icon" class="h-4 w-4" aria-hidden="true" />
+            <div class="flex items-start justify-between gap-4">
+                <div class="flex min-w-0 items-start gap-3">
+                    <div v-if="icon" class="rounded-lg border bg-background p-2 text-muted-foreground shadow-sm">
+                        <component :is="icon" class="h-4 w-4" aria-hidden="true" />
+                    </div>
+                    <div class="min-w-0">
+                        <CardTitle class="text-base">{{ title }}</CardTitle>
+                        <p v-if="description" class="mt-1 text-sm text-muted-foreground">{{ description }}</p>
+                    </div>
                 </div>
-                <div class="min-w-0">
-                    <CardTitle class="text-base">{{ title }}</CardTitle>
-                    <p v-if="description" class="mt-1 text-sm text-muted-foreground">{{ description }}</p>
-                </div>
+                <div v-if="$slots.actions" class="shrink-0"><slot name="actions" /></div>
             </div>
         </CardHeader>
-        <CardContent class="p-5">
+        <CardContent class="p-5 sm:p-6">
             <slot />
         </CardContent>
     </Card>

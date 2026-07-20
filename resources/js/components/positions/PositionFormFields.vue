@@ -14,16 +14,18 @@ const props = withDefaults(defineProps<{
     form: GenericRecord
     organizations?: OrganizationOption[]
     jobTitles?: GenericRecord[]
+    projectManagers?: GenericRecord[]
     extended?: boolean
 }>(), {
     organizations: () => [],
     jobTitles: () => [],
+    projectManagers: () => [],
     extended: false,
 })
 
 const selectedJobTitle = computed(() => props.jobTitles.find((item) => Number(item.id) === Number(props.form.job_title_id)))
-const generatedLaborCategory = computed(() => selectedJobTitle.value && props.form.experience_level
-    ? `${selectedJobTitle.value.name} - ${props.form.experience_level}`
+const generatedLaborCategory = computed(() => selectedJobTitle.value && props.form.level
+    ? `${selectedJobTitle.value.name} - Level ${props.form.level}`
     : '')
 
 const selectClass = (error?: string) => [
@@ -35,7 +37,7 @@ const selectClass = (error?: string) => [
 <template>
     <FormSection
         title="Core Position Information"
-        description="Define the position identifier, status, job title, and experience level."
+        description="Define the position identifier, status, job title, level, team, and project manager."
     >
         <div class="grid gap-5 md:grid-cols-2">
             <FormField label="Position Code" for-id="position_code" :error="form.errors.position_code" description="Use the approved position or requisition identifier.">
@@ -63,20 +65,34 @@ const selectClass = (error?: string) => [
                 </template>
             </FormField>
 
-            <FormField label="Experience Level" for-id="experience_level" :error="form.errors.experience_level">
+            <FormField label="Level" for-id="level" :error="form.errors.level">
                 <template #default="{ describedBy }">
-                    <select id="experience_level" v-model="form.experience_level" :class="selectClass(form.errors.experience_level)" :aria-describedby="describedBy" :aria-invalid="Boolean(form.errors.experience_level)">
-                        <option value="">Select Experience Level</option>
-                        <option value="Beginner">Beginner</option>
-                        <option value="Novice">Novice</option>
-                        <option value="Experienced">Experienced</option>
-                        <option value="Senior">Senior</option>
+                    <select id="level" v-model="form.level" :class="selectClass(form.errors.level)" :aria-describedby="describedBy" :aria-invalid="Boolean(form.errors.level)">
+                        <option value="">Select Level</option>
+                        <option v-for="level in 5" :key="level" :value="level">Level {{ level }}</option>
                     </select>
                 </template>
             </FormField>
 
-            <FormField class="md:col-span-2" label="Labor Category Preview" for-id="labor_category_preview" description="Generated automatically from the selected job title and experience level.">
-                <Input id="labor_category_preview" :model-value="generatedLaborCategory || 'Select Job Title and Experience Level'" disabled class="bg-muted" />
+            <FormField label="Team Name" for-id="team_name" :error="form.errors.team_name">
+                <template #default="{ describedBy }">
+                    <Input id="team_name" v-model="form.team_name" :aria-describedby="describedBy" :aria-invalid="Boolean(form.errors.team_name)" />
+                </template>
+            </FormField>
+
+            <FormField label="Project Manager" for-id="project_manager_user_id" :error="form.errors.project_manager_user_id">
+                <template #default="{ describedBy }">
+                    <select id="project_manager_user_id" v-model="form.project_manager_user_id" :class="selectClass(form.errors.project_manager_user_id)" :aria-describedby="describedBy" :aria-invalid="Boolean(form.errors.project_manager_user_id)">
+                        <option :value="null">Select Project Manager</option>
+                        <option v-for="manager in projectManagers" :key="manager.id" :value="manager.id">
+                            {{ manager.name }}<template v-if="manager.email"> — {{ manager.email }}</template>
+                        </option>
+                    </select>
+                </template>
+            </FormField>
+
+            <FormField class="md:col-span-2" label="Labor Category Preview" for-id="labor_category_preview" description="Generated automatically from the selected job title and level.">
+                <Input id="labor_category_preview" :model-value="generatedLaborCategory || 'Select Job Title and Level'" disabled class="bg-muted" />
             </FormField>
         </div>
     </FormSection>
@@ -137,7 +153,6 @@ const selectClass = (error?: string) => [
 
         <FormSection title="Project and Customer Information" description="Record the teams and customer contacts connected to this position.">
             <div class="grid gap-5 md:grid-cols-2">
-                <FormField label="Project Team Name" for-id="project_team_name" :error="form.errors.project_team_name"><Input id="project_team_name" v-model="form.project_team_name" /></FormField>
                 <FormField label="Customer Lead Name" for-id="customer_lead_name" :error="form.errors.customer_lead_name"><Input id="customer_lead_name" v-model="form.customer_lead_name" /></FormField>
                 <FormField label="Customer Created Date" for-id="customer_created_at" :error="form.errors.customer_created_at"><Input id="customer_created_at" v-model="form.customer_created_at" type="date" /></FormField>
                 <FormField label="Notes" for-id="notes" :error="form.errors.notes" class="md:col-span-2"><Textarea id="notes" v-model="form.notes" rows="5" /></FormField>

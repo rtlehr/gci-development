@@ -21,7 +21,9 @@ class Position extends Model
 
         'job_title_id',
         'job_title',
-        'experience_level',
+        'level',
+        'team_name',
+        'project_manager_user_id',
         'labor_category',
 
         'certifications_required',
@@ -70,6 +72,7 @@ class Position extends Model
         'scheduled_to_close' => 'date',
         'close_date' => 'date',
         'customer_created_at' => 'date',
+        'level' => 'integer',
     ];
 
     /*
@@ -111,6 +114,11 @@ class Position extends Model
     public function jobTitle()
     {
         return $this->belongsTo(JobTitle::class, 'job_title_id');
+    }
+
+    public function projectManager()
+    {
+        return $this->belongsTo(User::class, 'project_manager_user_id');
     }
 
     /*
@@ -275,10 +283,10 @@ class Position extends Model
 
             if (
                 filled($position->job_title) &&
-                filled($position->experience_level)
+                filled($position->level)
             ) {
                 $position->labor_category =
-                    $position->job_title . ' - ' . $position->experience_level;
+                    $position->job_title . ' - Level ' . $position->level;
             }
 
             /*
@@ -289,7 +297,7 @@ class Position extends Model
 
             if (
                 blank($position->job_title) ||
-                blank($position->experience_level)
+                blank($position->level)
             ) {
                 $position->labor_category = null;
             }

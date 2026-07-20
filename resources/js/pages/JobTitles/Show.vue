@@ -1,11 +1,15 @@
 <script setup lang="ts">
 import { Link, useForm } from '@inertiajs/vue3'
 import { computed, ref } from 'vue'
+import DetailItem from '@/components/DetailItem.vue'
+import DetailGrid from '@/components/detail/DetailGrid.vue'
+import DetailSection from '@/components/detail/DetailSection.vue'
 import RequirementItem from '@/components/job-titles/RequirementItem.vue'
 import PageContainer from '@/components/layout/PageContainer.vue'
 import PageHeader from '@/components/layout/PageHeader.vue'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { BriefcaseBusiness } from 'lucide-vue-next'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
@@ -121,30 +125,23 @@ function submitTask() {
             </template>
         </PageHeader>
 
-        <Card>
-            <CardHeader>
-                <CardTitle>Job Title Information</CardTitle>
-            </CardHeader>
-            <CardContent class="space-y-4">
-                <div>
-                    <div class="text-sm font-medium text-muted-foreground">Description</div>
-                    <p class="mt-1 whitespace-pre-line text-sm">
-                        {{ jobTitle.description || 'No description provided.' }}
-                    </p>
-                </div>
-
-                <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                    <div>
-                        <div class="text-sm font-medium text-muted-foreground">Status</div>
-                        <p class="mt-1 text-sm">{{ jobTitle.is_active ? 'Active' : 'Inactive' }}</p>
-                    </div>
-                    <div>
-                        <div class="text-sm font-medium text-muted-foreground">Sort Order</div>
-                        <p class="mt-1 text-sm">{{ jobTitle.sort_order ?? 0 }}</p>
-                    </div>
-                </div>
-            </CardContent>
-        </Card>
+        <DetailSection
+            title="Job title information"
+            description="Core classification and display settings"
+            :icon="BriefcaseBusiness"
+        >
+            <DetailGrid :columns="3">
+                <DetailItem
+                    class="sm:col-span-2 lg:col-span-3"
+                    label="Description"
+                    :value="jobTitle.description || 'No description provided.'"
+                    multiline
+                />
+                <DetailItem label="Status" :value="jobTitle.is_active ? 'Active' : 'Inactive'" />
+                <DetailItem label="Sort Order" :value="jobTitle.sort_order ?? 0" />
+                <DetailItem label="Record ID" :value="jobTitle.id" copyable />
+            </DetailGrid>
+        </DetailSection>
 
         <div class="grid grid-cols-1 gap-6 xl:grid-cols-2">
             <Card id="skills" class="scroll-mt-6">

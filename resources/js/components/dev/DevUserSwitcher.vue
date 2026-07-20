@@ -16,7 +16,7 @@
                 :key="testUser.person_code"
                 :value="testUser.person_code"
             >
-                {{ testUser.name }} — {{ testUser.person_code }}
+                {{ userOptionLabel(testUser) }}
             </option>
         </select>
 
@@ -52,10 +52,20 @@ const currentPersonCode = computed(() => {
 const testUsers = computed(() => {
     const current = currentPersonCode.value
 
-    return rawTestUsers.value.filter(
-        (user) => user.person_code !== current
-    )
+    return rawTestUsers.value
+        .filter((user) => user.person_code !== current)
+        .sort((left, right) => left.name.localeCompare(right.name))
 })
+
+/**
+ * Builds the readable dropdown label.
+ * Example: Charles Winchester - PM
+ */
+function userOptionLabel(user) {
+    return user.role_display
+        ? `${user.name} - ${user.role_display}`
+        : user.name
+}
 
 /**
  * Switches the current development impersonation user.

@@ -8,6 +8,7 @@ use Inertia\Middleware;
 use App\Models\Person;
 use App\Models\Alert;
 use App\Services\UserResolver;
+use App\Support\RoleAbbreviation;
 
 class HandleInertiaRequests extends Middleware
 {
@@ -91,6 +92,7 @@ class HandleInertiaRequests extends Middleware
                 'testUsers' => fn () => config('app.debug') === true
                     ? Person::query()
                         ->whereNotNull('user_id')
+                        ->with(['user.roles:id,name,label'])
                         ->orderBy('last_name')
                         ->orderBy('first_name')
                         ->get([
@@ -100,12 +102,20 @@ class HandleInertiaRequests extends Middleware
                             'last_name',
                             'user_id',
                         ])
-                        ->map(fn ($person) => [
-                            'id' => $person->id,
-                            'person_code' => $person->person_code,
-                            'name' => trim($person->first_name . ' ' . $person->last_name),
-                            'user_id' => $person->user_id,
-                        ])
+                        ->map(function ($person) {
+                            $roleAbbreviations = RoleAbbreviation::forRoles(
+                                $person->user?->roles ?? []
+                            );
+
+                            return [
+                                'id' => $person->id,
+                                'person_code' => $person->person_code,
+                                'name' => trim($person->first_name . ' ' . $person->last_name),
+                                'user_id' => $person->user_id,
+                                'role_abbreviations' => $roleAbbreviations,
+                                'role_display' => implode(' | ', $roleAbbreviations),
+                            ];
+                        })
                     : [],
             ],
 

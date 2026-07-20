@@ -21,11 +21,13 @@ const props = withDefaults(defineProps<{
     position: GenericRecord
     organizations?: OrganizationOption[]
     jobTitles?: GenericRecord[]
+    projectManagers?: GenericRecord[]
     jobTitleSkills?: GenericRecord[]
     jobTitleTasks?: GenericRecord[]
 }>(), {
     organizations: () => [],
     jobTitles: () => [],
+    projectManagers: () => [],
     jobTitleSkills: () => [],
     jobTitleTasks: () => [],
 })
@@ -41,7 +43,9 @@ const form = useForm({
     position_code: props.position.position_code ?? '',
     status: props.position.status ?? 'Open',
     job_title_id: props.position.job_title_id ?? null,
-    experience_level: props.position.experience_level ?? '',
+    level: props.position.level ?? '',
+    team_name: props.position.team_name ?? '',
+    project_manager_user_id: props.position.project_manager_user_id ?? null,
     certifications_required: props.position.certifications_required ?? '',
     training_required: props.position.training_required ?? '',
     experience: props.position.experience ?? '',
@@ -73,8 +77,8 @@ const customSkills = computed(() => props.position.custom_skills ?? [])
 const customTasks = computed(() => props.position.custom_tasks ?? [])
 const selectedJobTitle = computed(() => props.jobTitles.find((item) => Number(item.id) === Number(form.job_title_id)))
 const selectedOrganization = computed(() => props.organizations.find((item) => Number(item.id) === Number(form.position_organization_id)))
-const laborCategory = computed(() => selectedJobTitle.value && form.experience_level
-    ? `${selectedJobTitle.value.name} - ${form.experience_level}`
+const laborCategory = computed(() => selectedJobTitle.value && form.level
+    ? `${selectedJobTitle.value.name} - Level ${form.level}`
     : 'Not selected')
 
 watch(() => form.status, (status) => {
@@ -136,7 +140,13 @@ onBeforeUnmount(() => window.removeEventListener('beforeunload', handleBeforeUnl
 
         <form class="grid gap-6 xl:grid-cols-[minmax(0,1fr)_20rem]" @submit.prevent="submit">
             <div class="grid min-w-0 gap-6">
-                <PositionFormFields :form="form" :organizations="organizations" :job-titles="jobTitles" extended />
+                <PositionFormFields
+                    :form="form"
+                    :organizations="organizations"
+                    :job-titles="jobTitles"
+                    :project-managers="projectManagers"
+                    extended
+                />
 
                 <FormSection title="Skills" description="Review default job-title skills and maintain position-specific skills.">
                     <div>
@@ -221,6 +231,8 @@ onBeforeUnmount(() => window.removeEventListener('beforeunload', handleBeforeUnl
                 <InfoPanel title="Position Summary" description="A live overview of the position and its record metadata.">
                     <DisplayField label="Position Code" :value="form.position_code || 'Not entered'" :muted="!form.position_code" />
                     <DisplayField label="Status" :value="form.status" />
+                    <DisplayField label="Level" :value="form.level ? `Level ${form.level}` : 'Not selected'" :muted="!form.level" />
+                    <DisplayField label="Team Name" :value="form.team_name || 'Not entered'" :muted="!form.team_name" />
                     <DisplayField label="Labor Category" :value="laborCategory" :muted="laborCategory === 'Not selected'" />
                     <DisplayField label="Organization" :value="selectedOrganization?.full_path || selectedOrganization?.name || 'Not selected'" :muted="!selectedOrganization" />
                     <DisplayField label="Location" :value="form.location || 'Not entered'" :muted="!form.location" />

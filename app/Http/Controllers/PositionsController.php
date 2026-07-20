@@ -6,6 +6,7 @@ use App\Models\JobTitle;
 use App\Models\Organization;
 use App\Models\Position;
 use App\Models\PositionActivity;
+use App\Models\User;
 use App\Models\UserListPreference;
 use App\Services\ListEngine;
 use App\Services\ListExportService;
@@ -67,9 +68,12 @@ class PositionsController extends Controller
                 'name',
             ]);
 
+        $projectManagers = $this->projectManagers();
+
         return Inertia::render('Positions/Create', [
             'organizations' => $organizations,
             'jobTitles' => $jobTitles,
+            'projectManagers' => $projectManagers,
         ]);
     }
 
@@ -173,10 +177,13 @@ class PositionsController extends Controller
                 'name',
             ]);
 
+        $projectManagers = $this->projectManagers();
+
         return inertia('Positions/Edit', [
             'position' => $position,
             'organizations' => $organizations,
             'jobTitles' => $jobTitles,
+            'projectManagers' => $projectManagers,
             'jobTitleSkills' => $jobTitleSkills,
             'jobTitleTasks' => $jobTitleTasks,
         ]);
@@ -343,7 +350,7 @@ class PositionsController extends Controller
 
     private function validatePosition(Request $request): array
     {
-        return $request->validate([
+        $validated = $request->validate([
             'position_code' => [
                 'nullable',
                 'string',
@@ -360,9 +367,22 @@ class PositionsController extends Controller
                 'exists:job_titles,id',
             ],
 
-            'experience_level' => [
+            'level' => [
                 'nullable',
-                'in:Beginner,Novice,Experienced,Senior',
+                'integer',
+                'between:1,5',
+            ],
+
+            'team_name' => [
+                'nullable',
+                'string',
+                'max:255',
+            ],
+
+            'project_manager_user_id' => [
+                'nullable',
+                'integer',
+                'exists:users,id',
             ],
 
             'certifications_required' => [
@@ -478,5 +498,32 @@ class PositionsController extends Controller
                 'string',
             ],
         ]);
+
+        if (! empty($validated['project_manager_user_id'])) {
+            $isProjectManager = User::query()
+                ->whereKey($validated['project_manager_user_id'])
+                ->whereHas('roles', fn ($query) => $query->where('roles.name', 'project_manager'))
+                ->exists();
+
+            if (! $isProjectManager) {
+                throw \Illuminate\Validation\ValidationException::withMessages([
+                    'project_manager_user_id' => 'The selected user must have the Project Manager role.',
+                ]);
+            }
+        }
+
+        return $validated;
+    }
+
+    private function projectManagers()
+    {
+        return User::query()
+            ->whereHas('roles', fn ($query) => $query->where('roles.name', 'project_manager'))
+            ->orderBy('name')
+            ->get([
+                'id',
+                'name',
+                'email',
+            ]);
     }
 }

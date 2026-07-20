@@ -14,16 +14,20 @@ type OrganizationOption = { id: number; name: string; full_path: string; depth?:
 const props = withDefaults(defineProps<{
     organizations?: OrganizationOption[]
     jobTitles?: GenericRecord[]
+    projectManagers?: GenericRecord[]
 }>(), {
     organizations: () => [],
     jobTitles: () => [],
+    projectManagers: () => [],
 })
 
 const form = useForm({
     position_code: '',
     status: 'Open',
     job_title_id: null as number | null,
-    experience_level: '',
+    level: '' as number | '',
+    team_name: '',
+    project_manager_user_id: null as number | null,
     certifications_required: '',
     training_required: '',
     experience: '',
@@ -41,8 +45,8 @@ const form = useForm({
 
 const selectedJobTitle = computed(() => props.jobTitles.find((item) => Number(item.id) === Number(form.job_title_id)))
 const selectedOrganization = computed(() => props.organizations.find((item) => Number(item.id) === Number(form.position_organization_id)))
-const laborCategory = computed(() => selectedJobTitle.value && form.experience_level
-    ? `${selectedJobTitle.value.name} - ${form.experience_level}`
+const laborCategory = computed(() => selectedJobTitle.value && form.level
+    ? `${selectedJobTitle.value.name} - Level ${form.level}`
     : 'Not selected')
 
 function focusFirstError(): void {
@@ -78,7 +82,7 @@ onBeforeUnmount(() => window.removeEventListener('beforeunload', handleBeforeUnl
 
         <form class="grid gap-6 xl:grid-cols-[minmax(0,1fr)_20rem]" @submit.prevent="submit">
             <div class="grid min-w-0 gap-6">
-                <PositionFormFields :form="form" :organizations="organizations" :job-titles="jobTitles" />
+                <PositionFormFields :form="form" :organizations="organizations" :job-titles="jobTitles" :project-managers="projectManagers" />
 
                 <FormActions
                     cancel-href="/positions"
@@ -94,6 +98,8 @@ onBeforeUnmount(() => window.removeEventListener('beforeunload', handleBeforeUnl
                 <InfoPanel title="Position Summary" description="This preview updates as you complete the form.">
                     <DisplayField label="Position Code" :value="form.position_code || 'Not entered'" :muted="!form.position_code" />
                     <DisplayField label="Status" :value="form.status" />
+                    <DisplayField label="Level" :value="form.level ? `Level ${form.level}` : 'Not selected'" :muted="!form.level" />
+                    <DisplayField label="Team Name" :value="form.team_name || 'Not entered'" :muted="!form.team_name" />
                     <DisplayField label="Labor Category" :value="laborCategory" :muted="laborCategory === 'Not selected'" />
                     <DisplayField label="Organization" :value="selectedOrganization?.full_path || selectedOrganization?.name || 'Not selected'" :muted="!selectedOrganization" />
                     <DisplayField label="Location" :value="form.location || 'Not entered'" :muted="!form.location" />
