@@ -14,6 +14,7 @@ class PositionCustomSkillTaskController extends Controller
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:255'],
             'description' => ['nullable', 'string'],
+            'requirement_type' => ['required', 'in:required,desired'],
         ]);
 
         $position->customSkills()->create($validated);

@@ -148,9 +148,9 @@
 import { computed, reactive, ref } from 'vue'
 import { Link, router } from '@inertiajs/vue3'
 import { ArrowDown, ArrowUp, ArrowUpDown, MoreHorizontal } from 'lucide-vue-next'
-import ColumnSettings from '@/Components/Lists/ColumnSettings.vue'
-import ListToolbar from '@/Components/Lists/ListToolbar.vue'
-import ListFilters from '@/Components/Lists/ListFilters.vue'
+import ColumnSettings from '@/components/Lists/ColumnSettings.vue'
+import ListToolbar from '@/components/Lists/ListToolbar.vue'
+import ListFilters from '@/components/Lists/ListFilters.vue'
 import { Button } from '@/components/ui/button'
 import {
     AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,

@@ -3,124 +3,42 @@
 namespace Database\Seeders;
 
 use App\Models\JobTitle;
-use App\Models\JobTitleSkill;
-use App\Models\JobTitleTask;
-
 use Illuminate\Database\Seeder;
 
 class JobTitleSeeder extends Seeder
 {
-    /**
-     * Seed Job Titles, Skills, and Tasks.
-     */
     public function run(): void
     {
-        /*
-        |--------------------------------------------------------------------------
-        | Frontend Developer
-        |--------------------------------------------------------------------------
-        */
-
-        $frontendDeveloper = JobTitle::create([
-            'name' => 'Frontend Developer',
-            'description' => 'Develops and maintains user interfaces using Vue, Laravel, and related technologies.',
-            'is_active' => true,
-            'sort_order' => 1,
-        ]);
-
-        /*
-        |--------------------------------------------------------------------------
-        | Skills
-        |--------------------------------------------------------------------------
-        */
-
-        $skills = [
-            'Vue.js',
-            'Laravel',
-            'TypeScript',
-            'MySQL',
-            'Git',
+        $titles = [
+            ['Frontend Developer', 'Builds and maintains accessible, responsive application interfaces.', 10],
+            ['Backend Developer', 'Develops server-side services, APIs, business logic, and integrations.', 20],
+            ['Full Stack Developer', 'Develops both frontend and backend application capabilities.', 30],
+            ['Software Engineer', 'Designs, develops, tests, and maintains enterprise software solutions.', 40],
+            ['DevOps Engineer', 'Automates build, deployment, infrastructure, and operational workflows.', 50],
+            ['Cloud Engineer', 'Designs and supports secure cloud infrastructure and platform services.', 60],
+            ['Systems Administrator', 'Maintains servers, identity services, patching, and system availability.', 70],
+            ['Network Engineer', 'Designs, configures, secures, and supports enterprise networks.', 80],
+            ['Cybersecurity Analyst', 'Monitors, assesses, and improves the security posture of systems and data.', 90],
+            ['Database Administrator', 'Administers, secures, tunes, and protects enterprise databases.', 100],
+            ['Data Analyst', 'Transforms operational data into reports, dashboards, and actionable insights.', 110],
+            ['Business Analyst', 'Elicits requirements, documents processes, and bridges business and technical teams.', 120],
+            ['Quality Assurance Analyst', 'Plans and executes testing to verify application quality and requirements.', 130],
+            ['UX/UI Designer', 'Designs usable, accessible, and consistent digital experiences.', 140],
+            ['Technical Writer', 'Creates and maintains clear technical and user documentation.', 150],
+            ['Program Manager', 'Leads complex programs, governance, schedules, risks, and stakeholder coordination.', 160],
+            ['Project Manager', 'Plans and manages project scope, schedule, resources, risks, and delivery.', 170],
+            ['Product Manager', 'Defines product direction, priorities, outcomes, and stakeholder alignment.', 180],
+            ['Scrum Master', 'Facilitates agile delivery, removes impediments, and supports team improvement.', 190],
+            ['Configuration Manager', 'Controls baselines, changes, releases, and configuration records.', 200],
+            ['Help Desk Specialist', 'Provides end-user technical support and incident resolution.', 210],
+            ['Training Specialist', 'Develops and delivers training materials, courses, and user enablement.', 220],
         ];
 
-        foreach ($skills as $index => $skill) {
-
-            JobTitleSkill::create([
-                'job_title_id' => $frontendDeveloper->id,
-                'name' => $skill,
-                'description' => $skill . ' related knowledge and experience.',
-                'is_active' => true,
-                'sort_order' => $index + 1,
-            ]);
+        foreach ($titles as [$name, $description, $sortOrder]) {
+            JobTitle::updateOrCreate(
+                ['name' => $name],
+                ['description' => $description, 'is_active' => true, 'sort_order' => $sortOrder],
+            );
         }
-
-        /*
-        |--------------------------------------------------------------------------
-        | Tasks
-        |--------------------------------------------------------------------------
-        */
-
-        $tasks = [
-            'Build frontend features',
-            'Connect Vue pages to Laravel data',
-            'Fix UI defects and bugs',
-            'Review application workflows',
-            'Maintain technical documentation',
-        ];
-
-        foreach ($tasks as $index => $task) {
-
-            JobTitleTask::create([
-                'job_title_id' => $frontendDeveloper->id,
-                'name' => $task,
-                'description' => $task,
-                'is_active' => true,
-                'sort_order' => $index + 1,
-            ]);
-        }
-
-        /*
-        |--------------------------------------------------------------------------
-        | Program Manager
-        |--------------------------------------------------------------------------
-        */
-
-        $programManager = JobTitle::create([
-            'name' => 'Program Manager',
-            'description' => 'Manages project planning, execution, schedules, and stakeholder communication.',
-            'is_active' => true,
-            'sort_order' => 2,
-        ]);
-
-        JobTitleSkill::create([
-            'job_title_id' => $programManager->id,
-            'name' => 'Project Management',
-            'description' => 'Project planning and execution.',
-            'is_active' => true,
-            'sort_order' => 1,
-        ]);
-
-        JobTitleSkill::create([
-            'job_title_id' => $programManager->id,
-            'name' => 'Risk Management',
-            'description' => 'Identifying and managing risks.',
-            'is_active' => true,
-            'sort_order' => 2,
-        ]);
-
-        JobTitleTask::create([
-            'job_title_id' => $programManager->id,
-            'name' => 'Manage project schedules',
-            'description' => 'Maintain project schedules and milestones.',
-            'is_active' => true,
-            'sort_order' => 1,
-        ]);
-
-        JobTitleTask::create([
-            'job_title_id' => $programManager->id,
-            'name' => 'Coordinate stakeholder meetings',
-            'description' => 'Communicate with project stakeholders.',
-            'is_active' => true,
-            'sort_order' => 2,
-        ]);
     }
 }

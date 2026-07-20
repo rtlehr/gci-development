@@ -17,6 +17,7 @@ class JobTitleSkill extends Model
         'job_title_id',
         'name',
         'description',
+        'requirement_type',
         'is_active',
         'sort_order',
     ];

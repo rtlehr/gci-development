@@ -17,6 +17,7 @@ class PositionCustomSkill extends Model
         'position_id',
         'name',
         'description',
+        'requirement_type',
         'is_active',
         'sort_order',
     ];

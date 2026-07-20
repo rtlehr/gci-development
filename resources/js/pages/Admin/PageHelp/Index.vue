@@ -69,8 +69,8 @@
 <script setup>
 import { reactive } from 'vue'
 import { Link, router } from '@inertiajs/vue3'
-import ListToolbar from '@/Components/Lists/ListToolbar.vue'
-import ListFilters from '@/Components/Lists/ListFilters.vue'
+import ListToolbar from '@/components/Lists/ListToolbar.vue'
+import ListFilters from '@/components/Lists/ListFilters.vue'
 
 import { Button } from '@/components/ui/button'
 

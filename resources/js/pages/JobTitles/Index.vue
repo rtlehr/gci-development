@@ -95,8 +95,8 @@
 <script setup>
 import { computed, reactive, ref } from 'vue'
 import { Link, router } from '@inertiajs/vue3'
-import ColumnSettings from '@/Components/Lists/ColumnSettings.vue'
-import ListToolbar from '@/Components/Lists/ListToolbar.vue'
+import ColumnSettings from '@/components/Lists/ColumnSettings.vue'
+import ListToolbar from '@/components/Lists/ListToolbar.vue'
 
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'

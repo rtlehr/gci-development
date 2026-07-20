@@ -4,6 +4,17 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\JobTitleController;
 use App\Http\Controllers\PositionCustomSkillTaskController;
 
+Route::get('/job-title-requirements', [JobTitleController::class, 'requirementsIndex'])
+    ->name('job-title-requirements.index')
+    ->middleware('permission:access_positions');
+
+// Preserve old bookmarks while directing users to the combined workflow.
+Route::redirect('/job-title-skills', '/job-title-requirements')
+    ->name('job-title-skills.index');
+
+Route::redirect('/job-title-tasks', '/job-title-requirements')
+    ->name('job-title-tasks.index');
+
 Route::get('/job-titles', [JobTitleController::class, 'index'])
     ->name('job-titles.index')
     ->middleware('permission:access_positions');

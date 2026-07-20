@@ -1,7 +1,8 @@
 <template>
-    <div class="p-6 space-y-6">
+    <PageContainer>
         <ListToolbar
             title="Positions"
+            description="Manage staffing requirements, position details, assignments, and mission needs."
             create-label="Create Position"
             create-href="/positions/create"
             :can-create="can(Permissions.POSITIONS_CREATE)"
@@ -47,7 +48,7 @@
         </ListFilters>
 
         <!-- Table -->
-        <div class="border rounded-xl bg-background overflow-hidden">
+        <ListTableShell label="Positions results">
             <Table>
                 <TableHeader>
                     <TableRow>
@@ -83,11 +84,11 @@
                 </TableHeader>
 
                 <TableBody>
-                    <TableRow v-if="!positions?.data?.length">
-                        <TableCell :colspan="activeColumns.length + 1" class="text-center py-8 text-muted-foreground">
-                            No positions found.
-                        </TableCell>
-                    </TableRow>
+                    <ListEmptyRow
+                        v-if="!positions?.data?.length"
+                        :colspan="activeColumns.length + 1"
+                        title="No positions found"
+                    />
 
                     <TableRow
                         v-for="position in positions.data"
@@ -155,44 +156,18 @@
                     </TableRow>
                 </TableBody>
             </Table>
-        </div>
+        </ListTableShell>
 
-        <!-- Pagination -->
-        <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-            <div class="text-sm text-muted-foreground">
-                Showing {{ positions.from ?? 0 }} to {{ positions.to ?? 0 }} of {{ positions.total ?? 0 }} positions
-            </div>
-
-            <div class="flex items-center gap-2 flex-wrap">
-                <Button
-                    size="sm"
-                    variant="outline"
-                    :disabled="positions.current_page === 1"
-                    @click="goToPage(positions.current_page - 1)"
-                >
-                    Previous
-                </Button>
-
-                <Button
-                    v-for="page in pagesToShow"
-                    :key="page"
-                    size="sm"
-                    :variant="page === positions.current_page ? 'default' : 'outline'"
-                    @click="goToPage(page)"
-                >
-                    {{ page }}
-                </Button>
-
-                <Button
-                    size="sm"
-                    variant="outline"
-                    :disabled="positions.current_page === positions.last_page"
-                    @click="goToPage(positions.current_page + 1)"
-                >
-                    Next
-                </Button>
-            </div>
-        </div>
+        <ListPagination
+            :current-page="positions.current_page"
+            :last-page="positions.last_page"
+            :from="positions.from"
+            :to="positions.to"
+            :total="positions.total"
+            :pages="pagesToShow"
+            item-label="positions"
+            @change="goToPage"
+        />
 
         <!-- Delete Dialog -->
         <AlertDialog :open="deleteDialogOpen" @update:open="deleteDialogOpen = $event">
@@ -219,7 +194,7 @@
                 </AlertDialogFooter>
             </AlertDialogContent>
         </AlertDialog>
-    </div>
+    </PageContainer>
 </template>
 
 <script setup>
@@ -238,9 +213,13 @@ import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
 import { Badge } from '@/components/ui/badge'
 import { useFileDownload } from '@/composables/useFileDownload'
-import ColumnSettings from '@/Components/Lists/ColumnSettings.vue'
-import ListToolbar from '@/Components/Lists/ListToolbar.vue'
-import ListFilters from '@/Components/Lists/ListFilters.vue'
+import ColumnSettings from '@/components/Lists/ColumnSettings.vue'
+import ListToolbar from '@/components/Lists/ListToolbar.vue'
+import ListFilters from '@/components/Lists/ListFilters.vue'
+import ListEmptyRow from '@/components/Lists/ListEmptyRow.vue'
+import ListPagination from '@/components/Lists/ListPagination.vue'
+import ListTableShell from '@/components/Lists/ListTableShell.vue'
+import PageContainer from '@/components/layout/PageContainer.vue'
 
 import {
     AlertDialog,

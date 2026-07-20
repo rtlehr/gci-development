@@ -11,6 +11,14 @@ use App\Models\Ticket;
 use Illuminate\Support\Facades\Mail;
 use App\Mail\TestEmail;
 
+Route::get('/admin', fn () => Inertia::render('Admin/Index'))
+    ->name('admin.index')
+    ->middleware('permission:view_admin');
+
+Route::get('/admin/component-showcase', fn () => Inertia::render('Admin/ComponentShowcase'))
+    ->name('admin.component-showcase')
+    ->middleware('permission:view_admin');
+
 Route::get('/', function (UserResolver $userResolver) {
     $user = $userResolver->resolveUser();
 

@@ -1,7 +1,8 @@
 <template>
-    <div class="p-6 space-y-6">
+    <PageContainer>
         <ListToolbar
             title="People"
+            description="Manage personnel records, assignments, contact information, and organizational relationships."
             create-label="Add Person"
             create-href="/people/create"
             :can-create="can(Permissions.PEOPLE_CREATE)"
@@ -29,7 +30,7 @@
         />
 
         <!-- Table -->
-        <div class="border rounded-xl bg-background overflow-hidden">
+        <ListTableShell label="People results">
             <Table>
                 <TableHeader>
                     <TableRow>
@@ -65,11 +66,11 @@
                 </TableHeader>
 
                 <TableBody>
-                    <TableRow v-if="!people?.data?.length">
-                        <TableCell :colspan="activeColumns.length + 1" class="text-center py-8 text-muted-foreground">
-                            No people found.
-                        </TableCell>
-                    </TableRow>
+                    <ListEmptyRow
+                        v-if="!people?.data?.length"
+                        :colspan="activeColumns.length + 1"
+                        title="No people found"
+                    />
 
                     <TableRow
                         v-for="person in people.data"
@@ -129,44 +130,18 @@
                     </TableRow>
                 </TableBody>
             </Table>
-        </div>
+        </ListTableShell>
 
-        <!-- Pagination -->
-        <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-            <div class="text-sm text-muted-foreground">
-                Showing {{ people.from ?? 0 }} to {{ people.to ?? 0 }} of {{ people.total ?? 0 }} people
-            </div>
-
-            <div class="flex items-center gap-2 flex-wrap">
-                <Button
-                    size="sm"
-                    variant="outline"
-                    :disabled="people.current_page === 1"
-                    @click="goToPage(people.current_page - 1)"
-                >
-                    Previous
-                </Button>
-
-                <Button
-                    v-for="page in pagesToShow"
-                    :key="page"
-                    size="sm"
-                    :variant="page === people.current_page ? 'default' : 'outline'"
-                    @click="goToPage(page)"
-                >
-                    {{ page }}
-                </Button>
-
-                <Button
-                    size="sm"
-                    variant="outline"
-                    :disabled="people.current_page === people.last_page"
-                    @click="goToPage(people.current_page + 1)"
-                >
-                    Next
-                </Button>
-            </div>
-        </div>
+        <ListPagination
+            :current-page="people.current_page"
+            :last-page="people.last_page"
+            :from="people.from"
+            :to="people.to"
+            :total="people.total"
+            :pages="pagesToShow"
+            item-label="people"
+            @change="goToPage"
+        />
 
         <!-- Delete Dialog -->
         <AlertDialog :open="deleteDialogOpen" @update:open="deleteDialogOpen = $event">
@@ -193,7 +168,7 @@
                 </AlertDialogFooter>
             </AlertDialogContent>
         </AlertDialog>
-    </div>
+    </PageContainer>
 </template>
 
 <script setup>
@@ -201,9 +176,13 @@ import { computed, reactive, ref } from 'vue'
 import { Link, router } from '@inertiajs/vue3'
 import { useAuth } from '@/composables/useAuth'
 import { useFileDownload } from '@/composables/useFileDownload'
-import ColumnSettings from '@/Components/Lists/ColumnSettings.vue'
-import ListToolbar from '@/Components/Lists/ListToolbar.vue'
-import ListFilters from '@/Components/Lists/ListFilters.vue'
+import ColumnSettings from '@/components/Lists/ColumnSettings.vue'
+import ListToolbar from '@/components/Lists/ListToolbar.vue'
+import ListFilters from '@/components/Lists/ListFilters.vue'
+import ListEmptyRow from '@/components/Lists/ListEmptyRow.vue'
+import ListPagination from '@/components/Lists/ListPagination.vue'
+import ListTableShell from '@/components/Lists/ListTableShell.vue'
+import PageContainer from '@/components/layout/PageContainer.vue'
 
 import {
     ArrowDown,

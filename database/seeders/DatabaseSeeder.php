@@ -12,6 +12,7 @@ class DatabaseSeeder extends Seeder
             PermissionSeeder::class,
             RoleSeeder::class,
             JobTitleSeeder::class,
+            JobTitleRequirementSeeder::class,
             PositionSeeder::class,
             WorkflowStepSeeder::class,
             PageHelpSeeder::class,

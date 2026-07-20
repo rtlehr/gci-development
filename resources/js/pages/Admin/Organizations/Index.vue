@@ -177,9 +177,9 @@ import { computed, reactive, ref } from 'vue'
 import { Link, router } from '@inertiajs/vue3'
 import { useAuth } from '@/composables/useAuth'
 import { useFileDownload } from '@/composables/useFileDownload'
-import ColumnSettings from '@/Components/Lists/ColumnSettings.vue'
-import ListToolbar from '@/Components/Lists/ListToolbar.vue'
-import ListFilters from '@/Components/Lists/ListFilters.vue'
+import ColumnSettings from '@/components/Lists/ColumnSettings.vue'
+import ListToolbar from '@/components/Lists/ListToolbar.vue'
+import ListFilters from '@/components/Lists/ListFilters.vue'
 
 import {
     ArrowDown,

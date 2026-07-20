@@ -7,6 +7,7 @@ use App\Models\JobTitleSkill;
 use App\Models\JobTitleTask;
 
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 
 class JobTitleController extends Controller
@@ -31,11 +32,44 @@ class JobTitleController extends Controller
     }
 
     /**
-     * Show the create Job Title form.
+     * Display the combined Job Title Requirements workflow.
      */
+    public function requirementsIndex()
+    {
+        $jobTitles = JobTitle::query()
+            ->withCount([
+                'skills',
+                'tasks',
+
+                'skills as required_skills_count' => function ($query) {
+                    $query->where('requirement_type', 'required');
+                },
+
+                'skills as desired_skills_count' => function ($query) {
+                    $query->where('requirement_type', 'desired');
+                },
+            ])
+            ->orderBy('sort_order')
+            ->orderBy('name')
+            ->get();
+
+        return Inertia::render('JobTitleRequirements/Index', [
+            'jobTitles' => $jobTitles,
+        ]);
+    }
+
     public function create()
     {
-        return Inertia::render('JobTitles/Create');
+        return Inertia::render('JobTitles/Create', [
+            'cloneSources' => JobTitle::query()
+                ->withCount(['skills', 'tasks'])
+                ->orderBy('sort_order')
+                ->orderBy('name')
+                ->get([
+                    'id',
+                    'name',
+                ]),
+        ]);
     }
 
     /**
@@ -64,16 +98,65 @@ class JobTitleController extends Controller
                 'nullable',
                 'integer',
             ],
+
+            'clone_job_title_id' => [
+                'nullable',
+                'integer',
+                'exists:job_titles,id',
+            ],
         ]);
+
+        $cloneSourceId = $validated['clone_job_title_id'] ?? null;
+        unset($validated['clone_job_title_id']);
 
         $validated['sort_order'] = $validated['sort_order'] ?? 0;
         $validated['is_active'] = $validated['is_active'] ?? true;
 
-        $jobTitle = JobTitle::create($validated);
+        $jobTitle = DB::transaction(function () use ($validated, $cloneSourceId) {
+            $jobTitle = JobTitle::create($validated);
+
+            if (! $cloneSourceId) {
+                return $jobTitle;
+            }
+
+            $cloneSource = JobTitle::query()
+                ->with(['skills', 'tasks'])
+                ->findOrFail($cloneSourceId);
+
+            $jobTitle->skills()->createMany(
+                $cloneSource->skills
+                    ->map(fn (JobTitleSkill $skill) => [
+                        'name' => $skill->name,
+                        'description' => $skill->description,
+                        'requirement_type' => $skill->requirement_type,
+                        'is_active' => $skill->is_active,
+                        'sort_order' => $skill->sort_order,
+                    ])
+                    ->all()
+            );
+
+            $jobTitle->tasks()->createMany(
+                $cloneSource->tasks
+                    ->map(fn (JobTitleTask $task) => [
+                        'name' => $task->name,
+                        'description' => $task->description,
+                        'is_active' => $task->is_active,
+                        'sort_order' => $task->sort_order,
+                    ])
+                    ->all()
+            );
+
+            return $jobTitle;
+        });
 
         return redirect()
             ->route('job-titles.show', $jobTitle)
-            ->with('success', 'Job Title created successfully.');
+            ->with(
+                'success',
+                $cloneSourceId
+                    ? 'Job Title created and its skills and tasks were cloned successfully.'
+                    : 'Job Title created successfully.'
+            );
     }
 
     /**
@@ -181,6 +264,11 @@ class JobTitleController extends Controller
             'description' => [
                 'nullable',
                 'string',
+            ],
+
+            'requirement_type' => [
+                'required',
+                'in:required,desired',
             ],
 
             'sort_order' => [

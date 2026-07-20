@@ -13,6 +13,8 @@ import {
     Building2,
     Boxes,
     BriefcaseBusiness,
+    Palette,
+    ListTodo,
 } from 'lucide-vue-next'
 
 import AppLogo from '@/components/AppLogo.vue'
@@ -72,6 +74,12 @@ const allMainNavCategories: NavCategory[] = [
                 title: 'Job Titles',
                 href: '/job-titles',
                 icon: BriefcaseBusiness,
+                permission: 'access_positions',
+            },
+            {
+                title: 'Job Title Requirements',
+                href: '/job-title-requirements',
+                icon: ListTodo,
                 permission: 'access_positions',
             },
             {
@@ -143,6 +151,12 @@ const allMainNavCategories: NavCategory[] = [
                 title: 'Add Help Page',
                 href: '/admin/page-help',
                 icon: HelpCircle,
+                permission: 'view_admin',
+            },
+            {
+                title: 'Component Showcase',
+                href: '/admin/component-showcase',
+                icon: Palette,
                 permission: 'view_admin',
             },
         ],
