@@ -26,7 +26,7 @@ class PositionSeeder extends Seeder
 
             $jobTitles = JobTitle::query()->get()->keyBy('name');
             $projectManagers = User::query()
-                ->whereIn('email', ['project.manager1@localhost', 'project.manager2@localhost', 'admin@localhost', 'cotr@localhost'])
+                ->whereHas('roles', fn ($query) => $query->where('roles.name', 'project_manager'))
                 ->get()
                 ->keyBy('email');
 
@@ -50,12 +50,12 @@ class PositionSeeder extends Seeder
             $positions = [
                 $this->position('IRAD-SWE-001', 'Open', 'Software Engineer', 4, 'Washington, DC', 'Portal Engineering', 'Senior application engineer supporting secure portal modernization.', 'project.manager1@localhost', 54),
                 $this->position('IRAD-CYB-002', 'Open', 'Cybersecurity Analyst', 3, 'Arlington, VA', 'Cyber Operations', 'Security analyst supporting vulnerability management and authorization activities.', 'project.manager2@localhost', 41, highRisk: true),
-                $this->position('IRAD-DOP-003', 'In Process', 'DevOps Engineer', 4, 'Remote', 'Platform Engineering', 'DevOps engineer improving automated build, test, deployment, and monitoring workflows.', 'admin@localhost', 38),
-                $this->position('IRAD-BA-004', 'Open', 'Business Analyst', 3, 'Washington, DC', 'Customer Delivery', 'Business analyst supporting requirements discovery and process improvement.', 'cotr@localhost', 25),
+                $this->position('IRAD-DOP-003', 'In Process', 'DevOps Engineer', 4, 'Remote', 'Platform Engineering', 'DevOps engineer improving automated build, test, deployment, and monitoring workflows.', 'project.manager1@localhost', 38),
+                $this->position('IRAD-BA-004', 'Open', 'Business Analyst', 3, 'Washington, DC', 'Customer Delivery', 'Business analyst supporting requirements discovery and process improvement.', 'project.manager2@localhost', 25),
                 $this->position('IRAD-DBA-005', 'Closed', 'Database Administrator', 4, 'Winchester, VA', 'Data Services', 'Senior database administrator responsible for availability, tuning, and data protection.', 'project.manager1@localhost', 132, closeReason: 'Position filled after successful candidate selection and onboarding.'),
                 $this->position('IRAD-NET-006', 'Closed', 'Network Engineer', 3, 'Arlington, VA', 'Infrastructure', 'Network engineer supporting secure enterprise connectivity and operations.', 'project.manager2@localhost', 96, closeReason: 'Customer cancelled the requirement after funding priorities changed.'),
-                $this->position('IRAD-PM-007', 'Open', 'Project Manager', 4, 'Washington, DC', 'Program Management Office', 'Project manager coordinating schedule, risks, dependencies, and customer communications.', 'cotr@localhost', 18, travel: true),
-                $this->position('IRAD-QA-008', 'In Process', 'Quality Assurance Analyst', 3, 'Remote', 'Quality Engineering', 'QA analyst developing test plans and validating functional and accessibility requirements.', 'admin@localhost', 31),
+                $this->position('IRAD-PM-007', 'Open', 'Project Manager', 4, 'Washington, DC', 'Program Management Office', 'Project manager coordinating schedule, risks, dependencies, and customer communications.', 'project.manager1@localhost', 18, travel: true),
+                $this->position('IRAD-QA-008', 'In Process', 'Quality Assurance Analyst', 3, 'Remote', 'Quality Engineering', 'QA analyst developing test plans and validating functional and accessibility requirements.', 'project.manager2@localhost', 31),
                 $this->position('IRAD-DATA-009', 'Open', 'Data Analyst', 3, 'Arlington, VA', 'Business Intelligence', 'Data analyst building operational reports, dashboards, and decision-support products.', null, 12),
                 $this->position('IRAD-SYS-010', 'Open', 'Systems Administrator', 2, 'Winchester, VA', 'Infrastructure', 'Systems administrator supporting identity, patching, monitoring, and service availability.', null, 7),
             ];
@@ -78,9 +78,10 @@ class PositionSeeder extends Seeder
                         'sponsoring_organization_id' => $organization->id,
                         'funding_organization_id' => $organization->id,
                         'job_title_id' => $jobTitles[$jobTitleName]->id,
-                        'project_manager_user_id' => $projectManagerEmail
-                            ? $projectManagers->get($projectManagerEmail)?->id
-                            : null,
+                        'project_manager_user_id' => $this->eligibleProjectManagerId(
+                            $projectManagers,
+                            $projectManagerEmail,
+                        ),
                     ])
                 );
 
@@ -143,6 +144,28 @@ class PositionSeeder extends Seeder
                 ? 'Filled-position scenario. The Position status remains Closed because the current schema supports Open, In Process, and Closed.'
                 : 'Scenario-driven development position.',
         ];
+    }
+
+    private function eligibleProjectManagerId(
+        \Illuminate\Support\Collection $projectManagers,
+        ?string $email,
+    ): ?int {
+        if (! $email) {
+            return null;
+        }
+
+        $projectManager = $projectManagers->get($email);
+
+        if (! $projectManager) {
+            $this->command?->warn(
+                "PositionSeeder skipped invalid Project Manager assignment for {$email}. "
+                .'Only users with the project_manager role may be assigned.'
+            );
+
+            return null;
+        }
+
+        return $projectManager->id;
     }
 
     private function seedDetails(Position $position): void

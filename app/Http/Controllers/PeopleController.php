@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Group;
 use App\Models\Person;
+use App\Models\Role;
 use App\Models\Team;
 use App\Models\User;
 use App\Models\UserListPreference;
@@ -100,6 +101,10 @@ class PeopleController extends Controller
     {
         $users = User::orderBy('name')->get(['id', 'name']);
 
+        $roles = Role::query()
+            ->orderBy('name')
+            ->get(['id', 'name', 'label', 'description']);
+
         $groups = Group::orderBy('group_name')->get([
             'id',
             'group_name',
@@ -112,6 +117,7 @@ class PeopleController extends Controller
 
         return inertia('People/Create', [
             'users' => $users,
+            'roles' => $roles,
             'groups' => $groups,
             'teams' => $teams,
         ]);
@@ -169,6 +175,9 @@ class PeopleController extends Controller
 
             'team_ids' => ['nullable', 'array'],
             'team_ids.*' => ['integer', 'exists:teams,id'],
+
+            'role_ids' => ['nullable', 'array'],
+            'role_ids.*' => ['integer', 'exists:roles,id'],
         ]);
 
         $newAttachments = $request->file('new_attachments', []);
@@ -186,6 +195,7 @@ class PeopleController extends Controller
             $attachmentMeta = $validated['attachment_meta'] ?? [];
             $groupIds = $validated['group_ids'] ?? [];
             $teamIds = $validated['team_ids'] ?? [];
+            $roleIds = $validated['role_ids'] ?? [];
 
             unset(
                 $validated['phone_numbers'],
@@ -193,7 +203,8 @@ class PeopleController extends Controller
                 $validated['new_attachments'],
                 $validated['attachment_meta'],
                 $validated['group_ids'],
-                $validated['team_ids']
+                $validated['team_ids'],
+                $validated['role_ids']
             );
 
             $user = $personUserAccountService->createForPerson($validated);
@@ -201,6 +212,8 @@ class PeopleController extends Controller
             $validated['user_id'] = $user->id;
 
             $person = Person::create($validated);
+
+            $user->roles()->sync($roleIds);
 
             $person->groups()->sync($groupIds);
             $person->teams()->sync($teamIds);
@@ -233,6 +246,7 @@ class PeopleController extends Controller
             'attachments',
             'groups',
             'teams',
+            'user.roles:id,name,label,description',
         ])->findOrFail($id);
 
         return inertia('People/Show', [
@@ -254,9 +268,14 @@ class PeopleController extends Controller
             'attachments',
             'groups:id,group_name',
             'teams:id,team_name',
+            'user.roles:id,name,label,description',
         ])->findOrFail($id);
 
         $users = User::orderBy('name')->get(['id', 'name']);
+
+        $roles = Role::query()
+            ->orderBy('name')
+            ->get(['id', 'name', 'label', 'description']);
 
         $groups = Group::orderBy('group_name')->get([
             'id',
@@ -272,9 +291,15 @@ class PeopleController extends Controller
         $person->addresses = $addressService->normalizeForForm($person->addresses);
         $person->attachments_for_ui = $attachmentService->normalizeForUi($person->attachments);
 
+        $selectedRoleIds = $person->user
+            ? $person->user->roles()->pluck('roles.id')->map(fn ($id) => (int) $id)->values()
+            : collect();
+
         return inertia('People/Edit', [
             'person' => $person,
+            'selectedRoleIds' => $selectedRoleIds,
             'users' => $users,
+            'roles' => $roles,
             'groups' => $groups,
             'teams' => $teams,
         ]);
@@ -338,6 +363,9 @@ class PeopleController extends Controller
 
             'team_ids' => ['nullable', 'array'],
             'team_ids.*' => ['integer', 'exists:teams,id'],
+
+            'role_ids' => ['nullable', 'array'],
+            'role_ids.*' => ['integer', 'exists:roles,id'],
         ]);
 
         $newAttachments = $request->file('new_attachments', []);
@@ -357,6 +385,7 @@ class PeopleController extends Controller
             $removeAttachmentIds = $validated['remove_attachment_ids'] ?? [];
             $groupIds = $validated['group_ids'] ?? [];
             $teamIds = $validated['team_ids'] ?? [];
+            $roleIds = $validated['role_ids'] ?? [];
 
             unset(
                 $validated['phone_numbers'],
@@ -365,7 +394,8 @@ class PeopleController extends Controller
                 $validated['attachment_meta'],
                 $validated['remove_attachment_ids'],
                 $validated['group_ids'],
-                $validated['team_ids']
+                $validated['team_ids'],
+                $validated['role_ids']
             );
 
             $person->update($validated);
@@ -374,6 +404,11 @@ class PeopleController extends Controller
             $person->teams()->sync($teamIds);
 
             $personUserAccountService->syncFromPerson($person, $validated);
+
+            $person->refresh();
+            if ($person->user) {
+                $person->user->roles()->sync($roleIds);
+            }
             $personPhoneService->sync($person, $phoneNumbersInput);
             $addressService->sync($person, $addressesInput);
 

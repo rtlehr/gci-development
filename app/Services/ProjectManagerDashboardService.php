@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\Candidate;
+use App\Models\Person;
 use App\Models\Position;
 use App\Models\User;
 use Illuminate\Support\Collection;
@@ -17,13 +18,8 @@ class ProjectManagerDashboardService
      */
     public function positionsFor(User $user): Collection
     {
-        return Position::query()
+        return $this->positionQuery()
             ->where('project_manager_user_id', $user->id)
-            ->with([
-                'candidates.person:id,first_name,preferred_name,last_name',
-                'candidates.workflow.steps',
-                'candidates.stepEvents.workflowStep',
-            ])
             ->get()
             ->map(fn (Position $position) => $this->transformPosition($position))
             ->sortBy([
@@ -32,6 +28,65 @@ class ProjectManagerDashboardService
                 ['position_code', 'asc'],
             ])
             ->values();
+    }
+
+    /**
+     * Return every position for the PMO dashboard.
+     *
+     * @return Collection<int, array<string, mixed>>
+     */
+    public function allPositionsForPmo(): Collection
+    {
+        $positions = $this->positionQuery()
+            ->with('projectManager:id,name,email')
+            ->get();
+
+        $personByUserId = Person::query()
+            ->whereIn(
+                'user_id',
+                $positions
+                    ->pluck('project_manager_user_id')
+                    ->filter()
+                    ->unique()
+                    ->values()
+            )
+            ->get(['id', 'user_id'])
+            ->keyBy('user_id');
+
+        return $positions
+            ->map(function (Position $position) use ($personByUserId) {
+                $metrics = $this->transformPosition($position);
+                $projectManager = $position->projectManager;
+                $person = $projectManager
+                    ? $personByUserId->get($projectManager->id)
+                    : null;
+
+                return [
+                    ...$metrics,
+                    'project_manager' => [
+                        'id' => $projectManager?->id,
+                        'name' => $projectManager?->name,
+                        'email' => $projectManager?->email,
+                        'person_id' => $person?->id,
+                    ],
+                ];
+            })
+            ->sortBy([
+                ['attention_rank', 'asc'],
+                ['days_open', 'desc'],
+                ['position_code', 'asc'],
+            ])
+            ->values();
+    }
+
+    private function positionQuery()
+    {
+        return Position::query()
+            ->with([
+                'candidates.person:id,first_name,preferred_name,last_name',
+                'candidates.workflow.steps',
+                'candidates.stepEvents.workflowStep',
+            ]);
     }
 
     /**

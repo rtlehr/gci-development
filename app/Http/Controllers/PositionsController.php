@@ -12,9 +12,11 @@ use App\Models\User;
 use App\Models\UserListPreference;
 use App\Services\ListEngine;
 use App\Services\ListExportService;
+use App\Services\PositionService;
 use App\Services\UserResolver;
 use App\Support\ListDefinitions\PositionsDefinition;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
@@ -70,7 +72,7 @@ class PositionsController extends Controller
                 'name',
             ]);
 
-        $projectManagers = $this->projectManagers();
+        $projectManagers = app(PositionService::class)->projectManagers();
 
         return Inertia::render('Positions/Create', [
             'organizations' => $organizations,
@@ -81,18 +83,15 @@ class PositionsController extends Controller
 
     public function store(
         Request $request,
-        UserResolver $userResolver
+        UserResolver $userResolver,
+        PositionService $positionService
     ) {
         $validated = $this->validatePosition($request);
 
-        $position = Position::create($validated);
-
-        PositionActivity::create([
-            'position_id' => $position->id,
-            'user_id' => $userResolver->resolveUserId(),
-            'action' => 'created',
-            'description' => 'Position created.',
-        ]);
+        $position = $positionService->create(
+            attributes: $validated,
+            userId: $userResolver->resolveUserId(),
+        );
 
         return redirect()
             ->route('positions.edit', $position->id)
@@ -236,7 +235,7 @@ class PositionsController extends Controller
                 'name',
             ]);
 
-        $projectManagers = $this->projectManagers();
+        $projectManagers = app(PositionService::class)->projectManagers();
 
         $candidatePersonIds = $position->candidates
             ->pluck('person_id')
@@ -324,43 +323,18 @@ class PositionsController extends Controller
     public function update(
         Request $request,
         UserResolver $userResolver,
+        PositionService $positionService,
         $id
     ) {
         $position = Position::findOrFail($id);
 
-        $original = $position->getOriginal();
+        $validated = $this->validatePosition($request, $position);
 
-        $validated = $this->validatePosition($request);
-
-        $position->update($validated);
-
-        $ignoredActivityFields = [
-            'customer_created_at',
-        ];
-
-        foreach ($validated as $field => $newValue) {
-            if (in_array($field, $ignoredActivityFields)) {
-                continue;
-            }
-
-            $oldValue = $original[$field] ?? null;
-
-            if ((string) $oldValue !== (string) $newValue) {
-                PositionActivity::create([
-                    'position_id' => $position->id,
-                    'user_id' => $userResolver->resolveUserId(),
-                    'action' => 'updated',
-                    'field_name' => $field,
-                    'old_value' => is_array($oldValue)
-                        ? json_encode($oldValue)
-                        : $oldValue,
-                    'new_value' => is_array($newValue)
-                        ? json_encode($newValue)
-                        : $newValue,
-                    'description' => "Updated {$field}.",
-                ]);
-            }
-        }
+        $positionService->update(
+            position: $position,
+            attributes: $validated,
+            userId: $userResolver->resolveUserId(),
+        );
 
         return redirect()
             ->route('positions.edit', $position->id)
@@ -480,13 +454,14 @@ class PositionsController extends Controller
         );
     }
 
-    private function validatePosition(Request $request): array
+    private function validatePosition(Request $request, ?Position $position = null): array
     {
         $validated = $request->validate([
             'position_code' => [
-                'nullable',
+                'required',
                 'string',
                 'max:255',
+                Rule::unique('positions', 'position_code')->ignore($position?->id),
             ],
 
             'status' => [
@@ -631,31 +606,10 @@ class PositionsController extends Controller
             ],
         ]);
 
-        if (! empty($validated['project_manager_user_id'])) {
-            $isProjectManager = User::query()
-                ->whereKey($validated['project_manager_user_id'])
-                ->whereHas('roles', fn ($query) => $query->where('roles.name', 'project_manager'))
-                ->exists();
-
-            if (! $isProjectManager) {
-                throw \Illuminate\Validation\ValidationException::withMessages([
-                    'project_manager_user_id' => 'The selected user must have the Project Manager role.',
-                ]);
-            }
-        }
+        app(PositionService::class)->assertEligibleProjectManager(
+            $validated['project_manager_user_id'] ?? null
+        );
 
         return $validated;
-    }
-
-    private function projectManagers()
-    {
-        return User::query()
-            ->whereHas('roles', fn ($query) => $query->where('roles.name', 'project_manager'))
-            ->orderBy('name')
-            ->get([
-                'id',
-                'name',
-                'email',
-            ]);
     }
 }
