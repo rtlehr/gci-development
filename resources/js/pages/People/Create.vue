@@ -69,6 +69,18 @@
                         </div>
 
                         <div class="space-y-2">
+                            <Label for="alternate_first_name">Alternate First Name</Label>
+                            <Input
+                                id="alternate_first_name"
+                                v-model="form.alternate_first_name"
+                                :class="form.errors.alternate_first_name ? 'border-red-500' : ''"
+                            />
+                            <p v-if="form.errors.alternate_first_name" class="text-sm text-red-500">
+                                {{ form.errors.alternate_first_name }}
+                            </p>
+                        </div>
+
+                        <div class="space-y-2">
                             <Label for="preferred_name">Preferred Name</Label>
                             <Input
                                 id="preferred_name"
@@ -91,6 +103,18 @@
                             />
                             <p v-if="form.errors.last_name" class="text-sm text-red-500">
                                 {{ form.errors.last_name }}
+                            </p>
+                        </div>
+
+                        <div class="space-y-2">
+                            <Label for="alternate_last_name">Alternate Last Name</Label>
+                            <Input
+                                id="alternate_last_name"
+                                v-model="form.alternate_last_name"
+                                :class="form.errors.alternate_last_name ? 'border-red-500' : ''"
+                            />
+                            <p v-if="form.errors.alternate_last_name" class="text-sm text-red-500">
+                                {{ form.errors.alternate_last_name }}
                             </p>
                         </div>
 
@@ -260,8 +284,10 @@ const createEmptyAddress = (isPrimary = false) => ({
 const form = useForm({
     person_code: '',
     first_name: '',
+    alternate_first_name: '',
     preferred_name: '',
     last_name: '',
+    alternate_last_name: '',
     company_name: '',
     email: '',
     employment_status: '',

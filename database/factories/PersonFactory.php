@@ -25,7 +25,10 @@ class PersonFactory extends Factory
         return [
             'person_code' => 'EMP-' . str_pad($number++, 3, '0', STR_PAD_LEFT),
             'first_name' => fake()->firstName(),
+            'alternate_first_name' => fake()->optional(0.15)->firstName(),
+            'preferred_name' => fake()->optional(0.25)->firstName(),
             'last_name' => fake()->lastName(),
+            'alternate_last_name' => fake()->optional(0.10)->lastName(),
             'company_name' => fake()->randomElement($companies),
             'cell_phone' => fake()->numerify('###-###-####'),
             'email' => fake()->unique()->safeEmail(),

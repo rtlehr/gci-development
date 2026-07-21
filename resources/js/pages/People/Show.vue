@@ -33,8 +33,18 @@
                 <CardContent class="space-y-4">
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <DetailItem label="First Name" :value="person.first_name" />
+                        <DetailItem
+                            v-if="person.alternate_first_name"
+                            label="Alternate First Name"
+                            :value="person.alternate_first_name"
+                        />
                         <DetailItem label="Preferred Name" :value="person.preferred_name" />
                         <DetailItem label="Last Name" :value="person.last_name" />
+                        <DetailItem
+                            v-if="person.alternate_last_name"
+                            label="Alternate Last Name"
+                            :value="person.alternate_last_name"
+                        />
                         <DetailItem label="Company Name" :value="person.company_name" />
                         <DetailItem label="Email" :value="person.email" />
                         <DetailItem label="Employment Status" :value="person.employment_status" />

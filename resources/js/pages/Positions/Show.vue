@@ -24,6 +24,7 @@ import PageHeader from '@/components/layout/PageHeader.vue'
 import PositionSectionNavigation, {
     type PositionSection,
 } from '@/components/positions/PositionSectionNavigation.vue'
+import PositionCandidatesTable from '@/components/positions/PositionCandidatesTable.vue'
 import StatCard from '@/components/data/StatCard.vue'
 import StatusBadge from '@/components/data/StatusBadge.vue'
 import DetailCard from '@/components/show/DetailCard.vue'
@@ -53,14 +54,6 @@ import {
     DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import {
-    Table,
-    TableBody,
-    TableCell,
-    TableHead,
-    TableHeader,
-    TableRow,
-} from '@/components/ui/table'
 
 type GenericRecord = Record<string, any>
 
@@ -916,115 +909,9 @@ function confirmDelete(): void {
             </template>
 
             <template v-else-if="activeSection === 'candidates'">
-                <Card>
-                    <CardHeader class="border-b">
-                        <CardTitle class="text-lg">
-                            Position Candidates
-                        </CardTitle>
-                    </CardHeader>
-
-                    <CardContent class="p-0">
-                        <div
-                            v-if="positionCandidates.length"
-                            class="overflow-x-auto"
-                        >
-                            <Table class="min-w-[1100px]">
-                                <TableHeader>
-                                    <TableRow>
-                                        <TableHead>Candidate</TableHead>
-                                        <TableHead>Candidate Code</TableHead>
-                                        <TableHead>Status</TableHead>
-                                        <TableHead>Workflow</TableHead>
-                                        <TableHead>Current Step</TableHead>
-                                        <TableHead>Submitted</TableHead>
-                                        <TableHead>Scheduled Start</TableHead>
-                                        <TableHead class="text-right">
-                                            FBR
-                                        </TableHead>
-                                    </TableRow>
-                                </TableHeader>
-
-                                <TableBody>
-                                    <TableRow
-                                        v-for="candidate in positionCandidates"
-                                        :key="candidate.id"
-                                    >
-                                        <TableCell>
-                                            <div class="font-medium">
-                                                {{ candidate.person?.full_name || 'Unknown candidate' }}
-                                            </div>
-
-                                            <div
-                                                v-if="candidate.person?.email"
-                                                class="mt-1 text-xs text-muted-foreground"
-                                            >
-                                                {{ candidate.person.email }}
-                                            </div>
-                                        </TableCell>
-
-                                        <TableCell>
-                                            {{ candidate.candidate_code || '—' }}
-                                        </TableCell>
-
-                                        <TableCell>
-                                            <StatusBadge
-                                                :label="candidate.status || 'Unknown'"
-                                                tone="info"
-                                            />
-                                        </TableCell>
-
-                                        <TableCell>
-                                            {{ candidate.workflow?.name || '—' }}
-                                        </TableCell>
-
-                                        <TableCell>
-                                            <div>
-                                                {{ candidate.workflow?.step_name || 'Not started' }}
-                                            </div>
-
-                                            <div
-                                                v-if="candidate.workflow?.step_number && candidate.workflow?.step_count"
-                                                class="mt-1 text-xs text-muted-foreground"
-                                            >
-                                                Step {{ candidate.workflow.step_number }}
-                                                of {{ candidate.workflow.step_count }}
-                                            </div>
-                                        </TableCell>
-
-                                        <TableCell>
-                                            {{ formatDate(candidate.submitted_at) }}
-                                        </TableCell>
-
-                                        <TableCell>
-                                            {{ formatDate(candidate.scheduled_start_date) }}
-                                        </TableCell>
-
-                                        <TableCell class="text-right">
-                                            {{ candidate.candidate_fbr ?? '—' }}
-                                        </TableCell>
-                                    </TableRow>
-                                </TableBody>
-                            </Table>
-                        </div>
-
-                        <div
-                            v-else
-                            class="p-10 text-center"
-                        >
-                            <Users
-                                class="mx-auto h-10 w-10 text-muted-foreground/60"
-                            />
-
-                            <h3 class="mt-4 font-semibold">
-                                No candidates assigned
-                            </h3>
-
-                            <p class="mt-1 text-sm text-muted-foreground">
-                                This position does not currently have any candidates.
-                            </p>
-                        </div>
-                    </CardContent>
-                </Card>
+                <PositionCandidatesTable
+                    :candidates="positionCandidates"
+                />
             </template>
         </div>
 

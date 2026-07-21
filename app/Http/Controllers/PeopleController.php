@@ -127,8 +127,10 @@ class PeopleController extends Controller
         $validated = $request->validate([
             'person_code' => ['required', 'string', 'max:255', 'unique:people,person_code'],
             'first_name' => ['required', 'string', 'max:255'],
+            'alternate_first_name' => ['nullable', 'string', 'max:255'],
             'preferred_name' => ['nullable', 'string', 'max:255'],
             'last_name' => ['required', 'string', 'max:255'],
+            'alternate_last_name' => ['nullable', 'string', 'max:255'],
             'company_name' => ['nullable', 'string', 'max:255'],
             'email' => ['nullable', 'email', 'max:255', 'unique:users,email'],
             'employment_status' => ['nullable', 'string', 'max:255'],
@@ -291,8 +293,10 @@ class PeopleController extends Controller
         $validated = $request->validate([
             'person_code' => ['required', 'string', 'max:255', 'unique:people,person_code,' . $person->id],
             'first_name' => ['required', 'string', 'max:255'],
+            'alternate_first_name' => ['nullable', 'string', 'max:255'],
             'preferred_name' => ['nullable', 'string', 'max:255'],
             'last_name' => ['required', 'string', 'max:255'],
+            'alternate_last_name' => ['nullable', 'string', 'max:255'],
             'company_name' => ['nullable', 'string', 'max:255'],
             'email' => ['nullable', 'email', 'max:255'],
             'employment_status' => ['nullable', 'string', 'max:255'],

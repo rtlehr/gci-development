@@ -96,7 +96,7 @@ onBeforeUnmount(() => window.removeEventListener('beforeunload', handleBeforeUnl
 
             <aside class="min-w-0">
                 <InfoPanel title="Position Summary" description="This preview updates as you complete the form.">
-                    <DisplayField label="Position Code" :value="form.position_code || 'Not entered'" :muted="!form.position_code" />
+                    <DisplayField label="Position ID" :value="form.position_code || 'Not entered'" :muted="!form.position_code" />
                     <DisplayField label="Status" :value="form.status" />
                     <DisplayField label="Level" :value="form.level ? `Level ${form.level}` : 'Not selected'" :muted="!form.level" />
                     <DisplayField label="Team Name" :value="form.team_name || 'Not entered'" :muted="!form.team_name" />
