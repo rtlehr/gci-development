@@ -78,13 +78,31 @@ defineOptions({
     <Head title="Dashboard" />
 
     <div class="flex h-full flex-1 flex-col gap-4 overflow-x-auto rounded-xl p-4">
+
+        <ProjectManagerPositionsCard
+            v-if="showProjectManagerPositions"
+            :positions="assignedPositions"
+        />
+
+        <PmoPositionsOverviewCard
+            v-if="showPmoPositions"
+            :positions="pmoPositions"
+        />
+
+        <div
+            class="relative min-h-[100vh] flex-1 rounded-xl border border-sidebar-border/70 dark:border-sidebar-border md:min-h-min"
+        >
+            <DashboardAlerts :alerts="alerts" />
+        </div>
+
         <div class="grid auto-rows-min gap-4 md:grid-cols-3">
             <div
                 class="relative aspect-video overflow-hidden rounded-xl border border-sidebar-border/70 p-4 dark:border-sidebar-border"
             >
-                <p>User: {{ username }}</p>
-                <p>Role: {{ role }}</p>
-                <p>Permissions: {{ permissions.join(', ') }}</p>
+                <p><strong>User:</strong> {{ username }}</p>
+                <!--<p><strong>Role:</strong> {{ role }}</p>-->
+                <!--<p>Permissions: {{ permissions.join(', ') }}</p>-->
+
             </div>
 
             <PermissionBlock
@@ -111,20 +129,6 @@ defineOptions({
             </PermissionBlock>
         </div>
 
-        <ProjectManagerPositionsCard
-            v-if="showProjectManagerPositions"
-            :positions="assignedPositions"
-        />
 
-        <PmoPositionsOverviewCard
-            v-if="showPmoPositions"
-            :positions="pmoPositions"
-        />
-
-        <div
-            class="relative min-h-[100vh] flex-1 rounded-xl border border-sidebar-border/70 dark:border-sidebar-border md:min-h-min"
-        >
-            <DashboardAlerts :alerts="alerts" />
-        </div>
     </div>
 </template>
