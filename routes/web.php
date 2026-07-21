@@ -1,7 +1,6 @@
 <?php
 
 use App\Models\Alert;
-use App\Models\Position;
 use App\Models\Ticket;
 use App\Services\UserResolver;
 use Illuminate\Http\Request;
@@ -9,6 +8,7 @@ use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 use Illuminate\Support\Facades\Auth;
 use App\Models\Person;
+use App\Services\ProjectManagerDashboardService;
 
 Route::get('/admin', fn () => Inertia::render('Admin/Index'))
     ->name('admin.index')
@@ -18,7 +18,10 @@ Route::get('/admin/component-showcase', fn () => Inertia::render('Admin/Componen
     ->name('admin.component-showcase')
     ->middleware('permission:view_admin');
 
-$renderDashboard = function (UserResolver $userResolver) {
+$renderDashboard = function (
+    UserResolver $userResolver,
+    ProjectManagerDashboardService $projectManagerDashboardService
+) {
     $user = $userResolver->resolveUser();
 
     $assignedTickets = Ticket::query()
@@ -42,34 +45,8 @@ $renderDashboard = function (UserResolver $userResolver) {
             'created_at',
         ]);
 
-    $assignedPositions = Position::query()
-        ->where('project_manager_user_id', $user->id)
-        ->with('jobTitle:id,name')
-        ->withCount('candidates')
-        ->orderByRaw("CASE LOWER(status)
-            WHEN 'open' THEN 1
-            WHEN 'in process' THEN 2
-            WHEN 'pending' THEN 3
-            WHEN 'on hold' THEN 4
-            WHEN 'filled' THEN 5
-            WHEN 'closed' THEN 6
-            ELSE 7
-        END")
-        ->orderBy('position_code')
-        ->get([
-            'id',
-            'position_code',
-            'job_title_id',
-            'job_title',
-            'status',
-        ])
-        ->map(fn (Position $position): array => [
-            'id' => $position->id,
-            'position_code' => $position->position_code,
-            'title' => $position->jobTitle?->name ?: $position->job_title,
-            'status' => $position->status,
-            'candidates_count' => $position->candidates_count,
-        ]);
+    $assignedPositions = $projectManagerDashboardService
+        ->positionsFor($user);
 
     $hasProjectManagerRole = $user->roles()
         ->where(function ($query) {
@@ -88,7 +65,8 @@ $renderDashboard = function (UserResolver $userResolver) {
 
         'assignedTickets' => $assignedTickets,
         'assignedPositions' => $assignedPositions,
-        'showProjectManagerPositions' => $hasProjectManagerRole || $assignedPositions->isNotEmpty(),
+        'showProjectManagerPositions' => $hasProjectManagerRole
+            || $assignedPositions->isNotEmpty(),
     ]);
 };
 

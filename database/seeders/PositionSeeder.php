@@ -8,354 +8,162 @@ use App\Models\Position;
 use App\Models\PositionActivity;
 use App\Models\PositionCustomSkill;
 use App\Models\PositionCustomTask;
+use App\Models\User;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\DB;
 
 class PositionSeeder extends Seeder
 {
     public function run(): void
     {
-        $rootOrganization = Organization::firstOrCreate(
-            ['id' => 1],
-            [
-                'parent_id' => null,
-                'name' => 'Org Root',
-                'status' => 'active',
-                'notes' => 'Default root organization.',
-            ]
-        );
-
-        $rootOrganization->rebuildHierarchyFields();
-
-        $jobTitles = JobTitle::query()
-            ->whereIn('name', ['Frontend Developer', 'Program Manager'])
-            ->get()
-            ->keyBy('name');
-
-        $frontendDeveloper = $jobTitles->get('Frontend Developer');
-        $programManager = $jobTitles->get('Program Manager');
-
-        if (! $frontendDeveloper || ! $programManager) {
-            $this->command?->warn('PositionSeeder skipped: required job titles were not found.');
-
-            return;
-        }
-
-        $positions = [
-            [
-                'position_code' => 'TEST-001',
-                'status' => 'Open',
-                'job_title_id' => $frontendDeveloper->id,
-                'experience_level' => 'Experienced',
-                'certifications_required' => 'Security+ Certification',
-                'training_required' => 'Annual Cyber Awareness Training',
-                'experience' => '5+ years of experience with Vue.js, Laravel, and enterprise application development.',
-                'is_essential' => true,
-                'travel_required' => false,
-                'high_risk_role' => false,
-                'location' => 'Washington, DC',
-                'building' => 'Building A',
-                'mission_description' => 'Supports enterprise modernization initiatives and frontend application development.',
-                'component' => 'Technology Services',
-                'funding_info' => 'FY26 approved funding allocation.',
-                'project_team_name' => 'China Team',
-                'customer_lead_name' => 'Sherman Potter',
-                'customer_created_at' => now()->subDays(30),
-                'notes' => 'Seeded testing position for the development environment.',
-            ],
-            [
-                'position_code' => 'IRAD-DEV-002',
-                'status' => 'Open',
-                'job_title_id' => $frontendDeveloper->id,
-                'experience_level' => 'Senior',
-                'certifications_required' => 'Security+ or equivalent',
-                'training_required' => 'Secure coding and annual cyber awareness training',
-                'experience' => '7+ years building accessible enterprise web applications.',
-                'is_essential' => true,
-                'travel_required' => false,
-                'high_risk_role' => false,
-                'location' => 'Arlington, VA',
-                'building' => 'Innovation Center',
-                'mission_description' => 'Leads frontend architecture and reusable component development for IRAD.',
-                'component' => 'Application Engineering',
-                'funding_info' => 'Funded through the FY26 modernization portfolio.',
-                'project_team_name' => 'IRAD Modernization',
-                'customer_lead_name' => 'Margaret Houlihan',
-                'customer_created_at' => now()->subDays(45),
-                'notes' => 'Priority senior development position.',
-            ],
-            [
-                'position_code' => 'IRAD-DEV-003',
-                'status' => 'In Process',
-                'job_title_id' => $frontendDeveloper->id,
-                'experience_level' => 'Experienced',
-                'certifications_required' => null,
-                'training_required' => 'Vue 3 and TypeScript standards orientation',
-                'experience' => '4+ years of modern JavaScript and component-based UI development.',
-                'is_essential' => false,
-                'travel_required' => false,
-                'high_risk_role' => false,
-                'location' => 'Remote',
-                'building' => null,
-                'mission_description' => 'Builds responsive user interfaces and improves usability across portal modules.',
-                'component' => 'User Experience',
-                'funding_info' => 'Funded through September 2027.',
-                'project_team_name' => 'Portal Experience',
-                'customer_lead_name' => 'B. J. Hunnicutt',
-                'customer_created_at' => now()->subDays(22),
-                'notes' => 'Candidate interviews are underway.',
-            ],
-            [
-                'position_code' => 'IRAD-DEV-004',
-                'status' => 'Open',
-                'job_title_id' => $frontendDeveloper->id,
-                'experience_level' => 'Novice',
-                'certifications_required' => null,
-                'training_required' => 'Annual cyber awareness training',
-                'experience' => '1-3 years of frontend development experience.',
-                'is_essential' => false,
-                'travel_required' => false,
-                'high_risk_role' => false,
-                'location' => 'Winchester, VA',
-                'building' => 'Building C',
-                'mission_description' => 'Supports feature delivery, defect correction, and automated UI testing.',
-                'component' => 'Application Engineering',
-                'funding_info' => 'Entry-level labor allocation approved for FY26.',
-                'project_team_name' => 'Development Support',
-                'customer_lead_name' => 'Maxwell Klinger',
-                'customer_created_at' => now()->subDays(18),
-                'notes' => 'Suitable for a developer growing into enterprise application work.',
-            ],
-            [
-                'position_code' => 'IRAD-DEV-005',
-                'status' => 'Closed',
-                'job_title_id' => $frontendDeveloper->id,
-                'experience_level' => 'Experienced',
-                'certifications_required' => 'Security+ Certification',
-                'training_required' => 'Accessibility and secure coding training',
-                'experience' => '5+ years of frontend development.',
-                'is_essential' => false,
-                'travel_required' => false,
-                'high_risk_role' => false,
-                'location' => 'Washington, DC',
-                'building' => 'Building B',
-                'mission_description' => 'Provided short-term support for the initial portal release.',
-                'component' => 'Technology Services',
-                'funding_info' => 'Funding period completed.',
-                'request_to_close' => true,
-                'scheduled_to_close' => now()->subDays(20),
-                'close_date' => now()->subDays(15),
-                'close_reason' => 'Initial release support period completed.',
-                'project_team_name' => 'Release Support',
-                'customer_lead_name' => 'Henry Blake',
-                'customer_created_at' => now()->subMonths(6),
-                'notes' => 'Retained as a closed-position test scenario.',
-            ],
-            [
-                'position_code' => 'IRAD-PM-006',
-                'status' => 'Open',
-                'job_title_id' => $programManager->id,
-                'experience_level' => 'Senior',
-                'certifications_required' => 'PMP preferred',
-                'training_required' => 'Program governance and records management training',
-                'experience' => '8+ years managing complex software delivery programs.',
-                'is_essential' => true,
-                'travel_required' => true,
-                'high_risk_role' => false,
-                'location' => 'Arlington, VA',
-                'building' => 'Program Office',
-                'mission_description' => 'Directs the IRAD roadmap, delivery schedule, risks, and stakeholder coordination.',
-                'component' => 'Program Management Office',
-                'funding_info' => 'Fully funded senior program management billet.',
-                'project_team_name' => 'IRAD Leadership',
-                'customer_lead_name' => 'Sherman Potter',
-                'customer_created_at' => now()->subDays(60),
-                'notes' => 'High-priority leadership position.',
-            ],
-            [
-                'position_code' => 'IRAD-PM-007',
-                'status' => 'In Process',
-                'job_title_id' => $programManager->id,
-                'experience_level' => 'Experienced',
-                'certifications_required' => 'PMP or DAWIA certification preferred',
-                'training_required' => 'Customer engagement orientation',
-                'experience' => '5+ years managing technical projects and cross-functional teams.',
-                'is_essential' => true,
-                'travel_required' => true,
-                'high_risk_role' => false,
-                'location' => 'Washington, DC',
-                'building' => 'Headquarters',
-                'mission_description' => 'Manages project execution, dependencies, milestones, and customer communications.',
-                'component' => 'Program Management Office',
-                'funding_info' => 'FY26 and FY27 funding approved.',
-                'project_team_name' => 'Customer Delivery',
-                'customer_lead_name' => 'Trapper John McIntyre',
-                'customer_created_at' => now()->subDays(33),
-                'notes' => 'Selection package is under review.',
-            ],
-            [
-                'position_code' => 'IRAD-PM-008',
-                'status' => 'Open',
-                'job_title_id' => $programManager->id,
-                'experience_level' => 'Experienced',
-                'certifications_required' => null,
-                'training_required' => 'Agile delivery and risk management training',
-                'experience' => '4+ years coordinating software projects.',
-                'is_essential' => false,
-                'travel_required' => false,
-                'high_risk_role' => false,
-                'location' => 'Remote',
-                'building' => null,
-                'mission_description' => 'Coordinates backlog readiness, sprint planning, and release communications.',
-                'component' => 'Delivery Operations',
-                'funding_info' => 'Funded through the digital transformation initiative.',
-                'project_team_name' => 'Agile Delivery',
-                'customer_lead_name' => 'Charles Winchester',
-                'customer_created_at' => now()->subDays(27),
-                'notes' => 'Remote-capable project management role.',
-            ],
-            [
-                'position_code' => 'IRAD-PM-009',
-                'status' => 'Open',
-                'job_title_id' => $programManager->id,
-                'experience_level' => 'Novice',
-                'certifications_required' => 'CAPM preferred',
-                'training_required' => 'Project controls and scheduling fundamentals',
-                'experience' => '2+ years supporting project schedules and status reporting.',
-                'is_essential' => false,
-                'travel_required' => false,
-                'high_risk_role' => false,
-                'location' => 'Winchester, VA',
-                'building' => 'Building C',
-                'mission_description' => 'Supports schedule maintenance, action tracking, and project reporting.',
-                'component' => 'Program Controls',
-                'funding_info' => 'Junior project support allocation.',
-                'project_team_name' => 'Program Controls',
-                'customer_lead_name' => 'Frank Burns',
-                'customer_created_at' => now()->subDays(16),
-                'notes' => 'Designed as a growth position for a developing project manager.',
-            ],
-            [
-                'position_code' => 'IRAD-PM-010',
-                'status' => 'Closed',
-                'job_title_id' => $programManager->id,
-                'experience_level' => 'Senior',
-                'certifications_required' => 'PMP',
-                'training_required' => 'Program governance training',
-                'experience' => '10+ years of program management experience.',
-                'is_essential' => true,
-                'travel_required' => true,
-                'high_risk_role' => false,
-                'location' => 'Arlington, VA',
-                'building' => 'Program Office',
-                'mission_description' => 'Managed the planning phase for the original IRAD implementation.',
-                'component' => 'Program Management Office',
-                'funding_info' => 'Planning-phase funding completed.',
-                'request_to_close' => true,
-                'scheduled_to_close' => now()->subMonths(2),
-                'close_date' => now()->subMonth(),
-                'close_reason' => 'Planning phase completed and responsibilities transitioned.',
-                'project_team_name' => 'Initial Planning',
-                'customer_lead_name' => 'Henry Blake',
-                'customer_created_at' => now()->subYear(),
-                'notes' => 'Closed program manager position for reporting and filtering tests.',
-            ],
-            [
-                'position_code' => 'IRAD-DEV-011',
-                'status' => 'In Process',
-                'job_title_id' => $frontendDeveloper->id,
-                'experience_level' => 'Senior',
-                'certifications_required' => 'Security+ Certification',
-                'training_required' => 'Section 508 and WCAG implementation training',
-                'experience' => '7+ years delivering accessible enterprise interfaces.',
-                'is_essential' => true,
-                'travel_required' => false,
-                'high_risk_role' => false,
-                'location' => 'Washington, DC',
-                'building' => 'Accessibility Lab',
-                'mission_description' => 'Leads accessibility remediation, design-system standards, and usability validation.',
-                'component' => 'User Experience',
-                'funding_info' => 'Accessibility modernization funding approved.',
-                'project_team_name' => 'Accessibility Initiative',
-                'customer_lead_name' => 'Kellye Nakahara',
-                'customer_created_at' => now()->subDays(38),
-                'notes' => 'Candidate screening is in progress.',
-            ],
-            [
-                'position_code' => 'IRAD-PM-012',
-                'status' => 'Open',
-                'job_title_id' => $programManager->id,
-                'experience_level' => 'Senior',
-                'certifications_required' => 'PMP preferred',
-                'training_required' => 'Portfolio governance and executive briefing training',
-                'experience' => '8+ years overseeing multiple concurrent technical projects.',
-                'is_essential' => true,
-                'travel_required' => true,
-                'high_risk_role' => true,
-                'location' => 'Washington, DC',
-                'building' => 'Headquarters',
-                'mission_description' => 'Oversees portfolio priorities, executive reporting, and cross-program risk resolution.',
-                'component' => 'Executive Portfolio Office',
-                'funding_info' => 'Executive portfolio funding approved through FY28.',
-                'project_team_name' => 'Portfolio Governance',
-                'customer_lead_name' => 'Sherman Potter',
-                'customer_created_at' => now()->subDays(50),
-                'notes' => 'High-visibility portfolio management position.',
-            ],
-        ];
-
-        foreach ($positions as $positionData) {
-            $position = Position::updateOrCreate(
-                ['position_code' => $positionData['position_code']],
-                array_merge([
-                    'position_organization_id' => $rootOrganization->id,
-                    'sponsoring_organization_id' => $rootOrganization->id,
-                    'funding_organization_id' => $rootOrganization->id,
-                    'request_to_close' => false,
-                    'scheduled_to_close' => null,
-                    'close_date' => null,
-                    'close_reason' => null,
-                ], $positionData)
+        DB::transaction(function (): void {
+            $organization = Organization::query()->firstOrCreate(
+                ['name' => 'Org Root'],
+                ['parent_id' => null, 'status' => 'active', 'notes' => 'Default root organization.']
             );
 
-            $this->seedPositionDetails($position);
-        }
+            $organization->rebuildHierarchyFields();
 
-        $this->seedActivityHistory(
-            Position::query()->where('position_code', 'TEST-001')->first()
-        );
+            $jobTitles = JobTitle::query()->get()->keyBy('name');
+            $projectManagers = User::query()
+                ->whereIn('email', ['project.manager1@localhost', 'project.manager2@localhost', 'admin@localhost', 'cotr@localhost'])
+                ->get()
+                ->keyBy('email');
+
+            $requiredTitles = [
+                'Software Engineer', 'Cybersecurity Analyst', 'DevOps Engineer', 'Business Analyst',
+                'Database Administrator', 'Network Engineer', 'Project Manager', 'Quality Assurance Analyst',
+                'Data Analyst', 'Systems Administrator',
+            ];
+
+            if (collect($requiredTitles)->contains(fn (string $title) => ! $jobTitles->has($title))) {
+                $this->command?->warn('PositionSeeder skipped because one or more required job titles are missing.');
+                return;
+            }
+
+            // Remove only records created by earlier development position seeders.
+            Position::query()
+                ->where('position_code', 'TEST-001')
+                ->orWhere('position_code', 'like', 'IRAD-%')
+                ->delete();
+
+            $positions = [
+                $this->position('IRAD-SWE-001', 'Open', 'Software Engineer', 4, 'Washington, DC', 'Portal Engineering', 'Senior application engineer supporting secure portal modernization.', 'project.manager1@localhost', 54),
+                $this->position('IRAD-CYB-002', 'Open', 'Cybersecurity Analyst', 3, 'Arlington, VA', 'Cyber Operations', 'Security analyst supporting vulnerability management and authorization activities.', 'project.manager2@localhost', 41, highRisk: true),
+                $this->position('IRAD-DOP-003', 'In Process', 'DevOps Engineer', 4, 'Remote', 'Platform Engineering', 'DevOps engineer improving automated build, test, deployment, and monitoring workflows.', 'admin@localhost', 38),
+                $this->position('IRAD-BA-004', 'Open', 'Business Analyst', 3, 'Washington, DC', 'Customer Delivery', 'Business analyst supporting requirements discovery and process improvement.', 'cotr@localhost', 25),
+                $this->position('IRAD-DBA-005', 'Closed', 'Database Administrator', 4, 'Winchester, VA', 'Data Services', 'Senior database administrator responsible for availability, tuning, and data protection.', 'project.manager1@localhost', 132, closeReason: 'Position filled after successful candidate selection and onboarding.'),
+                $this->position('IRAD-NET-006', 'Closed', 'Network Engineer', 3, 'Arlington, VA', 'Infrastructure', 'Network engineer supporting secure enterprise connectivity and operations.', 'project.manager2@localhost', 96, closeReason: 'Customer cancelled the requirement after funding priorities changed.'),
+                $this->position('IRAD-PM-007', 'Open', 'Project Manager', 4, 'Washington, DC', 'Program Management Office', 'Project manager coordinating schedule, risks, dependencies, and customer communications.', 'cotr@localhost', 18, travel: true),
+                $this->position('IRAD-QA-008', 'In Process', 'Quality Assurance Analyst', 3, 'Remote', 'Quality Engineering', 'QA analyst developing test plans and validating functional and accessibility requirements.', 'admin@localhost', 31),
+                $this->position('IRAD-DATA-009', 'Open', 'Data Analyst', 3, 'Arlington, VA', 'Business Intelligence', 'Data analyst building operational reports, dashboards, and decision-support products.', null, 12),
+                $this->position('IRAD-SYS-010', 'Open', 'Systems Administrator', 2, 'Winchester, VA', 'Infrastructure', 'Systems administrator supporting identity, patching, monitoring, and service availability.', null, 7),
+            ];
+
+            foreach ($positions as $positionData) {
+                // These values are lookup helpers for the seeder only. They are not
+                // columns on the positions table and must not be mass assigned.
+                $jobTitleName = $positionData['job_title_name'];
+                $projectManagerEmail = $positionData['project_manager_email'];
+
+                unset(
+                    $positionData['job_title_name'],
+                    $positionData['project_manager_email'],
+                );
+
+                $position = Position::updateOrCreate(
+                    ['position_code' => $positionData['position_code']],
+                    array_merge($positionData, [
+                        'position_organization_id' => $organization->id,
+                        'sponsoring_organization_id' => $organization->id,
+                        'funding_organization_id' => $organization->id,
+                        'job_title_id' => $jobTitles[$jobTitleName]->id,
+                        'project_manager_user_id' => $projectManagerEmail
+                            ? $projectManagers->get($projectManagerEmail)?->id
+                            : null,
+                    ])
+                );
+
+                $this->seedDetails($position);
+            }
+
+            $this->seedActivityHistory(Position::query()->where('position_code', 'IRAD-SWE-001')->first());
+        });
     }
 
-    private function seedPositionDetails(Position $position): void
-    {
-        $skills = [
-            ['name' => 'Active Secret Clearance', 'description' => 'Candidate must be eligible for or already hold an active clearance.'],
-            ['name' => 'GCI Process Familiarity', 'description' => 'Knowledge of internal GCI workflows and development processes.'],
-        ];
+    private function position(
+        string $code,
+        string $status,
+        string $jobTitle,
+        int $level,
+        string $location,
+        string $team,
+        string $mission,
+        ?string $projectManagerEmail,
+        int $daysOld,
+        bool $highRisk = false,
+        bool $travel = false,
+        ?string $closeReason = null,
+    ): array {
+        $isClosed = $status === 'Closed';
 
-        foreach ($skills as $index => $skill) {
+        return [
+            'position_code' => $code,
+            'status' => $status,
+            'job_title_name' => $jobTitle,
+            'job_title' => $jobTitle,
+            'level' => $level,
+            'team_name' => $team,
+            'project_team_name' => $team,
+            'project_manager_email' => $projectManagerEmail,
+            'certifications_required' => in_array($jobTitle, ['Cybersecurity Analyst', 'Systems Administrator', 'Network Engineer'], true) ? 'Security+ or equivalent preferred.' : null,
+            'training_required' => 'Annual cyber awareness and IRAD process orientation.',
+            'experience' => $level >= 4 ? 'Seven or more years of directly relevant experience.' : 'Three or more years of directly relevant experience.',
+            'is_essential' => in_array($jobTitle, ['Software Engineer', 'Cybersecurity Analyst', 'Project Manager'], true),
+            'travel_required' => $travel,
+            'high_risk_role' => $highRisk,
+            'location' => $location,
+            'building' => $location === 'Remote' ? null : 'Building '.chr(65 + ($daysOld % 4)),
+            'mission_description' => $mission,
+            'component' => $team,
+            'funding_info' => 'Development seed scenario with approved FY26 funding.',
+            'request_to_close' => $isClosed,
+            'scheduled_to_close' => $isClosed ? now()->subDays(14)->toDateString() : null,
+            'close_date' => $isClosed ? now()->subDays(7)->toDateString() : null,
+            'close_reason' => $closeReason,
+            'customer_lead_name' => match ($projectManagerEmail) {
+                'project.manager1@localhost' => 'B. J. Hunnicutt',
+                'project.manager2@localhost' => 'Charles Winchester',
+                'admin@localhost' => 'Hawkeye Pierce',
+                'cotr@localhost' => 'Margaret Houlihan',
+                default => 'Sherman Potter',
+            },
+            'customer_created_at' => now()->subDays($daysOld)->toDateString(),
+            'notes' => $isClosed && str_contains((string) $closeReason, 'filled')
+                ? 'Filled-position scenario. The Position status remains Closed because the current schema supports Open, In Process, and Closed.'
+                : 'Scenario-driven development position.',
+        ];
+    }
+
+    private function seedDetails(Position $position): void
+    {
+        foreach ([
+            ['Active clearance eligibility', 'Candidate must be eligible to satisfy the position security requirements.'],
+            ['Customer communication', 'Candidate must communicate clearly with technical and non-technical stakeholders.'],
+        ] as $index => [$name, $description]) {
             PositionCustomSkill::updateOrCreate(
-                ['position_id' => $position->id, 'name' => $skill['name']],
-                [
-                    'description' => $skill['description'],
-                    'is_active' => true,
-                    'sort_order' => $index + 1,
-                ]
+                ['position_id' => $position->id, 'name' => $name],
+                ['description' => $description, 'is_active' => true, 'sort_order' => $index + 1]
             );
         }
 
-        $tasks = [
-            ['name' => 'Support IRAD modernization work', 'description' => 'Assist with modernization and refinement of IRAD application modules.'],
-            ['name' => 'Prepare customer-facing demos', 'description' => 'Support demonstrations and walkthroughs for customer stakeholders.'],
-        ];
-
-        foreach ($tasks as $index => $task) {
+        foreach ([
+            ['Support mission delivery', 'Perform role-specific work supporting the assigned mission.'],
+            ['Prepare status updates', 'Provide concise progress, risk, and dependency updates.'],
+        ] as $index => [$name, $description]) {
             PositionCustomTask::updateOrCreate(
-                ['position_id' => $position->id, 'name' => $task['name']],
-                [
-                    'description' => $task['description'],
-                    'is_active' => true,
-                    'sort_order' => $index + 1,
-                ]
+                ['position_id' => $position->id, 'name' => $name],
+                ['description' => $description, 'is_active' => true, 'sort_order' => $index + 1]
             );
         }
     }
@@ -366,29 +174,15 @@ class PositionSeeder extends Seeder
             return;
         }
 
-        $activities = [
-            ['field_name' => 'status', 'old_value' => 'Draft', 'new_value' => 'Open', 'description' => 'Updated status.', 'days_ago' => 14],
-            ['field_name' => 'experience_level', 'old_value' => 'Novice', 'new_value' => 'Experienced', 'description' => 'Updated experience level.', 'days_ago' => 12],
-            ['field_name' => 'high_risk_role', 'old_value' => 'No', 'new_value' => 'Yes', 'description' => 'Updated high risk role.', 'days_ago' => 10],
-            ['field_name' => 'location', 'old_value' => 'Washington, DC', 'new_value' => 'Arlington, VA', 'description' => 'Updated location.', 'days_ago' => 7],
-            ['field_name' => 'funding_info', 'old_value' => 'FY25 approved funding allocation.', 'new_value' => 'FY26 approved funding allocation.', 'description' => 'Updated funding information.', 'days_ago' => 3],
-        ];
-
-        foreach ($activities as $activity) {
+        foreach ([
+            ['status', 'Draft', 'Open', 'Position opened for recruiting.', 45],
+            ['level', '3', '4', 'Position level increased after customer review.', 39],
+            ['location', 'Arlington, VA', 'Washington, DC', 'Duty location updated.', 30],
+            ['funding_info', 'Pending approval', 'FY26 funding approved', 'Funding was approved.', 21],
+        ] as [$field, $old, $new, $description, $daysAgo]) {
             PositionActivity::updateOrCreate(
-                [
-                    'position_id' => $position->id,
-                    'action' => 'updated',
-                    'field_name' => $activity['field_name'],
-                    'description' => $activity['description'],
-                ],
-                [
-                    'user_id' => null,
-                    'old_value' => $activity['old_value'],
-                    'new_value' => $activity['new_value'],
-                    'created_at' => now()->subDays($activity['days_ago']),
-                    'updated_at' => now()->subDays($activity['days_ago']),
-                ]
+                ['position_id' => $position->id, 'action' => 'updated', 'field_name' => $field, 'description' => $description],
+                ['user_id' => null, 'old_value' => $old, 'new_value' => $new, 'created_at' => now()->subDays($daysAgo), 'updated_at' => now()->subDays($daysAgo)]
             );
         }
     }

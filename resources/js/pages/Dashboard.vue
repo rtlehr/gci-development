@@ -14,6 +14,12 @@ type AssignedPosition = {
     title: string | null
     status: string | null
     candidates_count: number
+    candidate_names: string[]
+    current_stage: string
+    current_stage_count: number
+    days_open: number
+    next_action: string
+    next_action_tone: 'success' | 'warning' | 'danger' | 'info' | 'neutral'
 }
 
 const { username, role, permissions } = useAuth()
