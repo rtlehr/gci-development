@@ -1,0 +1,48 @@
+<script setup lang="ts">
+import { computed, provide, ref } from 'vue';
+import { usePage } from '@inertiajs/vue3';
+import FlashMessages from '@/components/FlashMessages.vue';
+import HelpPanel from '@/components/ui/HelpPanel.vue';
+import ImpersonationBanner from '@/components/public-portal/ImpersonationBanner.vue';
+import PublicPortalFooter from '@/components/public-portal/PublicPortalFooter.vue';
+import PublicPortalHeader from '@/components/public-portal/PublicPortalHeader.vue';
+
+const props = defineProps<{ helpKey?: string }>();
+const page = usePage();
+const helpOpen = ref(false);
+
+const currentHelpKey = computed(() => {
+    if (props.helpKey?.trim()) return props.helpKey;
+    return (page.component ?? '').replace(/\//g, '.').toLowerCase();
+});
+
+const openHelpPanel = () => { helpOpen.value = true; };
+const closeHelpPanel = () => { helpOpen.value = false; };
+const toggleHelpPanel = () => { helpOpen.value = !helpOpen.value; };
+
+provide('openHelpPanel', openHelpPanel);
+provide('closeHelpPanel', closeHelpPanel);
+provide('toggleHelpPanel', toggleHelpPanel);
+provide('helpOpen', helpOpen);
+provide('currentHelpKey', currentHelpKey);
+</script>
+
+<template>
+    <div class="public-portal-theme flex min-h-screen w-full bg-[#f7f8f7] text-[#3a3a3a]">
+        <a href="#main-content" class="sr-only z-50 rounded bg-white px-4 py-2 text-[#005c43] focus:not-sr-only focus:fixed focus:left-4 focus:top-4">
+            Skip to main content
+        </a>
+
+        <div class="min-w-0 flex-1">
+            <ImpersonationBanner />
+            <PublicPortalHeader />
+            <FlashMessages />
+            <main id="main-content" tabindex="-1">
+                <slot />
+            </main>
+            <PublicPortalFooter />
+        </div>
+
+        <HelpPanel :open="helpOpen" :help-key="currentHelpKey" @close="closeHelpPanel" />
+    </div>
+</template>

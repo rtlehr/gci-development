@@ -170,3 +170,16 @@
         @apply bg-background text-foreground;
     }
 }
+
+.public-portal-theme {
+    --portal-primary: #005c43;
+    --portal-primary-hover: #004734;
+    --portal-neutral: #e3e3e3;
+    --portal-foreground: #3a3a3a;
+    --portal-surface-muted: #f7f8f7;
+    color: var(--portal-foreground);
+}
+
+.public-portal-theme :focus-visible {
+    outline-color: var(--portal-primary);
+}

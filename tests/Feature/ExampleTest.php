@@ -1,9 +1,9 @@
-<?php
+﻿<?php
 
 use App\Models\User;
 use Inertia\Testing\AssertableInertia as Assert;
 
-test('authenticated users can visit the home route', function () {
+test('authenticated users can visit the public home route', function () {
     $user = User::factory()->create();
 
     $response = $this
@@ -13,8 +13,6 @@ test('authenticated users can visit the home route', function () {
     $response
         ->assertOk()
         ->assertInertia(fn (Assert $page) => $page
-            ->component('Dashboard')
-            ->has('alerts')
-            ->has('assignedTickets')
+            ->component('Public/Home')
         );
 });

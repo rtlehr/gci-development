@@ -1,7 +1,7 @@
 import { createInertiaApp } from '@inertiajs/vue3';
 import { initializeTheme } from '@/composables/useAppearance';
 import AppLayout from '@/layouts/AppLayout.vue';
-import AuthLayout from '@/layouts/AuthLayout.vue';
+import PublicPortalLayout from '@/layouts/PublicPortalLayout.vue';
 import SettingsLayout from '@/layouts/settings/Layout.vue';
 
 const appName = import.meta.env.VITE_APP_NAME || 'Laravel';
@@ -10,12 +10,14 @@ createInertiaApp({
     title: (title) => (title ? `${title} - ${appName}` : appName),
     layout: (name) => {
         switch (true) {
-            case name === 'Welcome':
-                return null;
+            case name.startsWith('Public/'):
+                return PublicPortalLayout;
+            case name.startsWith('Portal/'):
+                return PublicPortalLayout;
             case name.startsWith('auth/'):
-                return AuthLayout;
+                return PublicPortalLayout;
             case name.startsWith('settings/'):
-                return [AppLayout, SettingsLayout];
+                return [PublicPortalLayout, SettingsLayout];
             default:
                 return AppLayout;
         }

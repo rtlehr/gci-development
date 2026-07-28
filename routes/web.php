@@ -1,14 +1,13 @@
 <?php
 
-use App\Models\Alert;
 use App\Models\Person;
-use App\Models\Ticket;
-use App\Services\ProjectManagerDashboardService;
-use App\Services\UserResolver;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
+
+require __DIR__.'/public.php';
+require __DIR__.'/portal.php';
 
 Route::get('/admin', fn () => Inertia::render('Admin/Index'))
     ->name('admin.index')
@@ -18,76 +17,9 @@ Route::get('/admin/component-showcase', fn () => Inertia::render('Admin/Componen
     ->name('admin.component-showcase')
     ->middleware('permission:view_admin');
 
-$renderDashboard = function (
-    UserResolver $userResolver,
-    ProjectManagerDashboardService $projectManagerDashboardService
-) {
-    $user = $userResolver->resolveUser();
-
-    $assignedTickets = Ticket::query()
-        ->where(function ($query) use ($user) {
-            $query->where('assigned_to_user_id', $user->id)
-                ->orWhereHas('assignedUsers', function ($assignedUserQuery) use ($user) {
-                    $assignedUserQuery->where('users.id', $user->id);
-                });
-        })
-        ->whereNotIn('status', ['complete', 'canceled'])
-        ->latest()
-        ->limit(10)
-        ->get([
-            'id',
-            'ticket_number',
-            'title',
-            'request_type',
-            'importance',
-            'category',
-            'status',
-            'created_at',
-        ]);
-
-    $assignedPositions = $projectManagerDashboardService
-        ->positionsFor($user);
-
-    $hasProjectManagerRole = $user->roles()
-        ->where(function ($query) {
-            $query->whereRaw('LOWER(name) IN (?, ?)', [
-                'project manager',
-                'project_manager',
-            ])->orWhereRaw('LOWER(label) = ?', [
-                'project manager',
-            ]);
-        })
-        ->exists();
-
-    $hasPmoRole = $user->roles()
-        ->whereRaw('LOWER(name) = ?', ['pmo'])
-        ->exists();
-
-    $pmoPositions = $hasPmoRole
-        ? $projectManagerDashboardService->allPositionsForPmo()
-        : collect();
-
-    return Inertia::render('Dashboard', [
-        'alerts' => Alert::query()
-            ->where('user_id', $user->id)
-            ->whereNull('read_at')
-            ->latest()
-            ->limit(10)
-            ->get(),
-
-        'assignedTickets' => $assignedTickets,
-
-        'assignedPositions' => $assignedPositions,
-        'showProjectManagerPositions' => $hasProjectManagerRole
-            || $assignedPositions->isNotEmpty(),
-
-        'pmoPositions' => $pmoPositions,
-        'showPmoPositions' => $hasPmoRole,
-    ]);
-};
-
-Route::get('/', $renderDashboard)->name('home');
-Route::get('/dashboard', $renderDashboard)->name('dashboard');
+Route::get('/dashboard', fn () => redirect()->route('portal.dashboard'))
+    ->middleware('auth')
+    ->name('dashboard');
 
 Route::post('/dev/switch-user', function (Request $request) {
     abort_unless(config('app.debug') === true, 403);
