@@ -61,18 +61,36 @@ class DashboardController extends Controller
             ->limit(8)
             ->get();
 
-        $assignedPositions = $projectManagerDashboardService->positionsFor($user);
+        $isPmo = $user->roles()
+            ->whereRaw('LOWER(name) = ?', ['pmo'])
+            ->exists();
+
+        $assignedPositions = $isPmo
+            ? collect()
+            : $projectManagerDashboardService->positionsFor($user);
+
+        $pmoPositions = $isPmo
+            ? $projectManagerDashboardService->allPositionsForPmo()
+            : collect();
 
         return Inertia::render('Portal/Dashboard', [
             'alerts' => $alerts,
             'assignedTickets' => $assignedTickets,
             'submittedTickets' => $submittedTickets,
             'assignedPositions' => $assignedPositions,
+            'pmoPositions' => $pmoPositions,
+            'showPmoPositions' => $isPmo,
+            'showProjectManagerPositions' => ! $isPmo && $assignedPositions->isNotEmpty(),
             'summary' => [
                 'unreadAlerts' => $alerts->count(),
                 'assignedTickets' => $assignedTickets->count(),
                 'submittedTickets' => $submittedTickets->count(),
-                'assignedPositions' => $assignedPositions->count(),
+                'assignedPositions' => $isPmo
+                    ? $pmoPositions->count()
+                    : $assignedPositions->count(),
+                'positionsLabel' => $isPmo
+                    ? 'all positions'
+                    : 'assigned positions',
             ],
         ]);
     }

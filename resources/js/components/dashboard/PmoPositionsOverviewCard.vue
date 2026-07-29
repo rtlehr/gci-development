@@ -115,10 +115,18 @@ function daysOpenClass(days: number): string {
     return 'border-red-200 bg-red-50 text-red-700 dark:border-red-900 dark:bg-red-950 dark:text-red-300'
 }
 
+function positionEditHref(position: PmoPosition): string {
+    return `/portal/positions/${position.id}/edit`
+}
+
+function candidatesEditHref(position: PmoPosition): string {
+    return `${positionEditHref(position)}?section=candidates`
+}
+
 function currentStageHref(position: PmoPosition): string {
     return position.current_stage_candidate_id
-        ? `/candidates/${position.current_stage_candidate_id}`
-        : `/positions/${position.id}?section=candidates`
+        ? `/portal/candidates/${position.current_stage_candidate_id}/edit?section=steps`
+        : candidatesEditHref(position)
 }
 </script>
 
@@ -133,7 +141,7 @@ function currentStageHref(position: PmoPosition): string {
                 <div>
                     <CardTitle>All Positions — PMO Overview</CardTitle>
                     <CardDescription class="mt-1">
-                        Organization-wide position status, ownership, candidates, and workflow activity.
+                        All positions with direct access to Portal edit workflows.
                     </CardDescription>
                 </div>
             </div>
@@ -183,7 +191,7 @@ function currentStageHref(position: PmoPosition): string {
 
                                 <TableCell>
                                     <Link
-                                        :href="`/positions/${position.id}`"
+                                        :href="positionEditHref(position)"
                                         class="group inline-flex items-center gap-1.5 font-medium text-primary underline-offset-4 hover:underline"
                                     >
                                         {{ position.title || 'Untitled Position' }}
@@ -197,7 +205,7 @@ function currentStageHref(position: PmoPosition): string {
                                 <TableCell>
                                     <Link
                                         v-if="position.project_manager.person_id"
-                                        :href="`/people/${position.project_manager.person_id}`"
+                                        :href="`/portal/people/${position.project_manager.person_id}`"
                                         class="group inline-flex items-center gap-1.5 font-medium text-primary underline-offset-4 hover:underline"
                                     >
                                         <UserRound class="h-3.5 w-3.5" aria-hidden="true" />
@@ -242,7 +250,7 @@ function currentStageHref(position: PmoPosition): string {
                                     <Tooltip>
                                         <TooltipTrigger as-child>
                                             <Link
-                                                :href="`/positions/${position.id}?section=candidates`"
+                                                :href="candidatesEditHref(position)"
                                                 class="inline-flex rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                                             >
                                                 <Badge
@@ -268,7 +276,7 @@ function currentStageHref(position: PmoPosition): string {
                                                     Position Candidates
                                                 </p>
                                                 <p class="text-xs text-muted-foreground">
-                                                    Click to open the Candidates tab.
+                                                    Click to edit the position and open its Candidates section.
                                                 </p>
                                             </div>
 
