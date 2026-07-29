@@ -2,19 +2,10 @@
 import { Link, usePage } from '@inertiajs/vue3'
 import { computed } from 'vue'
 import {
-    LayoutGrid,
-    CircleUserRound,
-    ClipboardMinus,
-    ArrowLeftRight,
-    LifeBuoy,
     HelpCircle,
-    Group,
-    BookUser,
-    Building2,
-    Boxes,
-    BriefcaseBusiness,
-    Palette,
-    ListTodo,
+    LayoutGrid,
+    LifeBuoy,
+    Settings,
 } from 'lucide-vue-next'
 
 import AppLogo from '@/components/AppLogo.vue'
@@ -31,7 +22,6 @@ import {
     SidebarMenuItem,
 } from '@/components/ui/sidebar'
 
-import { dashboard } from '@/routes'
 import type { NavItem } from '@/types'
 import TicketQuickLink from '@/components/TicketQuickLink.vue'
 import DevUserSwitcher from '@/components/dev/DevUserSwitcher.vue'
@@ -42,121 +32,47 @@ type NavCategory = {
 }
 
 const page = usePage()
-
 const isImpersonating = computed(() => page.props.dev?.isImpersonating === true)
-
 const { can, user } = useAuth()
-
 const devDebug = computed(() => page.props.dev?.debug === true)
 
 const allMainNavCategories: NavCategory[] = [
     {
-        title: 'Users',
+        title: 'Navigation',
         items: [
             {
-                title: 'Dashboard',
-                href: dashboard(),
+                title: 'Admin Portal',
+                href: '/admin',
                 icon: LayoutGrid,
+                permission: 'view_admin',
             },
             {
-                title: 'People',
-                href: '/people',
-                icon: CircleUserRound,
-                permission: 'access_people',
-            },
-            {
-                title: 'Positions',
-                href: '/positions',
-                icon: ClipboardMinus,
-                permission: 'access_positions',
-            },
-            {
-                title: 'Job Titles',
-                href: '/job-titles',
-                icon: BriefcaseBusiness,
-                permission: 'access_positions',
-            },
-            {
-                title: 'Job Title Requirements',
-                href: '/job-title-requirements',
-                icon: ListTodo,
-                permission: 'access_positions',
-            },
-            {
-                title: 'Candidates',
-                href: '/candidates',
-                icon: BookUser,
-                permission: 'access_candidates',
+                title: 'View Portal',
+                href: '/portal/dashboard',
+                icon: LayoutGrid,
+                permission: 'view_admin',
             },
         ],
     },
     {
-        title: 'Admin',
+        title: 'Quick Access',
         items: [
             {
-                title: 'User Permissions',
-                href: '/admin/users',
-                icon: ArrowLeftRight,
-                permission: 'access_permissions',
-            },
-            {
-                title: 'Add Groups',
-                href: '/admin/groups',
-                icon: Group,
-                permission: 'access_groups',
-            },
-            {
-                title: 'Add Teams',
-                href: '/admin/teams',
-                icon: Boxes,
-                permission: 'view_admin',
-            },
-            {
-                title: 'Organizations',
-                href: '/admin/organizations',
-                icon: Building2,
-                permission: 'view_admin',
-            },
-            {
-                title: 'Add Workflows',
-                href: '/workflows',
-                icon: LifeBuoy,
-                permission: 'view_admin',
-            },
-            {
-                title: 'View Tickets',
+                title: 'Support Tickets',
                 href: '/admin/tickets',
                 icon: LifeBuoy,
-                permission: 'view_admin',
-            },
-            
-        ],
-    },
-    {
-        title: 'Owner',
-        items: [
-            {
-                title: 'Edit Permissions',
-                href: '/admin/permissions',
-                icon: ArrowLeftRight,
-                permission: 'view_admin',
+                permission: 'access_tickets',
             },
             {
-                title: 'Edit Roles',
-                href: '/admin/roles',
-                icon: ArrowLeftRight,
-                permission: 'view_admin',
-            },
-            {
-                title: 'Add Help Page',
+                title: 'Page Help',
                 href: '/admin/page-help',
                 icon: HelpCircle,
                 permission: 'view_admin',
             },
             {
-                title: 'Component Showcase',
-                href: '/admin/component-showcase',
-                icon: Palette,
+                title: 'Site Settings',
+                href: '/admin/site-settings',
+                icon: Settings,
                 permission: 'view_admin',
             },
         ],
@@ -168,10 +84,7 @@ const mainNavCategories = computed(() =>
         .map((category) => ({
             ...category,
             items: category.items.filter((item) => {
-                if (!item.permission) {
-                    return true
-                }
-
+                if (!item.permission) return true
                 return can(item.permission)
             }),
         }))
@@ -188,9 +101,7 @@ const mainNavCategories = computed(() =>
             <div class="font-semibold">Impersonating</div>
             <div>
                 {{ user.username }}
-                <span v-if="user.person_code">
-                    ({{ user.person_code }})
-                </span>
+                <span v-if="user.person_code">({{ user.person_code }})</span>
             </div>
         </div>
 
@@ -198,7 +109,7 @@ const mainNavCategories = computed(() =>
             <SidebarMenu>
                 <SidebarMenuItem>
                     <SidebarMenuButton size="lg" as-child>
-                        <Link :href="dashboard()">
+                        <Link href="/admin">
                             <AppLogo />
                         </Link>
                     </SidebarMenuButton>
@@ -212,9 +123,7 @@ const mainNavCategories = computed(() =>
                 :key="category.title"
                 class="px-2 py-2"
             >
-                <div
-                    class="px-2 pb-1 text-xs font-semibold uppercase tracking-wide text-muted-foreground"
-                >
+                <div class="px-2 pb-1 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                     {{ category.title }}
                 </div>
 
@@ -224,7 +133,6 @@ const mainNavCategories = computed(() =>
 
         <SidebarFooter>
             <TicketQuickLink />
-
             <DevUserSwitcher />
         </SidebarFooter>
     </Sidebar>

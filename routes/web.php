@@ -88,3 +88,4 @@ require __DIR__.'/Alerts.php';
 require __DIR__.'/Teams.php';
 require __DIR__.'/email.php';
 require __DIR__.'/jobTitles.php';
+require __DIR__.'/site-settings.php';

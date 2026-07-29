@@ -21,6 +21,12 @@ import PortalManageMenu from './PortalManageMenu.vue';
 import PublicPortalNavigation from './PublicPortalNavigation.vue';
 
 const page = usePage();
+const siteSettings = computed(() => page.props.siteSettings as {
+    branding: {
+        program_mark: string;
+        portal_name: string;
+    };
+});
 const { user, username, can, hasRole } = useAuth();
 const mobileOpen = ref(false);
 
@@ -63,18 +69,18 @@ function closeMobile(): void {
 </script>
 
 <template>
-    <header class="border-b border-[#e3e3e3] bg-white">
+    <header class="border-b border-[var(--portal-border)] bg-[var(--portal-surface)]">
         <div class="mx-auto flex h-20 max-w-7xl items-center gap-4 px-4 sm:px-6 lg:px-8">
             <Link
                 href="/"
-                class="flex shrink-0 items-center gap-3 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#005c43]"
+                class="flex shrink-0 items-center gap-3 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--portal-primary)]"
             >
-                <span class="flex h-10 w-10 items-center justify-center rounded-lg bg-[#005c43] text-white">
+                <span class="flex h-10 w-10 items-center justify-center rounded-lg bg-[var(--portal-primary)] text-white">
                     <AppLogoIcon class="h-6 w-6" />
                 </span>
                 <span>
-                    <span class="block text-sm font-semibold tracking-wide text-[#005c43]">ZION</span>
-                    <span class="block text-base font-bold text-[#3a3a3a]">INSIGHT Portal</span>
+                    <span class="block text-sm font-semibold tracking-wide text-[var(--portal-primary)]">{{ siteSettings.branding.program_mark }}</span>
+                    <span class="block text-base font-bold text-[var(--portal-text)]">{{ siteSettings.branding.portal_name }}</span>
                 </span>
             </Link>
 
@@ -88,7 +94,7 @@ function closeMobile(): void {
                 <Button
                     v-if="user && canOpenAdminDashboard"
                     as-child
-                    class="hidden gap-2 bg-[#005c43] text-white hover:bg-[#004735] sm:inline-flex"
+                    class="hidden gap-2 bg-[var(--portal-primary)] text-white hover:bg-[var(--portal-primary-hover)] sm:inline-flex"
                 >
                     <Link href="/admin">
                         <LayoutDashboard class="h-4 w-4" />
@@ -113,10 +119,10 @@ function closeMobile(): void {
             </div>
         </div>
 
-        <div v-if="mobileOpen" class="border-t border-[#e3e3e3] bg-white px-4 py-4 lg:hidden">
+        <div v-if="mobileOpen" class="border-t border-[var(--portal-border)] bg-[var(--portal-surface)] px-4 py-4 lg:hidden">
             <nav aria-label="Mobile navigation" class="mx-auto grid max-w-7xl gap-4">
-                <div v-if="user" class="border-b border-[#e3e3e3] px-2 pb-3">
-                    <div class="text-sm font-semibold text-[#3a3a3a]">{{ username }}</div>
+                <div v-if="user" class="border-b border-[var(--portal-border)] px-2 pb-3">
+                    <div class="text-sm font-semibold text-[var(--portal-text)]">{{ username }}</div>
                     <div class="mt-0.5 text-xs text-muted-foreground">Authenticated portal user</div>
                 </div>
 
@@ -127,8 +133,8 @@ function closeMobile(): void {
                     <div class="grid gap-1">
                         <Link
                             href="/"
-                            class="rounded-md px-3 py-2 font-medium hover:bg-[#005c43]/10"
-                            :class="isActive('/') ? 'bg-[#005c43]/10 text-[#005c43]' : ''"
+                            class="rounded-md px-3 py-2 font-medium hover:bg-[var(--portal-primary-soft)]"
+                            :class="isActive('/') ? 'bg-[var(--portal-primary-soft)] text-[var(--portal-primary)]' : ''"
                             @click="closeMobile"
                         >
                             Home
@@ -136,8 +142,8 @@ function closeMobile(): void {
                         <Link
                             v-if="user"
                             href="/portal/dashboard"
-                            class="rounded-md px-3 py-2 font-medium hover:bg-[#005c43]/10"
-                            :class="isActive('/portal/dashboard') ? 'bg-[#005c43]/10 text-[#005c43]' : ''"
+                            class="rounded-md px-3 py-2 font-medium hover:bg-[var(--portal-primary-soft)]"
+                            :class="isActive('/portal/dashboard') ? 'bg-[var(--portal-primary-soft)] text-[var(--portal-primary)]' : ''"
                             @click="closeMobile"
                         >
                             My Portal
@@ -145,8 +151,8 @@ function closeMobile(): void {
                         <Link
                             v-if="user"
                             href="/portal/tickets"
-                            class="rounded-md px-3 py-2 font-medium hover:bg-[#005c43]/10"
-                            :class="isActive('/portal/tickets') ? 'bg-[#005c43]/10 text-[#005c43]' : ''"
+                            class="rounded-md px-3 py-2 font-medium hover:bg-[var(--portal-primary-soft)]"
+                            :class="isActive('/portal/tickets') ? 'bg-[var(--portal-primary-soft)] text-[var(--portal-primary)]' : ''"
                             @click="closeMobile"
                         >
                             Support
@@ -154,18 +160,18 @@ function closeMobile(): void {
                         <a
                             v-else
                             href="/#support"
-                            class="rounded-md px-3 py-2 font-medium hover:bg-[#005c43]/10"
+                            class="rounded-md px-3 py-2 font-medium hover:bg-[var(--portal-primary-soft)]"
                             @click="closeMobile"
                         >
                             Support
                         </a>
-                        <a href="/#resources" class="rounded-md px-3 py-2 font-medium hover:bg-[#005c43]/10" @click="closeMobile">
+                        <a href="/#resources" class="rounded-md px-3 py-2 font-medium hover:bg-[var(--portal-primary-soft)]" @click="closeMobile">
                             Resources
                         </a>
-                        <a href="/#program" class="rounded-md px-3 py-2 font-medium hover:bg-[#005c43]/10" @click="closeMobile">
+                        <a href="/#program" class="rounded-md px-3 py-2 font-medium hover:bg-[var(--portal-primary-soft)]" @click="closeMobile">
                             Program
                         </a>
-                        <a href="/#faqs" class="rounded-md px-3 py-2 font-medium hover:bg-[#005c43]/10" @click="closeMobile">
+                        <a href="/#faqs" class="rounded-md px-3 py-2 font-medium hover:bg-[var(--portal-primary-soft)]" @click="closeMobile">
                             FAQs
                         </a>
                     </div>
@@ -194,8 +200,8 @@ function closeMobile(): void {
                                     <Link
                                         v-else
                                         :href="item.href"
-                                        class="flex items-center gap-2 rounded-md px-3 py-2 font-medium hover:bg-[#005c43]/10"
-                                        :class="isActive(item.href) ? 'bg-[#005c43]/10 text-[#005c43]' : ''"
+                                        class="flex items-center gap-2 rounded-md px-3 py-2 font-medium hover:bg-[var(--portal-primary-soft)]"
+                                        :class="isActive(item.href) ? 'bg-[var(--portal-primary-soft)] text-[var(--portal-primary)]' : ''"
                                         @click="closeMobile"
                                     >
                                         <component :is="item.icon" class="h-4 w-4" />
@@ -210,7 +216,7 @@ function closeMobile(): void {
                 <Link
                     v-if="user && canOpenAdminDashboard"
                     href="/admin"
-                    class="flex items-center justify-center gap-2 rounded-md bg-[#005c43] px-3 py-2 font-semibold text-white hover:bg-[#004735]"
+                    class="flex items-center justify-center gap-2 rounded-md bg-[var(--portal-primary)] px-3 py-2 font-semibold text-white hover:bg-[var(--portal-primary-hover)]"
                     @click="closeMobile"
                 >
                     <LayoutDashboard class="h-4 w-4" />

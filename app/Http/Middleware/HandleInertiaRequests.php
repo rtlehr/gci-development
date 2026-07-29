@@ -5,6 +5,7 @@ namespace App\Http\Middleware;
 use App\Models\Alert;
 use App\Models\Person;
 use App\Services\CurrentUserContext;
+use App\Services\SiteSettingsService;
 use App\Support\RoleAbbreviation;
 use Illuminate\Http\Request;
 use Inertia\Middleware;
@@ -15,6 +16,7 @@ class HandleInertiaRequests extends Middleware
 
     public function __construct(
         private readonly CurrentUserContext $currentUser,
+        private readonly SiteSettingsService $siteSettings,
     ) {
     }
 
@@ -55,6 +57,8 @@ class HandleInertiaRequests extends Middleware
             ...parent::share($request),
 
             'appLabels' => config('app_labels'),
+
+            'siteSettings' => fn () => $this->siteSettings->all(),
 
             'headerAlerts' => [
                 'count' => $alertCount,
