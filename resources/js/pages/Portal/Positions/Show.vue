@@ -911,6 +911,7 @@ function confirmDelete(): void {
             <template v-else-if="activeSection === 'candidates'">
                 <PositionCandidatesTable
                     :candidates="positionCandidates"
+                    context="portal"
                 />
             </template>
         </div>

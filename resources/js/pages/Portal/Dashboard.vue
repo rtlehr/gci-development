@@ -19,7 +19,11 @@ withDefaults(defineProps<{ alerts?:any[]; assignedTickets?:any[]; submittedTicke
 <article class="rounded-xl border border-[#e3e3e3] bg-white p-5 shadow-sm"><LifeBuoy class="h-6 w-6 text-[#005c43]"/><h2 class="mt-3 font-bold">Assigned tickets</h2><p class="mt-1 text-sm text-[#3a3a3a]/70">{{ summary.assignedTickets }} active</p></article>
 <article class="rounded-xl border border-[#e3e3e3] bg-white p-5 shadow-sm"><BriefcaseBusiness class="h-6 w-6 text-[#005c43]"/><h2 class="mt-3 font-bold">Assigned positions</h2><p class="mt-1 text-sm text-[#3a3a3a]/70">{{ summary.assignedPositions }} positions</p></article>
 </div>
-<ProjectManagerPositionsCard v-if="assignedPositions.length" :positions="assignedPositions" />
+<ProjectManagerPositionsCard
+    v-if="assignedPositions.length"
+    :positions="assignedPositions"
+    portal-mode
+/>
 <div class="grid gap-6 lg:grid-cols-2"><DashboardAlerts :alerts="alerts"/><MySubmittedTickets :tickets="submittedTickets"/></div>
 <TicketsAssignedToMe v-if="assignedTickets.length" :tickets="assignedTickets"/>
 </div>

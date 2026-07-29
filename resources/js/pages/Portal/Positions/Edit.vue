@@ -1,17 +1,12 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
-import { router, useForm } from '@inertiajs/vue3'
-import { Trash2 } from 'lucide-vue-next'
-import DisplayField from '@/components/forms/DisplayField.vue'
-import FormActions from '@/components/forms/FormActions.vue'
+import { Link, router, useForm } from '@inertiajs/vue3'
+import { BadgeCheck, BriefcaseBusiness, Building2, ClipboardList, MapPinned, Settings2, Trash2, Users } from 'lucide-vue-next'
 import FormField from '@/components/forms/FormField.vue'
 import FormSection from '@/components/forms/FormSection.vue'
-import InfoPanel from '@/components/forms/InfoPanel.vue'
-import PageContainer from '@/components/layout/PageContainer.vue'
-import PageHeader from '@/components/layout/PageHeader.vue'
 import PositionCandidatesPanel from '@/components/positions/PositionCandidatesPanel.vue'
 import PositionFormFields from '@/components/positions/PositionFormFields.vue'
-import PositionSectionNavigation, { type PositionSection } from '@/components/positions/PositionSectionNavigation.vue'
+import PortalSectionNav from '@/components/portal/PortalSectionNav.vue'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
@@ -29,7 +24,7 @@ const props = withDefaults(defineProps<{
     candidateOptions?: GenericRecord[]
     positionCandidates?: GenericRecord[]
     workflows?: GenericRecord[]
-    initialSection?: PositionSection
+    initialSection?: string
 }>(), {
     organizations: () => [],
     jobTitles: () => [],
@@ -43,7 +38,10 @@ const props = withDefaults(defineProps<{
 })
 
 
-const activeSection = ref<PositionSection>(props.initialSection)
+type PositionEditSection = 'details' | 'qualifications' | 'mission' | 'organization' | 'operations' | 'requirements' | 'candidates'
+
+const normalizedInitialSection = props.initialSection === 'general' ? 'details' : props.initialSection
+const activeSection = ref<PositionEditSection>((normalizedInitialSection as PositionEditSection) || 'details')
 
 watch(activeSection, (section) => {
     const url = new URL(window.location.href)
@@ -52,12 +50,6 @@ watch(activeSection, (section) => {
 })
 
 const formatDateForInput = (value: unknown): string => value ? String(value).slice(0, 10) : ''
-const formatDate = (value: unknown): string => {
-    if (!value) return '—'
-    const date = new Date(String(value))
-    return Number.isNaN(date.getTime()) ? String(value) : date.toLocaleDateString()
-}
-
 const form = useForm({
     position_code: props.position.position_code ?? '',
     status: props.position.status ?? 'Open',
@@ -119,18 +111,28 @@ const desiredCustomSkills = computed(() =>
     customSkills.value.filter((skill: GenericRecord) => skill.requirement_type === 'desired'),
 )
 
-const selectedJobTitle = computed(() => props.jobTitles.find((item) => Number(item.id) === Number(form.job_title_id)))
-const selectedOrganization = computed(() => props.organizations.find((item) => Number(item.id) === Number(form.position_organization_id)))
-const laborCategory = computed(() => selectedJobTitle.value && form.level
-    ? `${selectedJobTitle.value.name} - Level ${form.level}`
-    : 'Not selected')
 
+const sections = computed(() => [
+    { id: 'details', title: 'Position Details', description: 'Identifier, status, title, level, and manager.', icon: BriefcaseBusiness, complete: Boolean(form.status && form.job_title_id) },
+    { id: 'qualifications', title: 'Qualifications', description: 'Certifications, training, and experience.', icon: BadgeCheck, complete: Boolean(form.certifications_required || form.training_required || form.experience) },
+    { id: 'mission', title: 'Mission & Location', description: 'Operational flags, workplace, and mission.', icon: MapPinned, complete: Boolean(form.location || form.building || form.mission_description) },
+    { id: 'organization', title: 'Organizations', description: 'Owning, sponsoring, and funding organizations.', icon: Building2, complete: Boolean(form.position_organization_id || form.sponsoring_organization_id || form.funding_organization_id) },
+    { id: 'operations', title: 'Operations', description: 'Funding, closure, customer, and internal details.', icon: Settings2, complete: Boolean(form.funding_info || form.customer_lead_name || form.notes) },
+    { id: 'requirements', title: 'Skills & Tasks', description: 'Job-title defaults and position-specific requirements.', icon: ClipboardList, complete: Boolean(props.jobTitleSkills.length || props.jobTitleTasks.length || customSkills.value.length || customTasks.value.length) },
+    { id: 'candidates', title: 'Candidates', description: 'Connected candidates and workflow activity.', icon: Users, badge: props.positionCandidates.length, complete: Boolean(props.positionCandidates.length) },
+])
+
+const selectedJobTitle = computed(() => props.jobTitles.find((item) => Number(item.id) === Number(form.job_title_id)))
 watch(() => form.status, (status) => {
     if (status !== 'Closed') {
         form.close_date = ''
         form.close_reason = ''
     }
 })
+
+function setActiveSection(value: string): void {
+    activeSection.value = value as PositionEditSection
+}
 
 function focusFirstError(): void {
     requestAnimationFrame(() => document.querySelector<HTMLElement>('[aria-invalid="true"], .border-destructive')?.focus())
@@ -173,21 +175,29 @@ onBeforeUnmount(() => window.removeEventListener('beforeunload', handleBeforeUnl
 </script>
 
 <template>
-    <PageContainer size="full">
-        <PageHeader
-            :title="`Edit ${position.position_code || 'Position'}`"
-            description="Manage position details, requirements, and connected candidates."
-            eyebrow="Positions"
-            :back-href="`/portal/positions/${position.id}`"
-            back-label="Back to Position"
-        />
+    <div class="mx-auto w-full max-w-7xl space-y-6 px-4 py-6 sm:px-6 lg:px-8">
+        <div class="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+            <div>
+                <h1 class="text-2xl font-semibold">Edit {{ position.position_code || 'Position' }}</h1>
+                <p class="mt-1 text-sm text-muted-foreground">
+                    Manage position details, requirements, and connected candidates.
+                </p>
+            </div>
+            <Link :href="`/portal/positions/${position.id}`">
+                <Button variant="outline">Back to Position</Button>
+            </Link>
+        </div>
 
-        <div class="space-y-6">
-            <PositionSectionNavigation
-                v-model="activeSection"
-                :candidate-count="positionCandidates.length"
-            />
+        <div class="grid gap-6 lg:grid-cols-[270px_minmax(0,1fr)]">
+                <PortalSectionNav
+                    title="Position sections"
+                    aria-label="Position sections"
+                    :sections="sections"
+                    :active-section="activeSection"
+                    @update:active-section="setActiveSection"
+                />
 
+                <div class="min-w-0 space-y-6">
             <PositionCandidatesPanel
                 v-if="activeSection === 'candidates'"
                 :position-id="position.id"
@@ -199,16 +209,16 @@ onBeforeUnmount(() => window.removeEventListener('beforeunload', handleBeforeUnl
 
             <form
                 v-else
-                class="grid gap-6 xl:grid-cols-[minmax(0,1fr)_20rem]"
+                class="min-w-0 space-y-6"
                 @submit.prevent="submit"
             >
-                <div class="grid min-w-0 gap-6">
                     <PositionFormFields
-                        v-if="activeSection === 'general'"
+                        v-if="!['requirements', 'candidates'].includes(activeSection)"
                         :form="form"
                         :organizations="organizations"
                         :job-titles="jobTitles"
                         :project-managers="projectManagers"
+                        :active-section="activeSection"
                         extended
                     />
 
@@ -644,33 +654,16 @@ onBeforeUnmount(() => window.removeEventListener('beforeunload', handleBeforeUnl
                         </FormSection>
                     </template>
 
-                    <FormActions
-                        :cancel-href="`/portal/positions/${position.id}`"
-                        submit-label="Save Changes"
-                        processing-label="Saving Changes…"
-                        :processing="form.processing"
-                        :dirty="form.isDirty"
-                        sticky
-                    />
-                </div>
-
-                <aside class="min-w-0">
-                    <InfoPanel title="Position Summary" description="A live overview of the position and its record metadata.">
-                        <DisplayField label="Position Code" :value="form.position_code || 'Not entered'" :muted="!form.position_code" />
-                        <DisplayField label="Status" :value="form.status" />
-                        <DisplayField label="Level" :value="form.level ? `Level ${form.level}` : 'Not selected'" :muted="!form.level" />
-                        <DisplayField label="Team Name" :value="form.team_name || 'Not entered'" :muted="!form.team_name" />
-                        <DisplayField label="Labor Category" :value="laborCategory" :muted="laborCategory === 'Not selected'" />
-                        <DisplayField label="Organization" :value="selectedOrganization?.full_path || selectedOrganization?.name || 'Not selected'" :muted="!selectedOrganization" />
-                        <DisplayField label="Location" :value="form.location || 'Not entered'" :muted="!form.location" />
-                        <div class="border-t pt-5"><DisplayField label="Created" :value="formatDate(position.created_at)" /></div>
-                        <DisplayField label="Last Updated" :value="formatDate(position.updated_at)" />
-                        <DisplayField label="Candidates" :value="positionCandidates.length" />
-                        <DisplayField label="Custom Skills" :value="customSkills.length" />
-                        <DisplayField label="Custom Tasks" :value="customTasks.length" />
-                    </InfoPanel>
-                </aside>
+                    <div class="flex gap-3 border-t pt-5">
+                        <Button type="submit" :disabled="form.processing">
+                            {{ form.processing ? 'Saving…' : 'Save Changes' }}
+                        </Button>
+                        <Link :href="`/portal/positions/${position.id}`">
+                            <Button type="button" variant="outline">Cancel</Button>
+                        </Link>
+                    </div>
             </form>
-        </div>
-    </PageContainer>
+                </div>
+            </div>
+    </div>
 </template>

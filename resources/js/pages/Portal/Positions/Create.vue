@@ -1,15 +1,20 @@
 <script setup lang="ts">
-import { computed, onBeforeUnmount, onMounted } from 'vue'
-import { useForm } from '@inertiajs/vue3'
-import DisplayField from '@/components/forms/DisplayField.vue'
-import FormActions from '@/components/forms/FormActions.vue'
-import InfoPanel from '@/components/forms/InfoPanel.vue'
-import PageContainer from '@/components/layout/PageContainer.vue'
-import PageHeader from '@/components/layout/PageHeader.vue'
+import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
+import { Link, useForm } from '@inertiajs/vue3'
+import {
+    BadgeCheck,
+    Building2,
+    BriefcaseBusiness,
+    MapPinned,
+} from 'lucide-vue-next'
+import PortalSectionNav from '@/components/portal/PortalSectionNav.vue'
 import PositionFormFields from '@/components/positions/PositionFormFields.vue'
+import { Button } from '@/components/ui/button'
 
 type GenericRecord = Record<string, any>
 type OrganizationOption = { id: number; name: string; full_path: string; depth?: number }
+
+type CreateSection = 'details' | 'qualifications' | 'mission' | 'organization'
 
 const props = withDefaults(defineProps<{
     organizations?: OrganizationOption[]
@@ -20,6 +25,8 @@ const props = withDefaults(defineProps<{
     jobTitles: () => [],
     projectManagers: () => [],
 })
+
+const activeSection = ref<CreateSection>('details')
 
 const form = useForm({
     position_code: '',
@@ -43,11 +50,40 @@ const form = useForm({
     funding_organization_id: null as number | null,
 })
 
-const selectedJobTitle = computed(() => props.jobTitles.find((item) => Number(item.id) === Number(form.job_title_id)))
-const selectedOrganization = computed(() => props.organizations.find((item) => Number(item.id) === Number(form.position_organization_id)))
-const laborCategory = computed(() => selectedJobTitle.value && form.level
-    ? `${selectedJobTitle.value.name} - Level ${form.level}`
-    : 'Not selected')
+const sections = computed(() => [
+    {
+        id: 'details',
+        title: 'Position Details',
+        description: 'Identifier, status, title, level, and manager.',
+        icon: BriefcaseBusiness,
+        complete: Boolean(form.status && form.job_title_id),
+    },
+    {
+        id: 'qualifications',
+        title: 'Qualifications',
+        description: 'Certifications, training, and experience.',
+        icon: BadgeCheck,
+        complete: Boolean(form.certifications_required || form.training_required || form.experience),
+    },
+    {
+        id: 'mission',
+        title: 'Mission & Location',
+        description: 'Operational flags, workplace, and mission.',
+        icon: MapPinned,
+        complete: Boolean(form.location || form.building || form.mission_description),
+    },
+    {
+        id: 'organization',
+        title: 'Organizations',
+        description: 'Owning, sponsoring, and funding organizations.',
+        icon: Building2,
+        complete: Boolean(form.position_organization_id || form.sponsoring_organization_id || form.funding_organization_id),
+    },
+])
+
+function setActiveSection(value: string): void {
+    activeSection.value = value as CreateSection
+}
 
 function focusFirstError(): void {
     requestAnimationFrame(() => {
@@ -71,43 +107,48 @@ onBeforeUnmount(() => window.removeEventListener('beforeunload', handleBeforeUnl
 </script>
 
 <template>
-    <PageContainer size="full">
-        <PageHeader
-            title="Create Position"
-            description="Add a new staffing position and define its requirements, organizations, and operational flags."
-            eyebrow="Positions"
-            back-href="/portal/positions"
-            back-label="Back to Positions"
-        />
-
-        <form class="grid gap-6 xl:grid-cols-[minmax(0,1fr)_20rem]" @submit.prevent="submit">
-            <div class="grid min-w-0 gap-6">
-                <PositionFormFields :form="form" :organizations="organizations" :job-titles="jobTitles" :project-managers="projectManagers" />
-
-                <FormActions
-                    cancel-href="/portal/positions"
-                    submit-label="Create Position"
-                    processing-label="Creating Position…"
-                    :processing="form.processing"
-                    :dirty="form.isDirty"
-                    sticky
-                />
+    <div class="mx-auto w-full max-w-7xl space-y-6 px-4 py-6 sm:px-6 lg:px-8">
+        <div class="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+            <div>
+                <h1 class="text-2xl font-semibold">Create Position</h1>
+                <p class="mt-1 text-sm text-muted-foreground">
+                    Add a new staffing position and define its requirements, organizations, and operational details.
+                </p>
             </div>
+            <Link href="/portal/positions">
+                <Button variant="outline">Back to List</Button>
+            </Link>
+        </div>
 
-            <aside class="min-w-0">
-                <InfoPanel title="Position Summary" description="This preview updates as you complete the form.">
-                    <DisplayField label="Position ID" :value="form.position_code || 'Not entered'" :muted="!form.position_code" />
-                    <DisplayField label="Status" :value="form.status" />
-                    <DisplayField label="Level" :value="form.level ? `Level ${form.level}` : 'Not selected'" :muted="!form.level" />
-                    <DisplayField label="Team Name" :value="form.team_name || 'Not entered'" :muted="!form.team_name" />
-                    <DisplayField label="Labor Category" :value="laborCategory" :muted="laborCategory === 'Not selected'" />
-                    <DisplayField label="Organization" :value="selectedOrganization?.full_path || selectedOrganization?.name || 'Not selected'" :muted="!selectedOrganization" />
-                    <DisplayField label="Location" :value="form.location || 'Not entered'" :muted="!form.location" />
-                    <div class="rounded-lg border bg-muted/30 p-4 text-xs leading-5 text-muted-foreground">
-                        Fields marked with an asterisk are required. Review the summary before creating the position.
+        <form @submit.prevent="submit">
+            <div class="grid gap-6 lg:grid-cols-[270px_minmax(0,1fr)]">
+                <PortalSectionNav
+                    title="Position sections"
+                    aria-label="Position sections"
+                    :sections="sections"
+                    :active-section="activeSection"
+                    @update:active-section="setActiveSection"
+                />
+
+                <div class="min-w-0 space-y-6">
+                    <PositionFormFields
+                        :form="form"
+                        :organizations="organizations"
+                        :job-titles="jobTitles"
+                        :project-managers="projectManagers"
+                        :active-section="activeSection"
+                    />
+
+                    <div class="flex gap-3 border-t pt-5">
+                        <Button type="submit" :disabled="form.processing">
+                            {{ form.processing ? 'Creating…' : 'Create Position' }}
+                        </Button>
+                        <Link href="/portal/positions">
+                            <Button type="button" variant="outline">Cancel</Button>
+                        </Link>
                     </div>
-                </InfoPanel>
-            </aside>
+                </div>
+            </div>
         </form>
-    </PageContainer>
+    </div>
 </template>

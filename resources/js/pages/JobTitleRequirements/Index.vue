@@ -24,7 +24,7 @@ defineProps<{ jobTitles: JobTitle[] }>()
             title="Job Title Requirements"
             description="Select a job title to manage its Required and Desired skills together with its default tasks."
             eyebrow="Positions"
-            back-href="/job-titles"
+            back-href="/portal/job-titles"
             back-label="Job Titles"
         />
 
@@ -66,7 +66,7 @@ defineProps<{ jobTitles: JobTitle[] }>()
                     </div>
 
                     <Button as-child class="w-full">
-                        <Link :href="`/job-titles/${jobTitle.id}#skills`">
+                        <Link :href="`/portal/job-titles/${jobTitle.id}#skills`">
                             Manage Requirements
                             <ChevronRight class="ml-2 h-4 w-4" />
                         </Link>

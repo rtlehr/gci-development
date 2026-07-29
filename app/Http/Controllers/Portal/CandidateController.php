@@ -1,7 +1,8 @@
 <?php
 
-namespace App\Http\Controllers;
+namespace App\Http\Controllers\Portal;
 
+use App\Http\Controllers\Controller;
 use App\Models\Candidate;
 use App\Models\Person;
 use App\Models\Position;
@@ -44,8 +45,8 @@ class CandidateController extends Controller
         $defaultColumnOrder = $this->getDefaultColumnOrder();
         $defaultVisibleColumns = $this->getDefaultVisibleColumns();
 
-        $visibleColumns = session('candidates.visible_columns', $defaultVisibleColumns);
-        $columnOrder = session('candidates.column_order', $defaultColumnOrder);
+        $visibleColumns = session('portal.candidates.visible_columns', $defaultVisibleColumns);
+        $columnOrder = session('portal.candidates.column_order', $defaultColumnOrder);
 
         $visibleColumns = $this->sanitizeColumnKeys($visibleColumns, $columns, $defaultVisibleColumns);
         $columnOrder = $this->sanitizeColumnKeys($columnOrder, $columns, $defaultColumnOrder);
@@ -129,7 +130,7 @@ class CandidateController extends Controller
                 ];
             });
 
-        return Inertia::render('Candidates/Index', [
+        return Inertia::render('Portal/Candidates/Index', [
             'candidates' => $candidates,
             'columns' => $columns,
             'visibleColumns' => $visibleColumns,
@@ -192,7 +193,7 @@ class CandidateController extends Controller
                 ->findOrFail($primaryWorkflow?->id ?? $workflows->first()->id);
         }
 
-        return Inertia::render('Candidates/Create', [
+        return Inertia::render('Portal/Candidates/Create', [
             'people' => $this->getPeopleOptions(),
             'positions' => $this->getPositionOptions(),
             'workflows' => $workflows->map(function ($workflow) {
@@ -311,7 +312,7 @@ class CandidateController extends Controller
         }
 
         return redirect()
-            ->route('candidates.index')
+            ->route('portal.candidates.index')
             ->with('success', 'Candidate created successfully.');
     }
 
@@ -411,7 +412,7 @@ class CandidateController extends Controller
             'step_events' => $workflowDisplay,
         ];
 
-        return Inertia::render('Candidates/Show', [
+        return Inertia::render('Portal/Candidates/Show', [
             'candidate' => $candidateData,
         ]);
     }
@@ -461,7 +462,7 @@ class CandidateController extends Controller
             })->values(),
         ];
 
-        return Inertia::render('Candidates/Edit', [
+        return Inertia::render('Portal/Candidates/Edit', [
             'candidate' => $candidateData,
             'people' => $this->getPeopleOptions(),
             'positions' => $this->getPositionOptions(),
@@ -565,7 +566,7 @@ class CandidateController extends Controller
         }
 
         return redirect()
-            ->route('candidates.index')
+            ->route('portal.candidates.index')
             ->with('success', 'Candidate updated successfully.');
     }
 
@@ -577,7 +578,7 @@ class CandidateController extends Controller
         $candidate->delete();
 
         return redirect()
-            ->route('candidates.index')
+            ->route('portal.candidates.index')
             ->with('success', 'Candidate deleted successfully.');
     }
 
@@ -610,8 +611,8 @@ class CandidateController extends Controller
         );
 
         session([
-            'candidates.visible_columns' => $visibleColumns,
-            'candidates.column_order' => $columnOrder,
+            'portal.candidates.visible_columns' => $visibleColumns,
+            'portal.candidates.column_order' => $columnOrder,
         ]);
 
         return back()->with('success', 'Candidate column preferences saved.');
@@ -623,8 +624,8 @@ class CandidateController extends Controller
     public function resetPreferences(): RedirectResponse
     {
         session()->forget([
-            'candidates.visible_columns',
-            'candidates.column_order',
+            'portal.candidates.visible_columns',
+            'portal.candidates.column_order',
         ]);
 
         return back()->with('success', 'Candidate column preferences reset.');

@@ -16,11 +16,13 @@ const props = withDefaults(defineProps<{
     jobTitles?: GenericRecord[]
     projectManagers?: GenericRecord[]
     extended?: boolean
+    activeSection?: string
 }>(), {
     organizations: () => [],
     jobTitles: () => [],
     projectManagers: () => [],
     extended: false,
+    activeSection: '',
 })
 
 const selectedJobTitle = computed(() => props.jobTitles.find((item) => Number(item.id) === Number(props.form.job_title_id)))
@@ -36,6 +38,7 @@ const selectClass = (error?: string) => [
 
 <template>
     <FormSection
+        v-if="!activeSection || activeSection === 'details'"
         title="Core Position Information"
         description="Define the position identifier, status, job title, level, team, and project manager."
     >
@@ -98,6 +101,7 @@ const selectClass = (error?: string) => [
     </FormSection>
 
     <FormSection
+        v-if="!activeSection || activeSection === 'qualifications'"
         title="Requirements and Qualifications"
         description="Document the certifications, training, and experience expected for this position."
     >
@@ -112,7 +116,7 @@ const selectClass = (error?: string) => [
         </FormField>
     </FormSection>
 
-    <FormSection title="Flags and Risk" description="Identify operational requirements that need additional attention.">
+    <FormSection v-if="!activeSection || activeSection === 'mission'" title="Flags and Risk" description="Identify operational requirements that need additional attention.">
         <div class="grid gap-4 md:grid-cols-3">
             <BooleanField id="is_essential" v-model="form.is_essential" label="Essential" description="This position is required for essential operations." />
             <BooleanField id="travel_required" v-model="form.travel_required" label="Travel Required" description="The assigned person may be required to travel." />
@@ -120,7 +124,7 @@ const selectClass = (error?: string) => [
         </div>
     </FormSection>
 
-    <FormSection title="Location and Mission" description="Describe where the position works and the mission it supports.">
+    <FormSection v-if="!activeSection || activeSection === 'mission'" title="Location and Mission" description="Describe where the position works and the mission it supports.">
         <div class="grid gap-5 md:grid-cols-2">
             <FormField label="Location" for-id="location" :error="form.errors.location"><Input id="location" v-model="form.location" /></FormField>
             <FormField label="Building" for-id="building" :error="form.errors.building"><Input id="building" v-model="form.building" /></FormField>
@@ -129,7 +133,7 @@ const selectClass = (error?: string) => [
         </div>
     </FormSection>
 
-    <FormSection title="Organization Information" description="Associate the position with its owning, sponsoring, and funding organizations.">
+    <FormSection v-if="!activeSection || activeSection === 'organization'" title="Organization Information" description="Associate the position with its owning, sponsoring, and funding organizations.">
         <div class="grid gap-5 lg:grid-cols-3">
             <OrganizationSelect v-model="form.position_organization_id" :organizations="organizations" label="Position Org" id="position_organization_id" :error="form.errors.position_organization_id" />
             <OrganizationSelect v-model="form.sponsoring_organization_id" :organizations="organizations" label="Sponsoring Org" id="sponsoring_organization_id" :error="form.errors.sponsoring_organization_id" />
@@ -137,7 +141,7 @@ const selectClass = (error?: string) => [
         </div>
     </FormSection>
 
-    <template v-if="extended">
+    <template v-if="extended && (!activeSection || activeSection === 'operations')">
         <FormSection title="Funding Information" description="Capture any funding details that users need when reviewing this position.">
             <FormField label="Funding Information" for-id="funding_info" :error="form.errors.funding_info"><Textarea id="funding_info" v-model="form.funding_info" rows="4" /></FormField>
         </FormSection>

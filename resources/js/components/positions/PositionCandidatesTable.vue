@@ -58,11 +58,13 @@ export type PositionCandidate = {
     workflow?: CandidateWorkflow | null
 }
 
-withDefaults(defineProps<{
+const props = withDefaults(defineProps<{
     candidates: PositionCandidate[]
     showHeader?: boolean
+    context?: 'admin' | 'portal'
 }>(), {
     showHeader: true,
+    context: 'admin',
 })
 
 function formatDate(value?: string | null): string {
@@ -115,13 +117,29 @@ function fbrClasses(value?: string | number | null): string {
 }
 
 function personHref(candidate: PositionCandidate): string | null {
-    return candidate.person?.id
-        ? `/people/${candidate.person.id}`
-        : null
+    if (!candidate.person?.id) {
+        return null
+    }
+
+    return props.context === 'portal'
+        ? `/portal/people/${candidate.person.id}`
+        : `/people/${candidate.person.id}`
+}
+
+function candidateHref(candidate: PositionCandidate): string {
+    return props.context === 'portal'
+        ? `/portal/candidates/${candidate.id}`
+        : `/candidates/${candidate.id}`
+}
+
+function candidateNameHref(candidate: PositionCandidate): string | null {
+    return props.context === 'portal'
+        ? candidateHref(candidate)
+        : personHref(candidate)
 }
 
 function workflowHref(candidate: PositionCandidate): string {
-    return `/candidates/${candidate.id}`
+    return candidateHref(candidate)
 }
 </script>
 
@@ -171,8 +189,8 @@ function workflowHref(candidate: PositionCandidate): string {
                             <TableCell>
                                 <div class="space-y-1">
                                     <Link
-                                        v-if="personHref(candidate)"
-                                        :href="personHref(candidate)!"
+                                        v-if="candidateNameHref(candidate)"
+                                        :href="candidateNameHref(candidate)!"
                                         class="font-medium text-primary underline-offset-4 hover:underline"
                                     >
                                         {{ candidate.person?.full_name || 'Unknown candidate' }}

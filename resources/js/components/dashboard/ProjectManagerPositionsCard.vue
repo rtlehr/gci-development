@@ -59,9 +59,12 @@ type AssignedPosition = {
     next_action_tone: StatusTone
 }
 
-defineProps<{
+const props = withDefaults(defineProps<{
     positions: AssignedPosition[]
-}>()
+    portalMode?: boolean
+}>(), {
+    portalMode: false,
+})
 
 function formatLabel(value: string | null): string {
     if (!value) {
@@ -119,10 +122,24 @@ function daysOpenClass(days: number): string {
     return 'border-red-200 bg-red-50 text-red-700 dark:border-red-900 dark:bg-red-950 dark:text-red-300'
 }
 
+function positionHref(position: AssignedPosition): string {
+    return props.portalMode
+        ? `/portal/positions/${position.id}`
+        : `/positions/${position.id}`
+}
+
+function candidatesHref(position: AssignedPosition): string {
+    return `${positionHref(position)}?section=candidates`
+}
+
 function currentStageHref(position: AssignedPosition): string {
-    return position.current_stage_candidate_id
-        ? `/candidates/${position.current_stage_candidate_id}`
-        : `/positions/${position.id}?section=candidates`
+    if (position.current_stage_candidate_id) {
+        return props.portalMode
+            ? `/portal/candidates/${position.current_stage_candidate_id}`
+            : `/candidates/${position.current_stage_candidate_id}`
+    }
+
+    return candidatesHref(position)
 }
 </script>
 
@@ -189,7 +206,7 @@ function currentStageHref(position: AssignedPosition): string {
 
                                 <TableCell>
                                     <Link
-                                        :href="`/positions/${position.id}`"
+                                        :href="positionHref(position)"
                                         class="group inline-flex items-center gap-1.5 font-medium text-primary underline-offset-4 hover:underline"
                                     >
                                         <span>
@@ -213,7 +230,7 @@ function currentStageHref(position: AssignedPosition): string {
                                     <Tooltip>
                                         <TooltipTrigger as-child>
                                             <Link
-                                                :href="`/positions/${position.id}?section=candidates`"
+                                                :href="candidatesHref(position)"
                                                 class="inline-flex rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                                                 :aria-label="`View ${position.candidates_count} candidates for ${position.position_code || position.title || 'position'}. Hover for candidate details.`"
                                             >

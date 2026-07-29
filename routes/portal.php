@@ -1,8 +1,11 @@
 <?php
 
 use App\Http\Controllers\Portal\AlertController;
+use App\Http\Controllers\Portal\CandidateController;
 use App\Http\Controllers\Portal\DashboardController;
 use App\Http\Controllers\Portal\PositionController;
+use App\Http\Controllers\Portal\PeopleController;
+use App\Http\Controllers\Portal\JobTitleController;
 use App\Http\Controllers\Portal\TicketController;
 use App\Http\Controllers\PositionCandidateController;
 use App\Http\Controllers\PositionCustomSkillTaskController;
@@ -15,6 +18,98 @@ Route::middleware('auth')
         Route::get('/', DashboardController::class)->name('index');
         Route::get('/dashboard', DashboardController::class)->name('dashboard');
         Route::get('/alerts', [AlertController::class, 'index'])->name('alerts.index');
+
+
+        Route::get('/people', [PeopleController::class, 'index'])
+            ->middleware('permission:access_people')
+            ->name('people.index');
+
+        Route::post('/people/preferences', [PeopleController::class, 'savePreferences'])
+            ->middleware('permission:access_people')
+            ->name('people.preferences.save');
+
+        Route::delete('/people/preferences', [PeopleController::class, 'resetPreferences'])
+            ->middleware('permission:access_people')
+            ->name('people.preferences.reset');
+
+        Route::post('/people/export/csv', [PeopleController::class, 'exportCsv'])
+            ->middleware('permission:access_people')
+            ->name('people.export.csv');
+
+        Route::get('/people/create', [PeopleController::class, 'create'])
+            ->middleware('permission:create_people')
+            ->name('people.create');
+
+        Route::post('/people', [PeopleController::class, 'store'])
+            ->middleware('permission:create_people')
+            ->name('people.store');
+
+        Route::get('/people/{id}', [PeopleController::class, 'show'])
+            ->middleware('permission:read_people')
+            ->name('people.show');
+
+        Route::get('/people/{id}/edit', [PeopleController::class, 'edit'])
+            ->middleware('permission:update_people')
+            ->name('people.edit');
+
+        Route::put('/people/{id}', [PeopleController::class, 'update'])
+            ->middleware('permission:update_people')
+            ->name('people.update');
+
+        Route::delete('/people/{id}', [PeopleController::class, 'destroy'])
+            ->middleware('permission:delete_people')
+            ->name('people.destroy');
+
+
+        Route::get('/job-title-requirements', [JobTitleController::class, 'requirementsIndex'])
+            ->middleware('permission:access_positions')
+            ->name('job-title-requirements.index');
+
+        Route::get('/job-titles', [JobTitleController::class, 'index'])
+            ->middleware('permission:access_positions')
+            ->name('job-titles.index');
+        Route::post('/job-titles/preferences', [JobTitleController::class, 'savePreferences'])
+            ->middleware('permission:access_positions')
+            ->name('job-titles.preferences.save');
+        Route::delete('/job-titles/preferences', [JobTitleController::class, 'resetPreferences'])
+            ->middleware('permission:access_positions')
+            ->name('job-titles.preferences.reset');
+        Route::get('/job-titles/create', [JobTitleController::class, 'create'])
+            ->middleware('permission:update_positions')
+            ->name('job-titles.create');
+        Route::post('/job-titles', [JobTitleController::class, 'store'])
+            ->middleware('permission:update_positions')
+            ->name('job-titles.store');
+        Route::get('/job-titles/{jobTitle}', [JobTitleController::class, 'show'])
+            ->middleware('permission:access_positions')
+            ->name('job-titles.show');
+        Route::get('/job-titles/{jobTitle}/edit', [JobTitleController::class, 'edit'])
+            ->middleware('permission:update_positions')
+            ->name('job-titles.edit');
+        Route::put('/job-titles/{jobTitle}', [JobTitleController::class, 'update'])
+            ->middleware('permission:update_positions')
+            ->name('job-titles.update');
+        Route::delete('/job-titles/{jobTitle}', [JobTitleController::class, 'destroy'])
+            ->middleware('permission:update_positions')
+            ->name('job-titles.destroy');
+        Route::post('/job-titles/{jobTitle}/skills', [JobTitleController::class, 'storeSkill'])
+            ->middleware('permission:update_positions')
+            ->name('job-titles.skills.store');
+        Route::put('/job-titles/{jobTitle}/skills/{skill}', [JobTitleController::class, 'updateSkill'])
+            ->middleware('permission:update_positions')
+            ->name('job-titles.skills.update');
+        Route::delete('/job-titles/{jobTitle}/skills/{skill}', [JobTitleController::class, 'destroySkill'])
+            ->middleware('permission:update_positions')
+            ->name('job-titles.skills.destroy');
+        Route::post('/job-titles/{jobTitle}/tasks', [JobTitleController::class, 'storeTask'])
+            ->middleware('permission:update_positions')
+            ->name('job-titles.tasks.store');
+        Route::put('/job-titles/{jobTitle}/tasks/{task}', [JobTitleController::class, 'updateTask'])
+            ->middleware('permission:update_positions')
+            ->name('job-titles.tasks.update');
+        Route::delete('/job-titles/{jobTitle}/tasks/{task}', [JobTitleController::class, 'destroyTask'])
+            ->middleware('permission:update_positions')
+            ->name('job-titles.tasks.destroy');
 
         Route::get('/positions', [PositionController::class, 'index'])
             ->middleware('permission:access_positions')
@@ -75,6 +170,46 @@ Route::middleware('auth')
         Route::delete('/positions/{position}/custom-tasks/{task}', [PositionCustomSkillTaskController::class, 'destroyTask'])
             ->middleware('permission:update_positions')
             ->name('positions.custom-tasks.destroy');
+
+        Route::get('/candidates', [CandidateController::class, 'index'])
+            ->middleware('permission:access_candidates')
+            ->name('candidates.index');
+
+        Route::post('/candidates/preferences', [CandidateController::class, 'savePreferences'])
+            ->middleware('permission:access_candidates')
+            ->name('candidates.preferences.save');
+
+        Route::delete('/candidates/preferences', [CandidateController::class, 'resetPreferences'])
+            ->middleware('permission:access_candidates')
+            ->name('candidates.preferences.reset');
+
+        Route::post('/candidates/export/csv', [CandidateController::class, 'exportCsv'])
+            ->middleware('permission:access_candidates')
+            ->name('candidates.export.csv');
+
+        Route::get('/candidates/create', [CandidateController::class, 'create'])
+            ->middleware('permission:create_candidates')
+            ->name('candidates.create');
+
+        Route::post('/candidates', [CandidateController::class, 'store'])
+            ->middleware('permission:create_candidates')
+            ->name('candidates.store');
+
+        Route::get('/candidates/{candidate}', [CandidateController::class, 'show'])
+            ->middleware('permission:read_candidates')
+            ->name('candidates.show');
+
+        Route::get('/candidates/{candidate}/edit', [CandidateController::class, 'edit'])
+            ->middleware('permission:update_candidates')
+            ->name('candidates.edit');
+
+        Route::put('/candidates/{candidate}', [CandidateController::class, 'update'])
+            ->middleware('permission:update_candidates')
+            ->name('candidates.update');
+
+        Route::delete('/candidates/{candidate}', [CandidateController::class, 'destroy'])
+            ->middleware('permission:delete_candidates')
+            ->name('candidates.destroy');
 
         Route::get('/tickets', [TicketController::class, 'index'])
             ->middleware('permission:portal_view_own_tickets')

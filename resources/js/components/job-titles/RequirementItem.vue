@@ -38,6 +38,7 @@ const props = defineProps<{
     type: RequirementType
     jobTitleId: number
     editing: boolean
+    basePath?: string
 }>()
 
 const emit = defineEmits<{
@@ -59,9 +60,10 @@ const form = useForm({
 
 const itemKey = `${props.type}-${props.item.id}`
 const itemLabel = props.type === 'skill' ? 'skill' : 'task'
+const basePath = props.basePath ?? '/job-titles'
 const updateUrl = props.type === 'skill'
-    ? `/job-titles/${props.jobTitleId}/skills/${props.item.id}`
-    : `/job-titles/${props.jobTitleId}/tasks/${props.item.id}`
+    ? `${basePath}/${props.jobTitleId}/skills/${props.item.id}`
+    : `${basePath}/${props.jobTitleId}/tasks/${props.item.id}`
 const deleteUrl = updateUrl
 
 watch(

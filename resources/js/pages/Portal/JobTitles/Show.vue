@@ -83,7 +83,7 @@ const taskForm = useForm({
 })
 
 function submitSkill() {
-    skillForm.post(`/job-titles/${props.jobTitle.id}/skills`, {
+    skillForm.post(`/portal/job-titles/${props.jobTitle.id}/skills`, {
         preserveScroll: true,
         onSuccess: () => {
             skillForm.reset()
@@ -95,7 +95,7 @@ function submitSkill() {
 }
 
 function submitTask() {
-    taskForm.post(`/job-titles/${props.jobTitle.id}/tasks`, {
+    taskForm.post(`/portal/job-titles/${props.jobTitle.id}/tasks`, {
         preserveScroll: true,
         onSuccess: () => {
             taskForm.reset()
@@ -112,15 +112,15 @@ function submitTask() {
             :title="jobTitle.name"
             description="Manage Job Title information, Required Skills, Desired Skills, and Tasks."
             eyebrow="Job Title Requirements"
-            back-href="/job-title-requirements"
+            back-href="/portal/job-title-requirements"
             back-label="Job Title Requirements"
         >
             <template #actions>
                 <Button as-child variant="outline">
-                    <Link href="/job-titles">Job Titles</Link>
+                    <Link href="/portal/job-titles">Job Titles</Link>
                 </Button>
                 <Button as-child>
-                    <Link :href="`/job-titles/${jobTitle.id}/edit`">Edit Job Title</Link>
+                    <Link :href="`/portal/job-titles/${jobTitle.id}/edit`">Edit Job Title</Link>
                 </Button>
             </template>
         </PageHeader>
@@ -233,7 +233,7 @@ function submitTask() {
                             :item="skill"
                             :index="index"
                             type="skill"
-                            :job-title-id="jobTitle.id"
+                            :job-title-id="jobTitle.id" base-path="/portal/job-titles"
                             :editing="editingKey === `skill-${skill.id}`"
                             @start-edit="editingKey = $event"
                             @finish-edit="editingKey = null"
@@ -253,7 +253,7 @@ function submitTask() {
                             :item="skill"
                             :index="index"
                             type="skill"
-                            :job-title-id="jobTitle.id"
+                            :job-title-id="jobTitle.id" base-path="/portal/job-titles"
                             :editing="editingKey === `skill-${skill.id}`"
                             @start-edit="editingKey = $event"
                             @finish-edit="editingKey = null"
@@ -273,7 +273,7 @@ function submitTask() {
                             :item="task"
                             :index="index"
                             type="task"
-                            :job-title-id="jobTitle.id"
+                            :job-title-id="jobTitle.id" base-path="/portal/job-titles"
                             :editing="editingKey === `task-${task.id}`"
                             @start-edit="editingKey = $event"
                             @finish-edit="editingKey = null"

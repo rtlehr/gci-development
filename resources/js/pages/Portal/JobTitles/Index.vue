@@ -4,7 +4,7 @@
             title="Job Titles"
             description="Manage master job titles, default skills, and default tasks."
             create-label="Create Job Title"
-            create-href="/job-titles/create"
+            create-href="/portal/job-titles/create"
             :can-create="true"
             :can-export="false"
             @open-column-settings="showColumnSettings = true"
@@ -64,13 +64,13 @@
 
                         <TableCell class="text-right">
                             <div class="flex justify-end gap-2">
-                                <Link :href="`/job-titles/${jobTitle.id}`">
+                                <Link :href="`/portal/job-titles/${jobTitle.id}`">
                                     <Button variant="outline" size="sm">
                                         View
                                     </Button>
                                 </Link>
 
-                                <Link :href="`/job-titles/${jobTitle.id}/edit`">
+                                <Link :href="`/portal/job-titles/${jobTitle.id}/edit`">
                                     <Button variant="outline" size="sm">
                                         Edit
                                     </Button>
@@ -201,7 +201,7 @@ function updateColumnSettings(updatedColumns) {
 function saveColumnPreferences(updatedColumns = columnsForSettings.value) {
     updateColumnSettings(updatedColumns)
 
-    router.post('/job-titles/preferences', {
+    router.post('/portal/job-titles/preferences', {
         visible_columns: settingsForm.visibleColumns,
         column_order: settingsForm.columnOrder,
     }, {
@@ -218,7 +218,7 @@ function resetColumnSettingsLocally() {
 }
 
 function resetPreferencesOnServer() {
-    router.delete('/job-titles/preferences', {
+    router.delete('/portal/job-titles/preferences', {
         preserveScroll: true,
     })
 }
@@ -250,7 +250,7 @@ function deleteJobTitle(id) {
         return
     }
 
-    router.delete(`/job-titles/${id}`, {
+    router.delete(`/portal/job-titles/${id}`, {
         preserveScroll: true,
     })
 }
