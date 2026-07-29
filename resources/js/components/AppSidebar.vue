@@ -2,6 +2,7 @@
 import { Link, usePage } from '@inertiajs/vue3'
 import { computed } from 'vue'
 import {
+    FileText,
     HelpCircle,
     LayoutGrid,
     LifeBuoy,
@@ -64,9 +65,16 @@ const allMainNavCategories: NavCategory[] = [
                 permission: 'access_tickets',
             },
             {
+                title: 'Content Pages',
+                href: '/admin/content-pages',
+                icon: FileText,
+                permission: 'view_admin',
+            },
+            {
                 title: 'Page Help',
                 href: '/admin/page-help',
-                icon: HelpCircle,
+                icon: FileText,
+    HelpCircle,
                 permission: 'view_admin',
             },
             {

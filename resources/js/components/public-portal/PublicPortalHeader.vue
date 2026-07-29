@@ -21,6 +21,7 @@ import PortalManageMenu from './PortalManageMenu.vue';
 import PublicPortalNavigation from './PublicPortalNavigation.vue';
 
 const page = usePage();
+const contentNavigation = computed(() => (page.props.contentNavigation as Array<{ label: string; href: string }>) ?? []);
 const siteSettings = computed(() => page.props.siteSettings as {
     branding: {
         program_mark: string;
@@ -148,32 +149,9 @@ function closeMobile(): void {
                         >
                             My Portal
                         </Link>
-                        <Link
-                            v-if="user"
-                            href="/portal/tickets"
-                            class="rounded-md px-3 py-2 font-medium hover:bg-[var(--portal-primary-soft)]"
-                            :class="isActive('/portal/tickets') ? 'bg-[var(--portal-primary-soft)] text-[var(--portal-primary)]' : ''"
-                            @click="closeMobile"
-                        >
-                            Support
-                        </Link>
-                        <a
-                            v-else
-                            href="/#support"
-                            class="rounded-md px-3 py-2 font-medium hover:bg-[var(--portal-primary-soft)]"
-                            @click="closeMobile"
-                        >
-                            Support
-                        </a>
-                        <a href="/#resources" class="rounded-md px-3 py-2 font-medium hover:bg-[var(--portal-primary-soft)]" @click="closeMobile">
-                            Resources
-                        </a>
-                        <a href="/#program" class="rounded-md px-3 py-2 font-medium hover:bg-[var(--portal-primary-soft)]" @click="closeMobile">
-                            Program
-                        </a>
-                        <a href="/#faqs" class="rounded-md px-3 py-2 font-medium hover:bg-[var(--portal-primary-soft)]" @click="closeMobile">
-                            FAQs
-                        </a>
+                        <Link v-for="item in contentNavigation" :key="item.href" :href="item.href" class="rounded-md px-3 py-2 font-medium hover:bg-[var(--portal-primary-soft)]" :class="isActive(item.href) ? 'bg-[var(--portal-primary-soft)] text-[var(--portal-primary)]' : ''" @click="closeMobile">{{ item.label }}</Link>
+                        <Link v-if="user" href="/portal/tickets" class="rounded-md px-3 py-2 font-medium hover:bg-[var(--portal-primary-soft)]" :class="isActive('/portal/tickets') ? 'bg-[var(--portal-primary-soft)] text-[var(--portal-primary)]' : ''" @click="closeMobile">Support</Link>
+                        <a v-else href="/#support" class="rounded-md px-3 py-2 font-medium hover:bg-[var(--portal-primary-soft)]" @click="closeMobile">Support</a>
                     </div>
                 </section>
 

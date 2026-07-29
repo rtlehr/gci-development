@@ -1,47 +1,6 @@
 <script setup lang="ts">
-import { Link, usePage } from '@inertiajs/vue3';
-import { computed } from 'vue';
-import { useAuth } from '@/composables/useAuth';
-
-const page = usePage();
-const { user } = useAuth();
-
-const items = computed(() => {
-    const publicItems = [
-        { label: 'Home', href: '/' },
-        { label: 'Program', href: '/#program' },
-        { label: 'Resources', href: '/#resources' },
-        { label: 'FAQs', href: '/#faqs' },
-        { label: 'Support', href: '/#support' },
-    ];
-
-    if (!user.value) return publicItems;
-
-    return [
-        { label: 'Home', href: '/' },
-        { label: 'My Portal', href: '/portal/dashboard' },
-        { label: 'Support', href: '/portal/tickets' },
-        { label: 'Resources', href: '/#resources' },
-        { label: 'Program', href: '/#program' },
-    ];
-});
-
-function isActive(href: string): boolean {
-    if (href === '/') return page.url === '/';
-    return !href.includes('#') && page.url.startsWith(href);
-}
-</script>
-
-<template>
-    <nav aria-label="Primary navigation" class="hidden items-center gap-1 lg:flex">
-        <Link
-            v-for="item in items"
-            :key="item.label"
-            :href="item.href"
-            class="rounded-md px-3 py-2 text-sm font-medium transition hover:bg-[#005c43]/10 hover:text-[#005c43] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#005c43]"
-            :class="isActive(item.href) ? 'bg-[#005c43]/10 text-[#005c43]' : 'text-[#3a3a3a]'"
-        >
-            {{ item.label }}
-        </Link>
-    </nav>
-</template>
+import { Link, usePage } from '@inertiajs/vue3'; import { computed } from 'vue'; import { useAuth } from '@/composables/useAuth';
+const page=usePage(); const {user}=useAuth(); const cmsItems=computed(()=>page.props.contentNavigation as Array<{label:string;href:string}> ?? []);
+const items=computed(()=>{ const base=user.value?[{label:'Home',href:'/'},{label:'My Portal',href:'/portal/dashboard'}]:[{label:'Home',href:'/'}]; return [...base,...cmsItems.value,{label:'Support',href:user.value?'/portal/tickets':'/#support'}]; });
+function isActive(href:string){if(href==='/')return page.url==='/'; return !href.includes('#')&&page.url.startsWith(href);}
+</script><template><nav aria-label="Primary navigation" class="hidden items-center gap-1 lg:flex"><Link v-for="item in items" :key="item.href" :href="item.href" class="rounded-md px-3 py-2 text-sm font-medium transition hover:bg-[var(--portal-primary-soft)] hover:text-[var(--portal-primary)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--portal-primary)]" :class="isActive(item.href)?'bg-[var(--portal-primary-soft)] text-[var(--portal-primary)]':'text-[var(--portal-text)]'">{{item.label}}</Link></nav></template>

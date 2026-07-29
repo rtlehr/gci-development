@@ -6,6 +6,7 @@ use App\Models\Alert;
 use App\Models\Person;
 use App\Services\CurrentUserContext;
 use App\Services\SiteSettingsService;
+use App\Services\ContentPageNavigationService;
 use App\Support\RoleAbbreviation;
 use Illuminate\Http\Request;
 use Inertia\Middleware;
@@ -17,6 +18,7 @@ class HandleInertiaRequests extends Middleware
     public function __construct(
         private readonly CurrentUserContext $currentUser,
         private readonly SiteSettingsService $siteSettings,
+        private readonly ContentPageNavigationService $contentPages,
     ) {
     }
 
@@ -59,6 +61,8 @@ class HandleInertiaRequests extends Middleware
             'appLabels' => config('app_labels'),
 
             'siteSettings' => fn () => $this->siteSettings->all(),
+
+            'contentNavigation' => fn () => $this->contentPages->forHeader($user !== null),
 
             'headerAlerts' => [
                 'count' => $alertCount,
