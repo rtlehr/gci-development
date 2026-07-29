@@ -27,6 +27,9 @@ class RoleSeeder extends Seeder
             'update_candidates',
             'delete_candidates',
             'create_tickets',
+            'portal_view_own_tickets',
+            'portal_create_tickets',
+            'portal_view_positions',
             'access_position_titles',
             'create_position_titles',
             'read_position_titles',
@@ -45,6 +48,7 @@ class RoleSeeder extends Seeder
                     'access_positions', 'create_positions', 'read_positions', 'update_positions', 'delete_positions',
                     'access_candidates', 'create_candidates', 'read_candidates', 'update_candidates', 'delete_candidates',
                     'access_tickets', 'create_tickets', 'read_tickets', 'update_tickets', 'delete_tickets',
+                    'portal_view_own_tickets', 'portal_create_tickets', 'portal_view_positions',
                     'access_groups', 'create_groups', 'read_groups', 'update_groups', 'delete_groups',
                     'access_teams', 'create_teams', 'read_teams', 'update_teams', 'delete_teams',
                     'access_permissions', 'create_permissions', 'read_permissions', 'update_permissions', 'delete_permissions',
@@ -62,6 +66,7 @@ class RoleSeeder extends Seeder
                     'access_positions', 'create_positions', 'read_positions', 'update_positions', 'delete_positions',
                     'access_candidates', 'create_candidates', 'read_candidates', 'update_candidates', 'delete_candidates',
                     'access_tickets', 'create_tickets', 'read_tickets', 'update_tickets', 'delete_tickets',
+                    'portal_view_own_tickets', 'portal_create_tickets', 'portal_view_positions',
                     'access_groups', 'create_groups', 'read_groups', 'update_groups', 'delete_groups',
                     'access_teams', 'create_teams', 'read_teams', 'update_teams', 'delete_teams',
                     'access_permissions', 'create_permissions', 'read_permissions', 'update_permissions', 'delete_permissions',
@@ -78,6 +83,7 @@ class RoleSeeder extends Seeder
                     'access_positions', 'create_positions', 'read_positions', 'update_positions', 'delete_positions',
                     'access_candidates', 'create_candidates', 'read_candidates', 'update_candidates', 'delete_candidates',
                     'create_tickets',
+                    'portal_view_own_tickets', 'portal_create_tickets', 'portal_view_positions',
                 ],
             ],
             [
@@ -96,7 +102,7 @@ class RoleSeeder extends Seeder
                 'name' => 'candidate',
                 'label' => 'Candidate',
                 'description' => 'People who are candidates for positions.',
-                'permissions' => ['create_tickets'],
+                'permissions' => ['create_tickets', 'portal_view_own_tickets', 'portal_create_tickets', 'portal_view_positions'],
             ],
         ];
 

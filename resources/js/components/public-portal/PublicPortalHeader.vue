@@ -78,6 +78,7 @@ const canOpenAdminDashboard = computed(() =>
                 </div>
                 <Link href="/" class="rounded-md px-3 py-2 font-medium hover:bg-[#005c43]/10" @click="mobileOpen = false">Home</Link>
                 <Link v-if="user" href="/portal/dashboard" class="rounded-md px-3 py-2 font-medium hover:bg-[#005c43]/10" @click="mobileOpen = false">My Portal</Link>
+                <Link v-if="user && (can('portal_view_positions') || can('access_positions'))" href="/portal/positions" class="rounded-md px-3 py-2 font-medium hover:bg-[#005c43]/10" @click="mobileOpen = false">Positions</Link>
                 <Link
                     v-if="user && canOpenAdminDashboard"
                     href="/admin"
@@ -90,7 +91,8 @@ const canOpenAdminDashboard = computed(() =>
                 <a href="/#program" class="rounded-md px-3 py-2 font-medium hover:bg-[#005c43]/10" @click="mobileOpen = false">Program</a>
                 <a href="/#resources" class="rounded-md px-3 py-2 font-medium hover:bg-[#005c43]/10" @click="mobileOpen = false">Resources</a>
                 <a href="/#faqs" class="rounded-md px-3 py-2 font-medium hover:bg-[#005c43]/10" @click="mobileOpen = false">FAQs</a>
-                <a href="/#support" class="rounded-md px-3 py-2 font-medium hover:bg-[#005c43]/10" @click="mobileOpen = false">Support</a>
+                <Link v-if="user" href="/portal/tickets" class="rounded-md px-3 py-2 font-medium hover:bg-[#005c43]/10" @click="mobileOpen = false">Support</Link>
+                <a v-else href="/#support" class="rounded-md px-3 py-2 font-medium hover:bg-[#005c43]/10" @click="mobileOpen = false">Support</a>
             </nav>
         </div>
     </header>

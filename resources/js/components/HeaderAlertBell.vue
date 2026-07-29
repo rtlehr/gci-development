@@ -152,6 +152,13 @@ function viewItem(alert: HeaderAlert) {
 
                 </DropdownMenuItem>
             </template>
+
+            <DropdownMenuSeparator />
+            <DropdownMenuItem as-child>
+                <Link href="/portal/alerts" class="justify-center font-medium">
+                    View all alerts
+                </Link>
+            </DropdownMenuItem>
         </DropdownMenuContent>
     </DropdownMenu>
 </template>

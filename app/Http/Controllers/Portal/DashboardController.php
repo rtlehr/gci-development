@@ -27,7 +27,7 @@ class DashboardController extends Controller
             })
             ->whereNotIn('status', ['complete', 'canceled'])
             ->latest()
-            ->limit(10)
+            ->limit(8)
             ->get([
                 'id',
                 'ticket_number',
@@ -39,17 +39,41 @@ class DashboardController extends Controller
                 'created_at',
             ]);
 
+        $submittedTickets = Ticket::query()
+            ->where('submitted_by_user_id', $user->id)
+            ->latest()
+            ->limit(8)
+            ->get([
+                'id',
+                'ticket_number',
+                'title',
+                'request_type',
+                'importance',
+                'category',
+                'status',
+                'created_at',
+            ]);
+
+        $alerts = Alert::query()
+            ->where('user_id', $user->id)
+            ->whereNull('read_at')
+            ->latest()
+            ->limit(8)
+            ->get();
+
         $assignedPositions = $projectManagerDashboardService->positionsFor($user);
 
         return Inertia::render('Portal/Dashboard', [
-            'alerts' => Alert::query()
-                ->where('user_id', $user->id)
-                ->whereNull('read_at')
-                ->latest()
-                ->limit(10)
-                ->get(),
+            'alerts' => $alerts,
             'assignedTickets' => $assignedTickets,
+            'submittedTickets' => $submittedTickets,
             'assignedPositions' => $assignedPositions,
+            'summary' => [
+                'unreadAlerts' => $alerts->count(),
+                'assignedTickets' => $assignedTickets->count(),
+                'submittedTickets' => $submittedTickets->count(),
+                'assignedPositions' => $assignedPositions->count(),
+            ],
         ]);
     }
 }

@@ -281,6 +281,13 @@ class TicketAdminController extends Controller
                 changeMessage: "Ticket {$ticket->ticket_number} has been updated.",
                 actionUrl: route('admin.tickets.show', $ticket)
             );
+
+            $alertService->ticketChangedForSubmitter(
+                ticket: $ticket,
+                changedByUserId: $changedByUserId,
+                changeMessage: "Ticket {$ticket->ticket_number} has been updated.",
+                actionUrl: route('portal.tickets.show', $ticket)
+            );
         }
 
         return redirect()

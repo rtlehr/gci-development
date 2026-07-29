@@ -4,7 +4,7 @@ import { computed } from 'vue';
 import { useAuth } from '@/composables/useAuth';
 
 const page = usePage();
-const { user } = useAuth();
+const { user, can } = useAuth();
 
 const items = computed(() => {
     const publicItems = [
@@ -21,10 +21,10 @@ const items = computed(() => {
         { label: 'Home', href: '/' },
         { label: 'My Portal', href: '/portal/dashboard' },
         { label: 'Directory', href: '/portal/directory', disabled: true },
-        { label: 'Positions', href: '/portal/positions', disabled: true },
+        { label: 'Positions', href: '/portal/positions', hidden: !(can('portal_view_positions') || can('access_positions')) },
         { label: 'Requests', href: '/portal/requests', disabled: true },
         { label: 'Resources', href: '/#resources' },
-        { label: 'Support', href: '/#support' },
+        { label: 'Support', href: '/portal/tickets' },
     ];
 });
 
@@ -36,7 +36,7 @@ function isActive(href: string): boolean {
 
 <template>
     <nav aria-label="Primary navigation" class="hidden items-center gap-1 lg:flex">
-        <template v-for="item in items" :key="item.label">
+        <template v-for="item in items.filter((entry) => !entry.hidden)" :key="item.label">
             <span
                 v-if="item.disabled"
                 class="cursor-not-allowed rounded-md px-3 py-2 text-sm font-medium text-slate-400"

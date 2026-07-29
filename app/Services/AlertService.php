@@ -206,6 +206,34 @@ class AlertService
         );
     }
 
+    public function ticketChangedForSubmitter(
+        Ticket $ticket,
+        int $changedByUserId,
+        string $changeMessage,
+        ?string $actionUrl = null
+    ): void {
+        $ticket->loadMissing('submittedBy.person');
+
+        if (! $ticket->submittedBy || (int) $ticket->submittedBy->id === $changedByUserId) {
+            return;
+        }
+
+        $this->createForUser(
+            user: $ticket->submittedBy,
+            title: "Ticket {$ticket->ticket_number} Updated",
+            message: $changeMessage,
+            actionUrl: $actionUrl,
+            type: 'ticket_submitter',
+            priority: 'normal',
+            sourceType: 'ticket',
+            sourceId: $ticket->id,
+            metadata: [
+                'ticket_number' => $ticket->ticket_number,
+            ],
+            shouldEmail: false
+        );
+    }
+
     public function ticketChangedForWatchers(
         Ticket $ticket,
         int $changedByUserId,

@@ -52,8 +52,12 @@ class PositionCandidateController extends Controller
             'submitted_at' => now(),
         ]);
 
+        $routeName = $request->routeIs('portal.*')
+            ? 'portal.positions.edit'
+            : 'positions.edit';
+
         return redirect()
-            ->route('positions.edit', [
+            ->route($routeName, [
                 'id' => $position->id,
                 'section' => 'candidates',
             ])

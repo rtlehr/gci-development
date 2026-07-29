@@ -47,7 +47,10 @@ const props = defineProps<{
     candidateOptions: CandidateOption[]
     candidates: PositionCandidate[]
     workflows: WorkflowOption[]
+    basePath?: string
 }>()
+
+const basePath = computed(() => props.basePath ?? '/positions')
 
 const primaryWorkflow = props.workflows.find((workflow) => workflow.is_primary) ?? props.workflows[0]
 
@@ -61,7 +64,7 @@ const selectedPerson = computed(() =>
 )
 
 function addCandidate(): void {
-    form.post(`/positions/${props.positionId}/candidates`, {
+    form.post(`${basePath.value}/${props.positionId}/candidates`, {
         preserveScroll: true,
         onSuccess: () => form.reset('person_id'),
     })
