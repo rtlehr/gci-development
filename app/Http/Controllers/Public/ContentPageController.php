@@ -4,18 +4,37 @@ namespace App\Http\Controllers\Public;
 
 use App\Http\Controllers\Controller;
 use App\Models\ContentPage;
+use App\Services\ContentPageNavigationService;
 use App\Services\CurrentUserContext;
 use Inertia\Inertia;
 use Inertia\Response;
 
 class ContentPageController extends Controller
 {
-    public function show(ContentPage $contentPage, CurrentUserContext $currentUser): Response
-    {
+    public function show(
+        ContentPage $contentPage,
+        CurrentUserContext $currentUser,
+        ContentPageNavigationService $contentPages,
+    ): Response {
         abort_unless($contentPage->status === 'published', 404);
         abort_if($contentPage->effective_at && $contentPage->effective_at->isFuture(), 404);
         abort_if($contentPage->expires_at && $contentPage->expires_at->isPast(), 404);
-        abort_unless($contentPage->isVisibleTo($currentUser->user() !== null), 403);
+
+        $authenticated = $currentUser->user() !== null;
+
+        abort_unless(
+            $contentPage->isVisibleTo($authenticated),
+            403,
+        );
+
+        abort_unless(
+            $contentPages->canSeePage(
+                $contentPage,
+                $authenticated,
+                $currentUser->permissions(),
+            ),
+            403,
+        );
 
         if ($contentPage->page_type === ContentPage::TYPE_FAQ) {
             $contentPage->load('activeFaqItems');

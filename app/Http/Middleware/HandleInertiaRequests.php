@@ -62,7 +62,7 @@ class HandleInertiaRequests extends Middleware
 
             'siteSettings' => fn () => $this->siteSettings->all(),
 
-            'contentNavigation' => fn () => $this->contentPages->forHeader($user !== null),
+            'contentNavigation' => fn () => $this->contentPages->forHeader($user !== null, $this->currentUser->permissions()),
 
             'headerAlerts' => [
                 'count' => $alertCount,

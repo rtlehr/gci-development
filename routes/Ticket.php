@@ -4,9 +4,8 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\TicketController;
 use App\Http\Controllers\TicketAdminController;
 
-Route::get('/tickets/create', [TicketController::class, 'create'])
-    ->name('tickets.create')
-    ->middleware('permission:create_tickets');
+Route::get('/tickets/create', fn () => redirect()->route('portal.tickets.create'))
+    ->name('tickets.create');
 
 Route::post('/tickets', [TicketController::class, 'store'])
     ->name('tickets.store')

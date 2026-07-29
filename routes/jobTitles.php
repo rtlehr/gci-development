@@ -4,36 +4,31 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\JobTitleController;
 use App\Http\Controllers\PositionCustomSkillTaskController;
 
-Route::get('/job-title-requirements', [JobTitleController::class, 'requirementsIndex'])
-    ->name('job-title-requirements.index')
-    ->middleware('permission:access_positions');
+Route::get('/job-title-requirements', fn () => redirect()->route('portal.job-title-requirements.index'))
+    ->name('job-title-requirements.index');
 
 // Preserve old bookmarks while directing users to the combined workflow.
-Route::redirect('/job-title-skills', '/job-title-requirements')
+Route::redirect('/job-title-skills', '/portal/job-title-requirements')
     ->name('job-title-skills.index');
 
-Route::redirect('/job-title-tasks', '/job-title-requirements')
+Route::redirect('/job-title-tasks', '/portal/job-title-requirements')
     ->name('job-title-tasks.index');
 
-Route::get('/job-titles', [JobTitleController::class, 'index'])
-    ->name('job-titles.index')
-    ->middleware('permission:access_positions');
+Route::get('/job-titles', fn () => redirect()->route('portal.job-titles.index'))
+    ->name('job-titles.index');
 
-Route::get('/job-titles/create', [JobTitleController::class, 'create'])
-    ->name('job-titles.create')
-    ->middleware('permission:update_positions');
+Route::get('/job-titles/create', fn () => redirect()->route('portal.job-titles.create'))
+    ->name('job-titles.create');
 
 Route::post('/job-titles', [JobTitleController::class, 'store'])
     ->name('job-titles.store')
     ->middleware('permission:update_positions');
 
-Route::get('/job-titles/{jobTitle}', [JobTitleController::class, 'show'])
-    ->name('job-titles.show')
-    ->middleware('permission:access_positions');
+Route::get('/job-titles/{jobTitle}', fn (int $jobTitle) => redirect()->route('portal.job-titles.show', $jobTitle))
+    ->name('job-titles.show');
 
-Route::get('/job-titles/{jobTitle}/edit', [JobTitleController::class, 'edit'])
-    ->name('job-titles.edit')
-    ->middleware('permission:update_positions');
+Route::get('/job-titles/{jobTitle}/edit', fn (int $jobTitle) => redirect()->route('portal.job-titles.edit', $jobTitle))
+    ->name('job-titles.edit');
 
 Route::put('/job-titles/{jobTitle}', [JobTitleController::class, 'update'])
     ->name('job-titles.update')

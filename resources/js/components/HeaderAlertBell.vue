@@ -36,6 +36,26 @@ const alerts = computed<HeaderAlerts>(() => {
     };
 });
 
+
+function normalizeActionUrl(url: string): string {
+    const mappings: Array<[RegExp, string]> = [
+        [/^\/people(\/.*)?$/, '/portal/people$1'],
+        [/^\/positions(\/.*)?$/, '/portal/positions$1'],
+        [/^\/candidates(\/.*)?$/, '/portal/candidates$1'],
+        [/^\/job-titles(\/.*)?$/, '/portal/job-titles$1'],
+        [/^\/job-title-requirements(\/.*)?$/, '/portal/job-title-requirements$1'],
+        [/^\/tickets(\/.*)?$/, '/portal/tickets$1'],
+    ];
+
+    for (const [pattern, replacement] of mappings) {
+        if (pattern.test(url)) {
+            return url.replace(pattern, replacement);
+        }
+    }
+
+    return url;
+}
+
 function markRead(alert: HeaderAlert) {
     router.patch(
         `/alerts/${alert.id}/read`,
@@ -64,7 +84,7 @@ function viewItem(alert: HeaderAlert) {
             preserveScroll: true,
             onSuccess: () => {
                 if (alert.action_url) {
-                    router.visit(alert.action_url);
+                    router.visit(normalizeActionUrl(alert.action_url));
                 }
             },
         },
@@ -76,7 +96,7 @@ function viewItem(alert: HeaderAlert) {
 <template>
     <DropdownMenu>
         <DropdownMenuTrigger as-child>
-            <Button variant="ghost" size="icon" class="relative">
+            <Button variant="ghost" size="icon" class="relative" aria-label="Open alerts">
                 <Bell class="h-5 w-5" />
 
                 <span

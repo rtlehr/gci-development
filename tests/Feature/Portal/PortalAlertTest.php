@@ -1,14 +1,27 @@
 <?php
 
 use App\Models\Alert;
+use App\Models\Permission;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Inertia\Testing\AssertableInertia as Assert;
 
 uses(RefreshDatabase::class);
 
-it('shows only the current users alerts', function () {
+function portalAlertUser(): User
+{
     $user = User::factory()->create();
+    $permission = Permission::query()->firstOrCreate(
+        ['name' => 'access_portal'],
+        ['description' => 'Access Portal'],
+    );
+    $user->permissions()->attach($permission);
+
+    return $user;
+}
+
+it('shows only the current users alerts', function () {
+    $user = portalAlertUser();
     $other = User::factory()->create();
 
     Alert::query()->create(['user_id' => $user->id, 'title' => 'Mine', 'type' => 'info', 'priority' => 'normal']);
@@ -25,7 +38,7 @@ it('shows only the current users alerts', function () {
 });
 
 it('filters unread alerts', function () {
-    $user = User::factory()->create();
+    $user = portalAlertUser();
 
     Alert::query()->create(['user_id' => $user->id, 'title' => 'Unread', 'type' => 'info', 'priority' => 'normal']);
     Alert::query()->create(['user_id' => $user->id, 'title' => 'Read', 'type' => 'info', 'priority' => 'normal', 'read_at' => now()]);

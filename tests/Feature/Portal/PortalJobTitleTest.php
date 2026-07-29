@@ -11,13 +11,19 @@ uses(RefreshDatabase::class);
 function userWithJobTitlePermission(string $permission): User
 {
     $user = User::factory()->create();
-    $permissionModel = Permission::query()->firstOrCreate(['name' => $permission], ['description' => $permission]);
-    $user->permissions()->syncWithoutDetaching([$permissionModel->id]);
+    foreach (array_unique(['access_portal', 'portal_view_positions', $permission]) as $name) {
+        $permissionModel = Permission::query()->firstOrCreate(
+            ['name' => $name],
+            ['description' => $name],
+        );
+        $user->permissions()->syncWithoutDetaching([$permissionModel->id]);
+    }
+
     return $user;
 }
 
 test('authorized users can view portal job titles', function () {
-    $user = userWithJobTitlePermission('access_positions');
+    $user = userWithJobTitlePermission('portal_view_positions');
     JobTitle::query()->create(['name' => 'Developer', 'is_active' => true, 'sort_order' => 0]);
 
     $this->actingAs($user)

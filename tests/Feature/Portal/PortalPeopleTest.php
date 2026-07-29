@@ -15,6 +15,12 @@ function portalCrudPeopleUser(array $permissions): User
     $user = User::factory()->create();
     Person::factory()->forUser($user)->create();
 
+    $permissions = array_values(array_unique([
+        'access_portal',
+        'portal_view_directory',
+        ...$permissions,
+    ]));
+
     $permissionIds = Permission::query()
         ->whereIn('name', $permissions)
         ->pluck('id');
@@ -107,7 +113,8 @@ it('renders portal person detail and edit pages', function () {
 });
 
 it('protects portal people actions with existing granular permissions', function () {
-    $user = portalCrudPeopleUser([]);
+    $user = User::factory()->create();
+    Person::factory()->forUser($user)->create();
     $person = Person::factory()->create();
 
     $this->actingAs($user)->get(route('portal.people.index'))->assertForbidden();

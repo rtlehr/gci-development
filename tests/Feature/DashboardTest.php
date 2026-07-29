@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Models\Permission;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Inertia\Testing\AssertableInertia as Assert;
@@ -25,6 +26,14 @@ class DashboardTest extends TestCase
     public function test_authenticated_users_can_visit_the_portal_dashboard(): void
     {
         $user = User::factory()->create();
+
+        foreach (['access_portal', 'portal_view_dashboard'] as $name) {
+            $permission = Permission::query()->firstOrCreate(
+                ['name' => $name],
+                ['description' => $name],
+            );
+            $user->permissions()->syncWithoutDetaching([$permission->id]);
+        }
 
         $response = $this
             ->actingAs($user)

@@ -28,27 +28,25 @@ const siteSettings = computed(() => page.props.siteSettings as {
         portal_name: string;
     };
 });
-const { user, username, can, hasRole } = useAuth();
+const { user, username, can } = useAuth();
 const mobileOpen = ref(false);
 
-const canOpenAdminDashboard = computed(() =>
-    can('view_admin') || hasRole('owner') || hasRole('admin'),
-);
+const canOpenAdminDashboard = computed(() => can('view_admin'));
 
 const manageGroups = [
     {
         label: 'Workforce',
         items: [
-            { label: 'People', href: '/portal/people', icon: Users },
-            { label: 'Candidates', href: '/portal/candidates', icon: UserSearch },
+            { label: 'People', href: '/portal/people', icon: Users, permission: 'portal_view_directory' },
+            { label: 'Candidates', href: '/portal/candidates', icon: UserSearch, permission: 'portal_view_positions' },
         ],
     },
     {
         label: 'Staffing',
         items: [
-            { label: 'Positions', href: '/portal/positions', icon: BriefcaseBusiness },
-            { label: 'Job Titles', href: '/portal/job-titles', icon: BadgeCheck },
-            { label: 'Job Title Requirements', href: '/portal/job-title-requirements', icon: ListChecks },
+            { label: 'Positions', href: '/portal/positions', icon: BriefcaseBusiness, permission: 'portal_view_positions' },
+            { label: 'Job Titles', href: '/portal/job-titles', icon: BadgeCheck, permission: 'portal_view_positions' },
+            { label: 'Job Title Requirements', href: '/portal/job-title-requirements', icon: ListChecks, permission: 'portal_view_positions' },
         ],
     },
     {
@@ -58,6 +56,28 @@ const manageGroups = [
         ],
     },
 ];
+
+const visibleManageGroups = computed(() =>
+    manageGroups
+        .map((group) => ({
+            ...group,
+            items: group.items.filter(
+                (item) => item.disabled || !item.permission || can(item.permission),
+            ),
+        }))
+        .filter((group) => group.items.length > 0),
+);
+
+const canViewPortalDashboard = computed(
+    () => can('access_portal') && can('portal_view_dashboard'),
+);
+
+const supportHref = computed(() => {
+    if (can('portal_view_own_tickets')) return '/portal/tickets';
+    if (can('portal_create_tickets')) return '/portal/tickets/create';
+
+    return null;
+});
 
 function isActive(href: string): boolean {
     if (href === '/') return page.url === '/';
@@ -90,7 +110,7 @@ function closeMobile(): void {
             </div>
 
             <div class="ml-auto flex shrink-0 items-center gap-1 sm:gap-2">
-                <PortalManageMenu v-if="user" />
+                <PortalManageMenu v-if="user && can('access_portal')" />
 
                 <Button
                     v-if="user && canOpenAdminDashboard"
@@ -112,6 +132,7 @@ function closeMobile(): void {
                     size="icon"
                     class="lg:hidden"
                     aria-label="Toggle navigation"
+                    aria-controls="portal-mobile-navigation"
                     :aria-expanded="mobileOpen"
                     @click="mobileOpen = !mobileOpen"
                 >
@@ -120,7 +141,7 @@ function closeMobile(): void {
             </div>
         </div>
 
-        <div v-if="mobileOpen" class="border-t border-[var(--portal-border)] bg-[var(--portal-surface)] px-4 py-4 lg:hidden">
+        <div id="portal-mobile-navigation" v-if="mobileOpen" class="border-t border-[var(--portal-border)] bg-[var(--portal-surface)] px-4 py-4 lg:hidden">
             <nav aria-label="Mobile navigation" class="mx-auto grid max-w-7xl gap-4">
                 <div v-if="user" class="border-b border-[var(--portal-border)] px-2 pb-3">
                     <div class="text-sm font-semibold text-[var(--portal-text)]">{{ username }}</div>
@@ -141,7 +162,7 @@ function closeMobile(): void {
                             Home
                         </Link>
                         <Link
-                            v-if="user"
+                            v-if="user && canViewPortalDashboard"
                             href="/portal/dashboard"
                             class="rounded-md px-3 py-2 font-medium hover:bg-[var(--portal-primary-soft)]"
                             :class="isActive('/portal/dashboard') ? 'bg-[var(--portal-primary-soft)] text-[var(--portal-primary)]' : ''"
@@ -150,18 +171,18 @@ function closeMobile(): void {
                             My Portal
                         </Link>
                         <Link v-for="item in contentNavigation" :key="item.href" :href="item.href" class="rounded-md px-3 py-2 font-medium hover:bg-[var(--portal-primary-soft)]" :class="isActive(item.href) ? 'bg-[var(--portal-primary-soft)] text-[var(--portal-primary)]' : ''" @click="closeMobile">{{ item.label }}</Link>
-                        <Link v-if="user" href="/portal/tickets" class="rounded-md px-3 py-2 font-medium hover:bg-[var(--portal-primary-soft)]" :class="isActive('/portal/tickets') ? 'bg-[var(--portal-primary-soft)] text-[var(--portal-primary)]' : ''" @click="closeMobile">Support</Link>
+                        <Link v-if="user && supportHref" :href="supportHref" class="rounded-md px-3 py-2 font-medium hover:bg-[var(--portal-primary-soft)]" :class="isActive('/portal/tickets') ? 'bg-[var(--portal-primary-soft)] text-[var(--portal-primary)]' : ''" @click="closeMobile">Support</Link>
                         <a v-else href="/#support" class="rounded-md px-3 py-2 font-medium hover:bg-[var(--portal-primary-soft)]" @click="closeMobile">Support</a>
                     </div>
                 </section>
 
-                <section v-if="user">
+                <section v-if="user && visibleManageGroups.length">
                     <div class="px-2 pb-1 text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">
                         Manage
                     </div>
 
                     <div class="grid gap-3">
-                        <div v-for="group in manageGroups" :key="group.label">
+                        <div v-for="group in visibleManageGroups" :key="group.label">
                             <div class="px-3 pb-1 text-xs font-medium text-muted-foreground">{{ group.label }}</div>
 
                             <div class="grid gap-1">

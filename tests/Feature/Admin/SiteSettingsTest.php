@@ -13,12 +13,14 @@ function siteSettingsAdminUser(): User
 {
     $user = User::factory()->create();
 
-    $permission = Permission::query()->create([
-        'name' => 'view_admin',
-        'description' => 'View admin',
-    ]);
+    foreach (['view_admin', 'access_site_settings', 'update_site_settings'] as $name) {
+        $permission = Permission::query()->firstOrCreate(
+            ['name' => $name],
+            ['description' => $name],
+        );
 
-    $user->permissions()->attach($permission);
+        $user->permissions()->syncWithoutDetaching([$permission->id]);
+    }
 
     return $user;
 }

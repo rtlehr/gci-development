@@ -10,6 +10,7 @@ import {
     Users,
 } from 'lucide-vue-next';
 import { computed } from 'vue';
+import { useAuth } from '@/composables/useAuth';
 import { Button } from '@/components/ui/button';
 import {
     DropdownMenu,
@@ -21,6 +22,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 
 const page = usePage();
+const { can } = useAuth();
 
 const groups = [
     {
@@ -31,12 +33,14 @@ const groups = [
                 description: 'Manage personnel, contact details, and access.',
                 href: '/portal/people',
                 icon: Users,
+                permission: 'portal_view_directory',
             },
             {
                 label: 'Candidates',
                 description: 'Manage candidates and hiring workflows.',
                 href: '/portal/candidates',
                 icon: UserSearch,
+                permission: 'portal_view_positions',
             },
         ],
     },
@@ -48,18 +52,21 @@ const groups = [
                 description: 'Manage staffing requirements and assignments.',
                 href: '/portal/positions',
                 icon: BriefcaseBusiness,
+                permission: 'portal_view_positions',
             },
             {
                 label: 'Job Titles',
                 description: 'Manage titles, default skills, and tasks.',
                 href: '/portal/job-titles',
                 icon: BadgeCheck,
+                permission: 'portal_view_positions',
             },
             {
                 label: 'Job Title Requirements',
                 description: 'Review skills and task requirements by title.',
                 href: '/portal/job-title-requirements',
                 icon: ListChecks,
+                permission: 'portal_view_positions',
             },
         ],
     },
@@ -76,6 +83,18 @@ const groups = [
         ],
     },
 ];
+
+
+const visibleGroups = computed(() =>
+    groups
+        .map((group) => ({
+            ...group,
+            items: group.items.filter(
+                (item) => item.disabled || !item.permission || can(item.permission),
+            ),
+        }))
+        .filter((group) => group.items.length > 0),
+);
 
 const managePrefixes = [
     '/portal/people',
@@ -116,7 +135,7 @@ function isActive(href: string): boolean {
         >
             <div class="grid gap-2 md:grid-cols-2">
                 <div
-                    v-for="group in groups"
+                    v-for="group in visibleGroups"
                     :key="group.label"
                     class="rounded-lg border border-border/70 p-2"
                     :class="group.label === 'Operations' ? 'md:col-span-2' : ''"

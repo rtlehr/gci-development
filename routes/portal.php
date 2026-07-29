@@ -11,29 +11,33 @@ use App\Http\Controllers\PositionCandidateController;
 use App\Http\Controllers\PositionCustomSkillTaskController;
 use Illuminate\Support\Facades\Route;
 
-Route::middleware('auth')
+Route::middleware(['auth', 'permission:access_portal'])
     ->prefix('portal')
     ->name('portal.')
     ->group(function (): void {
-        Route::get('/', DashboardController::class)->name('index');
-        Route::get('/dashboard', DashboardController::class)->name('dashboard');
+        Route::get('/', DashboardController::class)
+            ->middleware('permission:portal_view_dashboard')
+            ->name('index');
+        Route::get('/dashboard', DashboardController::class)
+            ->middleware('permission:portal_view_dashboard')
+            ->name('dashboard');
         Route::get('/alerts', [AlertController::class, 'index'])->name('alerts.index');
 
 
         Route::get('/people', [PeopleController::class, 'index'])
-            ->middleware('permission:access_people')
+            ->middleware('permission:portal_view_directory')
             ->name('people.index');
 
         Route::post('/people/preferences', [PeopleController::class, 'savePreferences'])
-            ->middleware('permission:access_people')
+            ->middleware('permission:portal_view_directory')
             ->name('people.preferences.save');
 
         Route::delete('/people/preferences', [PeopleController::class, 'resetPreferences'])
-            ->middleware('permission:access_people')
+            ->middleware('permission:portal_view_directory')
             ->name('people.preferences.reset');
 
         Route::post('/people/export/csv', [PeopleController::class, 'exportCsv'])
-            ->middleware('permission:access_people')
+            ->middleware('permission:portal_view_directory')
             ->name('people.export.csv');
 
         Route::get('/people/create', [PeopleController::class, 'create'])
@@ -45,7 +49,7 @@ Route::middleware('auth')
             ->name('people.store');
 
         Route::get('/people/{id}', [PeopleController::class, 'show'])
-            ->middleware('permission:read_people')
+            ->middleware('permission:portal_view_directory')
             ->name('people.show');
 
         Route::get('/people/{id}/edit', [PeopleController::class, 'edit'])
@@ -62,17 +66,17 @@ Route::middleware('auth')
 
 
         Route::get('/job-title-requirements', [JobTitleController::class, 'requirementsIndex'])
-            ->middleware('permission:access_positions')
+            ->middleware('permission:portal_view_positions')
             ->name('job-title-requirements.index');
 
         Route::get('/job-titles', [JobTitleController::class, 'index'])
-            ->middleware('permission:access_positions')
+            ->middleware('permission:portal_view_positions')
             ->name('job-titles.index');
         Route::post('/job-titles/preferences', [JobTitleController::class, 'savePreferences'])
-            ->middleware('permission:access_positions')
+            ->middleware('permission:portal_view_positions')
             ->name('job-titles.preferences.save');
         Route::delete('/job-titles/preferences', [JobTitleController::class, 'resetPreferences'])
-            ->middleware('permission:access_positions')
+            ->middleware('permission:portal_view_positions')
             ->name('job-titles.preferences.reset');
         Route::get('/job-titles/create', [JobTitleController::class, 'create'])
             ->middleware('permission:update_positions')
@@ -81,7 +85,7 @@ Route::middleware('auth')
             ->middleware('permission:update_positions')
             ->name('job-titles.store');
         Route::get('/job-titles/{jobTitle}', [JobTitleController::class, 'show'])
-            ->middleware('permission:access_positions')
+            ->middleware('permission:portal_view_positions')
             ->name('job-titles.show');
         Route::get('/job-titles/{jobTitle}/edit', [JobTitleController::class, 'edit'])
             ->middleware('permission:update_positions')
@@ -112,19 +116,19 @@ Route::middleware('auth')
             ->name('job-titles.tasks.destroy');
 
         Route::get('/positions', [PositionController::class, 'index'])
-            ->middleware('permission:access_positions')
+            ->middleware('permission:portal_view_positions')
             ->name('positions.index');
 
         Route::post('/positions/preferences', [PositionController::class, 'savePreferences'])
-            ->middleware('permission:access_positions')
+            ->middleware('permission:portal_view_positions')
             ->name('positions.preferences.save');
 
         Route::delete('/positions/preferences', [PositionController::class, 'resetPreferences'])
-            ->middleware('permission:access_positions')
+            ->middleware('permission:portal_view_positions')
             ->name('positions.preferences.reset');
 
         Route::post('/positions/export/csv', [PositionController::class, 'exportCsv'])
-            ->middleware('permission:access_positions')
+            ->middleware('permission:portal_view_positions')
             ->name('positions.export.csv');
 
         Route::get('/positions/create', [PositionController::class, 'create'])
@@ -136,7 +140,7 @@ Route::middleware('auth')
             ->name('positions.store');
 
         Route::get('/positions/{id}', [PositionController::class, 'show'])
-            ->middleware('permission:read_positions')
+            ->middleware('permission:portal_view_positions')
             ->name('positions.show');
 
         Route::get('/positions/{id}/edit', [PositionController::class, 'edit'])
@@ -172,19 +176,19 @@ Route::middleware('auth')
             ->name('positions.custom-tasks.destroy');
 
         Route::get('/candidates', [CandidateController::class, 'index'])
-            ->middleware('permission:access_candidates')
+            ->middleware('permission:portal_view_positions')
             ->name('candidates.index');
 
         Route::post('/candidates/preferences', [CandidateController::class, 'savePreferences'])
-            ->middleware('permission:access_candidates')
+            ->middleware('permission:portal_view_positions')
             ->name('candidates.preferences.save');
 
         Route::delete('/candidates/preferences', [CandidateController::class, 'resetPreferences'])
-            ->middleware('permission:access_candidates')
+            ->middleware('permission:portal_view_positions')
             ->name('candidates.preferences.reset');
 
         Route::post('/candidates/export/csv', [CandidateController::class, 'exportCsv'])
-            ->middleware('permission:access_candidates')
+            ->middleware('permission:portal_view_positions')
             ->name('candidates.export.csv');
 
         Route::get('/candidates/create', [CandidateController::class, 'create'])
@@ -196,7 +200,7 @@ Route::middleware('auth')
             ->name('candidates.store');
 
         Route::get('/candidates/{candidate}', [CandidateController::class, 'show'])
-            ->middleware('permission:read_candidates')
+            ->middleware('permission:portal_view_positions')
             ->name('candidates.show');
 
         Route::get('/candidates/{candidate}/edit', [CandidateController::class, 'edit'])

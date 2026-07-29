@@ -23,6 +23,8 @@ function portalTicketUser(array $permissions): User
         'email' => $user->email,
     ]);
 
+    $permissions = array_values(array_unique(['access_portal', ...$permissions]));
+
     $permissionIds = Permission::query()
         ->whereIn('name', $permissions)
         ->pluck('id');

@@ -17,6 +17,12 @@ function portalCrudPositionUser(array $permissions): User
     $user = User::factory()->create();
     Person::factory()->forUser($user)->create();
 
+    $permissions = array_values(array_unique([
+        'access_portal',
+        'portal_view_positions',
+        ...$permissions,
+    ]));
+
     $permissionIds = Permission::query()
         ->whereIn('name', $permissions)
         ->pluck('id');
@@ -115,7 +121,8 @@ it('renders full position detail and edit pages inside the portal shell', functi
 });
 
 it('protects portal position actions with the existing granular permissions', function () {
-    $user = portalCrudPositionUser([]);
+    $user = User::factory()->create();
+    Person::factory()->forUser($user)->create();
     $position = Position::factory()->create();
 
     $this->actingAs($user)->get(route('portal.positions.index'))->assertForbidden();
