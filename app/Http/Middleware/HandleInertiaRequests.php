@@ -32,6 +32,9 @@ class HandleInertiaRequests extends Middleware
     {
         $user = $this->currentUser->user();
 
+        $devSwitcherAvailable = app()->environment('local')
+            && config('devuser.enabled') === true;
+
         $alertCount = 0;
         $recentAlerts = [];
 
@@ -73,10 +76,17 @@ class HandleInertiaRequests extends Middleware
                 'user' => $this->currentUser->payload(),
             ],
 
+            'impersonation' => [
+                'active' => session()->has('impersonator_user_id'),
+                'impersonator_user_id' => session('impersonator_user_id'),
+                'log_id' => session('impersonation_log_id'),
+            ],
+
             'dev' => [
-                'debug' => config('app.debug') === true,
-                'isImpersonating' => session()->has('dev_person_code'),
-                'testUsers' => fn () => config('app.debug') === true
+                'available' => $devSwitcherAvailable,
+                'isImpersonating' => $devSwitcherAvailable
+                    && session()->has('dev_person_code'),
+                'testUsers' => fn () => $devSwitcherAvailable
                     ? Person::query()
                         ->whereNotNull('user_id')
                         ->with(['user.roles:id,name,label'])

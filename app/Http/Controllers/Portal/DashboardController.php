@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Portal;
 use App\Http\Controllers\Controller;
 use App\Models\Alert;
 use App\Models\Ticket;
+use App\Services\CurrentUserContext;
 use App\Services\ProjectManagerDashboardService;
 use App\Services\UserResolver;
 use Inertia\Inertia;
@@ -14,7 +15,8 @@ class DashboardController extends Controller
 {
     public function __invoke(
         UserResolver $userResolver,
-        ProjectManagerDashboardService $projectManagerDashboardService,
+        CurrentUserContext $currentUser,
+        ProjectManagerDashboardService $dashboardService,
     ): Response {
         $user = $userResolver->resolveUser();
 
@@ -61,17 +63,56 @@ class DashboardController extends Controller
             ->limit(8)
             ->get();
 
-        $isPmo = $user->roles()
-            ->whereRaw('LOWER(name) = ?', ['pmo'])
-            ->exists();
+        /*
+        |--------------------------------------------------------------------------
+        | Multiple-role precedence
+        |--------------------------------------------------------------------------
+        |
+        | Permissions are additive. The broadest applicable workforce view wins:
+        | all positions, assigned positions, then candidate opportunities.
+        |
+        */
 
-        $assignedPositions = $isPmo
-            ? collect()
-            : $projectManagerDashboardService->positionsFor($user);
+        $showAllPositions = $currentUser->hasPermission(
+            'portal_view_all_positions',
+        );
 
-        $pmoPositions = $isPmo
-            ? $projectManagerDashboardService->allPositionsForPmo()
+        $showAssignedPositions = ! $showAllPositions
+            && $currentUser->hasPermission(
+                'portal_view_assigned_positions',
+            );
+
+        $showCandidateProgress = ! $showAllPositions
+            && ! $showAssignedPositions
+            && $currentUser->hasPermission(
+                'portal_view_candidate_positions',
+            );
+
+        $pmoPositions = $showAllPositions
+            ? $dashboardService->allPositionsForPmo()
             : collect();
+
+        $assignedPositions = $showAssignedPositions
+            ? $dashboardService->positionsFor($user)
+            : collect();
+
+        $candidateOpportunities = $showCandidateProgress
+            ? $dashboardService->candidateOpportunitiesFor($user)
+            : collect();
+
+        $positionCount = match (true) {
+            $showAllPositions => $pmoPositions->count(),
+            $showAssignedPositions => $assignedPositions->count(),
+            $showCandidateProgress => $candidateOpportunities->count(),
+            default => 0,
+        };
+
+        $positionLabel = match (true) {
+            $showAllPositions => 'all positions',
+            $showAssignedPositions => 'assigned positions',
+            $showCandidateProgress => 'opportunities',
+            default => 'positions',
+        };
 
         return Inertia::render('Portal/Dashboard', [
             'alerts' => $alerts,
@@ -79,18 +120,16 @@ class DashboardController extends Controller
             'submittedTickets' => $submittedTickets,
             'assignedPositions' => $assignedPositions,
             'pmoPositions' => $pmoPositions,
-            'showPmoPositions' => $isPmo,
-            'showProjectManagerPositions' => ! $isPmo && $assignedPositions->isNotEmpty(),
+            'candidateOpportunities' => $candidateOpportunities,
+            'showPmoPositions' => $showAllPositions,
+            'showProjectManagerPositions' => $showAssignedPositions,
+            'showCandidateOpportunities' => $showCandidateProgress,
             'summary' => [
                 'unreadAlerts' => $alerts->count(),
                 'assignedTickets' => $assignedTickets->count(),
                 'submittedTickets' => $submittedTickets->count(),
-                'assignedPositions' => $isPmo
-                    ? $pmoPositions->count()
-                    : $assignedPositions->count(),
-                'positionsLabel' => $isPmo
-                    ? 'all positions'
-                    : 'assigned positions',
+                'assignedPositions' => $positionCount,
+                'positionsLabel' => $positionLabel,
             ],
         ]);
     }

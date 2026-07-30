@@ -49,6 +49,7 @@ test('pmo portal dashboard receives every position and not the project manager c
         'access_portal',
         'portal_view_dashboard',
         'portal_view_positions',
+        'portal_view_all_positions',
         'update_positions',
     ]);
 
@@ -72,6 +73,7 @@ test('project manager portal dashboard receives only assigned positions', functi
         'access_portal',
         'portal_view_dashboard',
         'portal_view_positions',
+        'portal_view_assigned_positions',
     ]);
 
     Position::factory()->create([

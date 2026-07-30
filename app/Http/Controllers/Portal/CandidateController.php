@@ -7,6 +7,7 @@ use App\Models\Candidate;
 use App\Models\Person;
 use App\Models\Position;
 use App\Models\Workflow;
+use App\Services\PortalWorkforceAccessService;
 use Illuminate\Http\Request;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Response as ResponseFacade;
@@ -17,6 +18,11 @@ use Inertia\Response;
 
 class CandidateController extends Controller
 {
+    public function __construct(
+        private readonly PortalWorkforceAccessService $workforceAccess,
+    ) {
+    }
+
     /**
      * Display a listing of the resource.
      */
@@ -51,7 +57,8 @@ class CandidateController extends Controller
         $visibleColumns = $this->sanitizeColumnKeys($visibleColumns, $columns, $defaultVisibleColumns);
         $columnOrder = $this->sanitizeColumnKeys($columnOrder, $columns, $defaultColumnOrder);
 
-        $candidates = Candidate::query()
+        $candidates = $this->workforceAccess
+            ->scopeCandidates(Candidate::query())
             ->with([
                 'person:id,first_name,last_name,person_code',
                 'position:id,job_title,position_code',
@@ -321,6 +328,8 @@ class CandidateController extends Controller
      */
     public function show(Candidate $candidate): Response
     {
+        $this->workforceAccess->authorizeCandidateView($candidate);
+
         $candidate->load([
             'person:id,first_name,last_name,person_code,email',
             'position:id,job_title,position_code,status',

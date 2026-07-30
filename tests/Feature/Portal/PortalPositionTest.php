@@ -20,6 +20,7 @@ function portalCrudPositionUser(array $permissions): User
     $permissions = array_values(array_unique([
         'access_portal',
         'portal_view_positions',
+        'portal_view_all_positions',
         ...$permissions,
     ]));
 

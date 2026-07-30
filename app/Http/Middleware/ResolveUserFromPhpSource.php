@@ -35,7 +35,13 @@ class ResolveUserFromPhpSource
             return $next($request);
         }
 
-        if (! config('devuser.enabled')) {
+        /*
+         * The development identity override is strictly local-only.
+         *
+         * Staging and production must use the normal resolved identity and the
+         * audited impersonation workflow. APP_DEBUG does not enable this path.
+         */
+        if (! app()->environment('local') || ! config('devuser.enabled')) {
             return $next($request);
         }
 

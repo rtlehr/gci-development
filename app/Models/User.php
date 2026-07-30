@@ -78,4 +78,14 @@ class User extends Authenticatable
             ->withTimestamps();
     }
 
+    public function startedImpersonations(): HasMany
+    {
+        return $this->hasMany(ImpersonationLog::class, 'impersonator_user_id');
+    }
+
+    public function receivedImpersonations(): HasMany
+    {
+        return $this->hasMany(ImpersonationLog::class, 'impersonated_user_id');
+    }
+
 }

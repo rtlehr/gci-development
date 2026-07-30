@@ -79,6 +79,54 @@ class ProjectManagerDashboardService
             ->values();
     }
 
+
+    /**
+     * Return opportunities and workflow progress for the Person linked to the
+     * supplied Candidate user.
+     *
+     * @return Collection<int, array<string, mixed>>
+     */
+    public function candidateOpportunitiesFor(User $user): Collection
+    {
+        $person = Person::query()
+            ->where('user_id', $user->id)
+            ->first();
+
+        if (! $person) {
+            return collect();
+        }
+
+        return Candidate::query()
+            ->where('person_id', $person->id)
+            ->with([
+                'position:id,position_code,job_title,status',
+                'workflow.steps',
+                'stepEvents.workflowStep',
+            ])
+            ->latest('updated_at')
+            ->get()
+            ->map(function (Candidate $candidate): array {
+                $metrics = $this->candidateMetrics($candidate);
+
+                return [
+                    'candidate_id' => $candidate->id,
+                    'position_id' => $candidate->position_id,
+                    'position_code' => $candidate->position?->position_code,
+                    'position_title' => $candidate->position?->job_title
+                        ?? 'Untitled Position',
+                    'position_status' => $candidate->position?->status,
+                    'candidate_status' => $candidate->status,
+                    'workflow_name' => $metrics['workflow_name'],
+                    'current_stage' => $metrics['step_name'],
+                    'step_number' => $metrics['step_number'],
+                    'step_count' => $metrics['step_count'],
+                    'status_code' => $metrics['status_code'],
+                    'last_updated' => $candidate->updated_at?->toIso8601String(),
+                ];
+            })
+            ->values();
+    }
+
     private function positionQuery()
     {
         return Position::query()

@@ -1,23 +1,36 @@
 <?php
 
+use App\Http\Controllers\PageHelpAdminController;
+use App\Http\Controllers\PageHelpController;
 use Illuminate\Support\Facades\Route;
 
-use App\Http\Controllers\PageHelpController;
-
-use App\Http\Controllers\PageHelpAdminController;
-
-Route::get('/page-help/{helpKey}', [PageHelpController::class, 'show'])  
+Route::get('/page-help/{helpKey}', [PageHelpController::class, 'show'])
     ->where('helpKey', '.*')
     ->name('page-help.show');
 
 Route::prefix('admin/page-help')
     ->name('page-help-admin.')
-    ->middleware('permission:view_admin')
-    ->group(function () {
+    ->middleware(['permission:view_admin', 'permission:access_page_help'])
+    ->group(function (): void {
         Route::get('/', [PageHelpAdminController::class, 'index'])->name('index');
-        Route::get('/create', [PageHelpAdminController::class, 'create'])->name('create');
-        Route::post('/', [PageHelpAdminController::class, 'store'])->name('store');
-        Route::get('/{pageHelp}/edit', [PageHelpAdminController::class, 'edit'])->name('edit');
-        Route::put('/{pageHelp}', [PageHelpAdminController::class, 'update'])->name('update');
-        Route::delete('/{pageHelp}', [PageHelpAdminController::class, 'destroy'])->name('destroy');
+
+        Route::get('/create', [PageHelpAdminController::class, 'create'])
+            ->middleware('permission:manage_page_help')
+            ->name('create');
+
+        Route::post('/', [PageHelpAdminController::class, 'store'])
+            ->middleware('permission:manage_page_help')
+            ->name('store');
+
+        Route::get('/{pageHelp}/edit', [PageHelpAdminController::class, 'edit'])
+            ->middleware('permission:manage_page_help')
+            ->name('edit');
+
+        Route::put('/{pageHelp}', [PageHelpAdminController::class, 'update'])
+            ->middleware('permission:manage_page_help')
+            ->name('update');
+
+        Route::delete('/{pageHelp}', [PageHelpAdminController::class, 'destroy'])
+            ->middleware('permission:manage_page_help')
+            ->name('destroy');
     });

@@ -2,6 +2,7 @@
 import { computed, provide, ref } from 'vue'
 import { usePage } from '@inertiajs/vue3'
 import FlashMessages from '@/components/FlashMessages.vue'
+import ImpersonationBanner from '@/components/public-portal/ImpersonationBanner.vue'
 import HelpPanel from '@/components/ui/HelpPanel.vue'
 import AppSidebarLayout from '@/layouts/app/AppSidebarLayout.vue'
 import type { BreadcrumbItem } from '@/types'
@@ -49,6 +50,7 @@ provide('currentHelpKey', currentHelpKey)
 <template>
     <div class="flex min-h-screen w-full">
         <div class="min-w-0 flex-1">
+            <ImpersonationBanner />
             <AppSidebarLayout :breadcrumbs="breadcrumbs ?? []">
                 <FlashMessages />
                 <slot />

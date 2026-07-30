@@ -1,5 +1,5 @@
 <template>
-    <div v-if="devDebug" class="rounded-lg border p-3 space-y-2 bg-muted/40">
+    <div v-if="devSwitcherAvailable" class="rounded-lg border p-3 space-y-2 bg-muted/40">
         <div class="text-xs font-semibold text-muted-foreground">
             Development User Switcher
         </div>
@@ -36,8 +36,10 @@ import { router, usePage } from '@inertiajs/vue3'
 
 const page = usePage()
 
-// Determines whether the development user switcher should be visible.
-const devDebug = computed(() => page.props.dev?.debug === true)
+// The backend exposes this only when APP_ENV=local and DEV_USER_ENABLED=true.
+const devSwitcherAvailable = computed(
+    () => page.props.dev?.available === true,
+)
 
 // Raw test users passed from the backend through Inertia page props.
 const rawTestUsers = computed(() => page.props.dev?.testUsers ?? [])

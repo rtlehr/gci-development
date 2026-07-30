@@ -10,39 +10,99 @@ class RoleSeeder extends Seeder
 {
     public function run(): void
     {
-        $standardPortalPermissions = [
+        $standardPortal = [
             'access_portal',
             'portal_view_dashboard',
-            'portal_view_positions',
+            'portal_view_personal_information',
             'portal_view_own_tickets',
             'portal_create_tickets',
             'portal_view_resources',
             'portal_view_program_contacts',
         ];
 
-        $workforcePortalPermissions = [
-            ...$standardPortalPermissions,
+        $pmoCotr = [
+            ...$standardPortal,
             'portal_view_directory',
-        ];
+            'portal_view_positions',
+            'portal_view_all_positions',
 
-        $pmoPermissions = [
-            ...$workforcePortalPermissions,
             'access_people',
             'create_people',
             'read_people',
             'update_people',
             'delete_people',
+
             'access_positions',
             'create_positions',
             'read_positions',
             'update_positions',
             'delete_positions',
+
             'access_candidates',
             'create_candidates',
             'read_candidates',
             'update_candidates',
             'delete_candidates',
+
+            'access_position_titles',
+            'create_position_titles',
+            'read_position_titles',
+            'update_position_titles',
+            'delete_position_titles',
+        ];
+
+        $adminOperational = [
+            'view_admin',
+            ...$standardPortal,
+            'portal_view_directory',
+            'portal_view_positions',
+            'portal_view_all_positions',
+            'portal_view_requests',
+            'portal_create_requests',
+
+            'access_people',
+            'create_people',
+            'read_people',
+            'update_people',
+            'delete_people',
+
+            'access_positions',
+            'create_positions',
+            'read_positions',
+            'update_positions',
+            'delete_positions',
+
+            'access_candidates',
+            'create_candidates',
+            'read_candidates',
+            'update_candidates',
+            'delete_candidates',
+
+            'access_tickets',
             'create_tickets',
+            'read_tickets',
+            'update_tickets',
+            'delete_tickets',
+
+            'access_groups',
+            'create_groups',
+            'read_groups',
+            'update_groups',
+            'delete_groups',
+
+            'access_teams',
+            'create_teams',
+            'read_teams',
+            'update_teams',
+            'delete_teams',
+
+            'access_organizations',
+            'manage_organizations',
+            'access_workflows',
+            'manage_workflows',
+            'access_content_pages',
+            'manage_content_pages',
+
             'access_position_titles',
             'create_position_titles',
             'read_position_titles',
@@ -54,82 +114,71 @@ class RoleSeeder extends Seeder
             [
                 'name' => 'owner',
                 'label' => 'Owner',
-                'description' => 'Full super administrative access.',
-                'permissions' => [
-                    'view_owner', 'view_admin',
-                    ...$workforcePortalPermissions,
-                    'portal_view_requests', 'portal_create_requests',
-                    'access_site_settings', 'update_site_settings',
-                    'access_people', 'create_people', 'read_people', 'update_people', 'delete_people',
-                    'access_positions', 'create_positions', 'read_positions', 'update_positions', 'delete_positions',
-                    'access_candidates', 'create_candidates', 'read_candidates', 'update_candidates', 'delete_candidates',
-                    'access_tickets', 'create_tickets', 'read_tickets', 'update_tickets', 'delete_tickets',
-                    'access_groups', 'create_groups', 'read_groups', 'update_groups', 'delete_groups',
-                    'access_teams', 'create_teams', 'read_teams', 'update_teams', 'delete_teams',
-                    'access_permissions', 'create_permissions', 'read_permissions', 'update_permissions', 'delete_permissions',
-                    'access_roles', 'create_roles', 'read_roles', 'update_roles', 'delete_roles',
-                    'access_position_titles', 'create_position_titles', 'read_position_titles', 'update_position_titles', 'delete_position_titles',
-                ],
+                'description' => 'Unrestricted system owner access.',
+                'permissions' => Permission::query()->pluck('name')->all(),
             ],
             [
                 'name' => 'admin',
                 'label' => 'Admin',
-                'description' => 'Full administrative access.',
+                'description' => 'Operational administrator without application-setup permissions.',
+                'permissions' => $adminOperational,
+            ],
+            [
+                'name' => 'developer',
+                'label' => 'Developer',
+                'description' => 'Technical support access, audited impersonation, and no operational-data administration by default.',
                 'permissions' => [
                     'view_admin',
-                    ...$workforcePortalPermissions,
-                    'portal_view_requests', 'portal_create_requests',
-                    'access_site_settings', 'update_site_settings',
-                    'access_people', 'create_people', 'read_people', 'update_people', 'delete_people',
-                    'access_positions', 'create_positions', 'read_positions', 'update_positions', 'delete_positions',
-                    'access_candidates', 'create_candidates', 'read_candidates', 'update_candidates', 'delete_candidates',
-                    'access_tickets', 'create_tickets', 'read_tickets', 'update_tickets', 'delete_tickets',
-                    'access_groups', 'create_groups', 'read_groups', 'update_groups', 'delete_groups',
-                    'access_teams', 'create_teams', 'read_teams', 'update_teams', 'delete_teams',
-                    'access_permissions', 'create_permissions', 'read_permissions', 'update_permissions', 'delete_permissions',
-                    'access_roles', 'create_roles', 'read_roles', 'update_roles', 'delete_roles',
-                    'access_position_titles', 'create_position_titles', 'read_position_titles', 'update_position_titles', 'delete_position_titles',
+                    ...$standardPortal,
+                    'access_tickets',
+                    'read_tickets',
+                    'update_tickets',
+                    'impersonate_users',
+                    'view_impersonation_log',
                 ],
             ],
             [
                 'name' => 'cotr',
                 'label' => 'COTR',
-                'description' => 'Can edit all people, positions and candidates.',
-                'permissions' => [
-                    ...$workforcePortalPermissions,
-                    'access_people', 'create_people', 'read_people', 'update_people', 'delete_people',
-                    'access_positions', 'create_positions', 'read_positions', 'update_positions', 'delete_positions',
-                    'access_candidates', 'create_candidates', 'read_candidates', 'update_candidates', 'delete_candidates',
-                    'create_tickets',
-                ],
+                'description' => 'Portal management access equivalent to PMO.',
+                'permissions' => $pmoCotr,
             ],
             [
                 'name' => 'pmo',
                 'label' => 'PMO',
-                'description' => 'Can edit their people, positions and candidates.',
-                'permissions' => $pmoPermissions,
+                'description' => 'Can view all positions and manage Portal workforce workflows.',
+                'permissions' => $pmoCotr,
             ],
             [
                 'name' => 'project_manager',
                 'label' => 'Project Manager',
-                'description' => 'Project manager with the same permissions as the PMO role.',
-                'permissions' => $pmoPermissions,
+                'description' => 'Can view assigned positions and related progress without edit permissions.',
+                'permissions' => [
+                    ...$standardPortal,
+                    'portal_view_positions',
+                    'portal_view_assigned_positions',
+                ],
             ],
             [
                 'name' => 'candidate',
                 'label' => 'Candidate',
-                'description' => 'People who are candidates for positions.',
-                'permissions' => [...$standardPortalPermissions, 'create_tickets'],
+                'description' => 'Can view personal information, assigned opportunities, and candidate progress.',
+                'permissions' => [
+                    ...$standardPortal,
+                    'portal_view_positions',
+                    'portal_view_candidate_positions',
+                    'portal_view_candidate_progress',
+                ],
             ],
         ];
 
         foreach ($roles as $roleData) {
-            $permissionNames = $roleData['permissions'];
+            $permissionNames = array_values(array_unique($roleData['permissions']));
             unset($roleData['permissions']);
 
-            $role = Role::updateOrCreate(
+            $role = Role::query()->updateOrCreate(
                 ['name' => $roleData['name']],
-                $roleData
+                $roleData,
             );
 
             $permissionIds = Permission::query()

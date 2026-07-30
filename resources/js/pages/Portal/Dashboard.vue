@@ -2,6 +2,7 @@
 import { Head, Link } from '@inertiajs/vue3';
 import { Bell, BriefcaseBusiness, LifeBuoy, Send } from 'lucide-vue-next';
 import DashboardAlerts from '@/components/DashboardAlerts.vue';
+import CandidateOpportunitiesCard from '@/components/dashboard/CandidateOpportunitiesCard.vue';
 import MySubmittedTickets from '@/components/MySubmittedTickets.vue';
 import PmoPositionsOverviewCard from '@/components/dashboard/PmoPositionsOverviewCard.vue';
 import ProjectManagerPositionsCard from '@/components/dashboard/ProjectManagerPositionsCard.vue';
@@ -24,8 +25,10 @@ withDefaults(defineProps<{
     submittedTickets?: any[];
     assignedPositions?: any[];
     pmoPositions?: any[];
+    candidateOpportunities?: any[];
     showPmoPositions?: boolean;
     showProjectManagerPositions?: boolean;
+    showCandidateOpportunities?: boolean;
     summary?: DashboardSummary;
 }>(), {
     alerts: () => [],
@@ -33,8 +36,10 @@ withDefaults(defineProps<{
     submittedTickets: () => [],
     assignedPositions: () => [],
     pmoPositions: () => [],
+    candidateOpportunities: () => [],
     showPmoPositions: false,
     showProjectManagerPositions: false,
+    showCandidateOpportunities: false,
     summary: () => ({
         unreadAlerts: 0,
         assignedTickets: 0,
@@ -80,7 +85,7 @@ withDefaults(defineProps<{
 
             <article class="rounded-xl border border-[#e3e3e3] bg-white p-5 shadow-sm">
                 <BriefcaseBusiness class="h-6 w-6 text-[#005c43]" />
-                <h2 class="mt-3 font-bold">{{ showPmoPositions ? 'All positions' : 'Assigned positions' }}</h2>
+                <h2 class="mt-3 font-bold">{{ showPmoPositions ? 'All positions' : (showCandidateOpportunities ? 'My opportunities' : 'Assigned positions') }}</h2>
                 <p class="mt-1 text-sm text-[#3a3a3a]/70">
                     {{ summary.assignedPositions }} {{ summary.positionsLabel ?? 'positions' }}
                 </p>
@@ -96,6 +101,11 @@ withDefaults(defineProps<{
             v-else-if="showProjectManagerPositions"
             :positions="assignedPositions"
             portal-mode
+        />
+
+        <CandidateOpportunitiesCard
+            v-else-if="showCandidateOpportunities"
+            :opportunities="candidateOpportunities"
         />
 
         <div class="grid gap-6 lg:grid-cols-2">

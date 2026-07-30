@@ -7,6 +7,7 @@ import {
     LayoutDashboard,
     LifeBuoy,
     Settings,
+    ShieldCheck,
     SquareArrowOutUpRight,
 } from 'lucide-vue-next';
 
@@ -37,7 +38,9 @@ const { can, user } = useAuth();
 const isImpersonating = computed(
     () => page.props.dev?.isImpersonating === true,
 );
-const devDebug = computed(() => page.props.dev?.debug === true);
+const devSwitcherAvailable = computed(
+    () => page.props.dev?.available === true,
+);
 
 const navigation: NavCategory[] = [
     {
@@ -70,19 +73,25 @@ const navigation: NavCategory[] = [
                 title: 'Content Pages',
                 href: '/admin/content-pages',
                 icon: FileText,
-                permission: 'view_admin',
+                permission: 'access_content_pages',
             },
             {
                 title: 'Page Help',
                 href: '/admin/page-help',
                 icon: HelpCircle,
-                permission: 'view_admin',
+                permission: 'access_page_help',
             },
             {
                 title: 'Site Settings',
                 href: '/admin/site-settings',
                 icon: Settings,
-                permission: 'view_admin',
+                permission: 'access_site_settings',
+            },
+            {
+                title: 'Impersonation',
+                href: '/admin/impersonation',
+                icon: ShieldCheck,
+                permission: 'view_impersonation_log',
             },
         ],
     },
@@ -103,7 +112,7 @@ const visibleNavigation = computed(() =>
 <template>
     <Sidebar collapsible="icon" variant="inset">
         <div
-            v-if="devDebug && isImpersonating && user"
+            v-if="devSwitcherAvailable && isImpersonating && user"
             class="m-2 rounded-md border border-yellow-300 bg-yellow-50 px-3 py-2 text-xs text-yellow-800"
             role="status"
         >

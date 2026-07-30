@@ -15,15 +15,15 @@ Route::get('/admin', fn () => Inertia::render('Admin/Index'))
 
 Route::get('/admin/component-showcase', fn () => Inertia::render('Admin/ComponentShowcase'))
     ->name('admin.component-showcase')
-    ->middleware('permission:view_admin');
+    ->middleware(['permission:view_admin', 'permission:access_component_showcase']);
 
 Route::get('/dashboard', fn () => redirect()->route('portal.dashboard'))
     ->middleware('auth')
     ->name('dashboard');
 
 Route::post('/dev/switch-user', function (Request $request) {
-    abort_unless(config('app.debug') === true, 403);
-    abort_unless(config('devuser.enabled') === true, 403);
+    abort_unless(app()->environment('local'), 404);
+    abort_unless(config('devuser.enabled') === true, 404);
 
     $validated = $request->validate([
         'person_code' => ['required', 'exists:people,person_code'],
@@ -42,12 +42,12 @@ Route::post('/dev/switch-user', function (Request $request) {
     $request->session()->regenerate();
 
     return redirect('/')
-        ->with('success', 'Test user switched.');
+        ->with('success', 'Development user switched.');
 })->name('dev.switch-user');
 
 Route::post('/dev/clear-user', function (Request $request) {
-    abort_unless(config('app.debug') === true, 403);
-    abort_unless(config('devuser.enabled') === true, 403);
+    abort_unless(app()->environment('local'), 404);
+    abort_unless(config('devuser.enabled') === true, 404);
 
     session()->forget('dev_person_code');
 
@@ -68,7 +68,7 @@ Route::post('/dev/clear-user', function (Request $request) {
     }
 
     return redirect('/')
-        ->with('success', 'Test user reset.');
+        ->with('success', 'Development user reset.');
 })->name('dev.clear-user');
 
 require __DIR__.'/people.php';
@@ -91,3 +91,5 @@ require __DIR__.'/jobTitles.php';
 require __DIR__.'/site-settings.php';
 
 require __DIR__.'/content-pages.php';
+
+require __DIR__.'/impersonation.php';

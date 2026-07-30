@@ -14,6 +14,7 @@ use App\Models\UserListPreference;
 use App\Services\ListEngine;
 use App\Services\ListExportService;
 use App\Services\PositionService;
+use App\Services\PortalWorkforceAccessService;
 use App\Services\UserResolver;
 use App\Support\ListDefinitions\PositionsDefinition;
 use Illuminate\Http\Request;
@@ -23,6 +24,11 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class PositionController extends Controller
 {
+    public function __construct(
+        private readonly PortalWorkforceAccessService $workforceAccess,
+    ) {
+    }
+
     public function index(
         Request $request,
         UserResolver $userResolver,
@@ -34,7 +40,7 @@ class PositionController extends Controller
             request: $request,
             definition: $definition,
             userId: $userResolver->resolveUserId(),
-            query: Position::query(),
+            query: $this->workforceAccess->scopePositions(Position::query()),
             filterCallback: function ($query, $request) {
                 if ($request->filled('status')) {
                     $query->where('status', $request->input('status'));
@@ -119,6 +125,8 @@ class PositionController extends Controller
             'sponsoringOrganization',
             'fundingOrganization',
         ])->findOrFail($id);
+
+        $this->workforceAccess->authorizePositionView($position);
 
         $jobTitleSkills = $position->jobTitle?->skills ?? collect();
         $jobTitleTasks = $position->jobTitle?->tasks ?? collect();
@@ -445,7 +453,7 @@ class PositionController extends Controller
         return $listExportService->exportCsv(
             request: $request,
             definition: PositionsDefinition::get(),
-            query: Position::query(),
+            query: $this->workforceAccess->scopePositions(Position::query()),
             filenamePrefix: 'positions-export',
             filterCallback: function ($query, $request) {
                 if ($request->filled('status')) {

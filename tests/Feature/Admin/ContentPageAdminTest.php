@@ -10,11 +10,21 @@ uses(RefreshDatabase::class);
 
 test('admin can open content pages with template information', function () {
     $user = User::factory()->create();
-    $permission = Permission::firstOrCreate(
-        ['name' => 'view_admin'],
-        ['description' => 'Admin'],
-    );
-    $user->permissions()->attach($permission);
+    $permissions = collect([
+        'view_admin',
+        'access_content_pages',
+    ])->map(fn (string $name) => Permission::firstOrCreate(
+        ['name' => $name],
+        [
+            'group_name' => 'Test',
+            'label' => $name,
+            'description' => $name,
+            'is_system' => false,
+            'is_locked' => false,
+        ],
+    ));
+
+    $user->permissions()->sync($permissions->pluck('id'));
 
     ContentPage::create([
         'title' => 'FAQ',
@@ -37,11 +47,22 @@ test('admin can open content pages with template information', function () {
 
 test('admin can save structured faq questions', function () {
     $user = User::factory()->create();
-    $permission = Permission::firstOrCreate(
-        ['name' => 'view_admin'],
-        ['description' => 'Admin'],
-    );
-    $user->permissions()->attach($permission);
+    $permissions = collect([
+        'view_admin',
+        'access_content_pages',
+        'manage_content_pages',
+    ])->map(fn (string $name) => Permission::firstOrCreate(
+        ['name' => $name],
+        [
+            'group_name' => 'Test',
+            'label' => $name,
+            'description' => $name,
+            'is_system' => false,
+            'is_locked' => false,
+        ],
+    ));
+
+    $user->permissions()->sync($permissions->pluck('id'));
 
     $this->actingAs($user)
         ->post('/admin/content-pages', [
