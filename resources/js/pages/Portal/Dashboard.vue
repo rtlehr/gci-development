@@ -6,10 +6,18 @@ import CandidateOpportunitiesCard from '@/components/dashboard/CandidateOpportun
 import MySubmittedTickets from '@/components/MySubmittedTickets.vue';
 import PmoPositionsOverviewCard from '@/components/dashboard/PmoPositionsOverviewCard.vue';
 import ProjectManagerPositionsCard from '@/components/dashboard/ProjectManagerPositionsCard.vue';
+import PositionStaffingSummary from '@/components/dashboard/PositionStaffingSummary.vue';
 import TicketsAssignedToMe from '@/components/TicketsAssignedToMe.vue';
 import { useAuth } from '@/composables/useAuth';
 
 const { username } = useAuth();
+
+type StaffingSummary = {
+    vacant: number;
+    selected: number;
+    departing: number;
+    onHold: number;
+};
 
 type DashboardSummary = {
     unreadAlerts: number;
@@ -29,6 +37,7 @@ withDefaults(defineProps<{
     showPmoPositions?: boolean;
     showProjectManagerPositions?: boolean;
     showCandidateOpportunities?: boolean;
+    staffingSummary?: StaffingSummary;
     summary?: DashboardSummary;
 }>(), {
     alerts: () => [],
@@ -40,6 +49,12 @@ withDefaults(defineProps<{
     showPmoPositions: false,
     showProjectManagerPositions: false,
     showCandidateOpportunities: false,
+    staffingSummary: () => ({
+        vacant: 0,
+        selected: 0,
+        departing: 0,
+        onHold: 0,
+    }),
     summary: () => ({
         unreadAlerts: 0,
         assignedTickets: 0,
@@ -64,7 +79,15 @@ withDefaults(defineProps<{
     </section>
 
     <div class="mx-auto max-w-7xl space-y-6 px-4 py-8 sm:px-6 lg:px-8">
-        <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        <PositionStaffingSummary
+            v-if="showPmoPositions || showProjectManagerPositions"
+            :summary="staffingSummary"
+        />
+
+        <div
+            v-else
+            class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4"
+        >
             <Link href="/portal/alerts" class="rounded-xl border border-[#e3e3e3] bg-white p-5 shadow-sm transition hover:-translate-y-0.5">
                 <Bell class="h-6 w-6 text-[#005c43]" />
                 <h2 class="mt-3 font-bold">Alerts</h2>
@@ -85,9 +108,9 @@ withDefaults(defineProps<{
 
             <article class="rounded-xl border border-[#e3e3e3] bg-white p-5 shadow-sm">
                 <BriefcaseBusiness class="h-6 w-6 text-[#005c43]" />
-                <h2 class="mt-3 font-bold">{{ showPmoPositions ? 'All positions' : (showCandidateOpportunities ? 'My opportunities' : 'Assigned positions') }}</h2>
+                <h2 class="mt-3 font-bold">My opportunities</h2>
                 <p class="mt-1 text-sm text-[#3a3a3a]/70">
-                    {{ summary.assignedPositions }} {{ summary.positionsLabel ?? 'positions' }}
+                    {{ summary.assignedPositions }} {{ summary.positionsLabel ?? 'opportunities' }}
                 </p>
             </article>
         </div>

@@ -8,6 +8,7 @@ use App\Models\Position;
 use App\Models\User;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Str;
+use Illuminate\Support\Carbon;
 
 class ProjectManagerDashboardService
 {
@@ -134,6 +135,7 @@ class ProjectManagerDashboardService
                 'candidates.person:id,first_name,preferred_name,last_name',
                 'candidates.workflow.steps',
                 'candidates.stepEvents.workflowStep',
+                'assignments',
             ]);
     }
 
@@ -184,7 +186,99 @@ class ProjectManagerDashboardService
             'next_action' => $nextAction['label'],
             'next_action_tone' => $nextAction['tone'],
             'attention_rank' => $nextAction['rank'],
+            'staffing_state' => $this->staffingState($position, $candidateMetrics),
         ];
+    }
+
+    /**
+     * Build the four staffing totals shown above position dashboard tables.
+     *
+     * @param Collection<int, array<string, mixed>> $positions
+     * @return array{vacant: int, selected: int, departing: int, onHold: int}
+     */
+    public function staffingSummary(Collection $positions): array
+    {
+        $counts = $positions->countBy('staffing_state');
+
+        return [
+            'vacant' => (int) $counts->get('vacant', 0),
+            'selected' => (int) $counts->get('selected', 0),
+            'departing' => (int) $counts->get('departing', 0),
+            'onHold' => (int) $counts->get('on_hold', 0),
+        ];
+    }
+
+    /**
+     * Determine the staffing condition independently of the recruiting status
+     * displayed in the positions table.
+     *
+     * @param Collection<int, array<string, mixed>> $candidateMetrics
+     */
+    private function staffingState(Position $position, Collection $candidateMetrics): string
+    {
+        $positionStatus = Str::of((string) $position->status)
+            ->lower()
+            ->replace(['-', '_'], ' ')
+            ->squish()
+            ->toString();
+
+        if (Str::contains($positionStatus, ['on hold', 'hold'])) {
+            return 'on_hold';
+        }
+
+        $departingAssignment = $position->assignments->first(function ($assignment): bool {
+            $assignmentStatus = Str::of((string) $assignment->assignment_status)
+                ->lower()
+                ->replace(['-', '_'], ' ')
+                ->squish()
+                ->toString();
+
+            if (Str::contains($assignmentStatus, ['departing', 'ending'])) {
+                return true;
+            }
+
+            if (! $assignment->end_date || in_array($assignmentStatus, ['ended', 'inactive'], true)) {
+                return false;
+            }
+
+            return Carbon::parse($assignment->end_date)->betweenIncluded(
+                now()->startOfDay(),
+                now()->addDays(30)->endOfDay(),
+            );
+        });
+
+        if ($departingAssignment) {
+            return 'departing';
+        }
+
+        $hasSelectedCandidate = $candidateMetrics->contains(function (array $metrics): bool {
+            $candidateStatus = Str::of((string) ($metrics['candidate_status'] ?? ''))
+                ->lower()
+                ->replace(['-', '_'], ' ')
+                ->squish()
+                ->toString();
+
+            return in_array($candidateStatus, [
+                'selected',
+                'approved',
+                'assigned',
+                'hired',
+                'onboarding',
+            ], true);
+        });
+
+        $hasStaffedAssignment = $position->assignments->contains(function ($assignment): bool {
+            $assignmentStatus = Str::lower((string) $assignment->assignment_status);
+
+            return in_array($assignmentStatus, ['active', 'planned', 'selected'], true)
+                && (! $assignment->end_date || Carbon::parse($assignment->end_date)->isFuture());
+        });
+
+        if ($hasSelectedCandidate || $hasStaffedAssignment || Str::contains($positionStatus, ['selected', 'filled'])) {
+            return 'selected';
+        }
+
+        return 'vacant';
     }
 
     /**

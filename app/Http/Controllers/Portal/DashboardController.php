@@ -114,6 +114,10 @@ class DashboardController extends Controller
             default => 'positions',
         };
 
+        $staffingSummary = $dashboardService->staffingSummary(
+            $showAllPositions ? $pmoPositions : $assignedPositions,
+        );
+
         return Inertia::render('Portal/Dashboard', [
             'alerts' => $alerts,
             'assignedTickets' => $assignedTickets,
@@ -124,6 +128,7 @@ class DashboardController extends Controller
             'showPmoPositions' => $showAllPositions,
             'showProjectManagerPositions' => $showAssignedPositions,
             'showCandidateOpportunities' => $showCandidateProgress,
+            'staffingSummary' => $staffingSummary,
             'summary' => [
                 'unreadAlerts' => $alerts->count(),
                 'assignedTickets' => $assignedTickets->count(),
