@@ -12,6 +12,8 @@ use App\Models\Address;
 use App\Models\Attachment;
 use App\Models\Group;
 use App\Models\Team;
+use App\Models\PersonNote;
+use App\Models\CustomFieldValue;
 
 class Person extends Model
 {
@@ -85,5 +87,17 @@ class Person extends Model
         return $this->belongsToMany(Team::class, 'person_team')
             ->withTimestamps();
     }
+
+    public function personNotes()
+    {
+        return $this->hasMany(PersonNote::class)
+            ->orderByRaw("CASE category WHEN 'kudos' THEN 1 WHEN 'reprimand' THEN 2 ELSE 3 END")
+            ->latest();
+    }
     
+    public function customFieldValues()
+    {
+        return $this->morphMany(CustomFieldValue::class, 'fieldable');
+    }
+
 }

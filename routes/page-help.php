@@ -14,6 +14,14 @@ Route::prefix('admin/page-help')
     ->group(function (): void {
         Route::get('/', [PageHelpAdminController::class, 'index'])->name('index');
 
+        Route::get('/export', [PageHelpAdminController::class, 'export'])
+            ->middleware('permission:manage_page_help')
+            ->name('export');
+
+        Route::post('/import', [PageHelpAdminController::class, 'import'])
+            ->middleware('permission:manage_page_help')
+            ->name('import');
+
         Route::get('/create', [PageHelpAdminController::class, 'create'])
             ->middleware('permission:manage_page_help')
             ->name('create');

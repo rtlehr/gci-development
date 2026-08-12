@@ -19,10 +19,10 @@
 <div class="space-y-2"><Label for="company_name">Company Name</Label><Input id="company_name" v-model="form.company_name" /></div>
 <div class="space-y-2 md:col-span-2"><Label for="email">Email</Label><Input id="email" type="email" v-model="form.email" /><p v-if="form.errors.email" class="text-sm text-red-500">{{ form.errors.email }}</p></div>
 </div>
-<div class="space-y-2"><Label for="notes">Notes</Label><Textarea id="notes" v-model="form.notes" rows="5" /></div>
 </CardContent></Card></section>
 <section v-show="activeSection === 'organization'"><AssignmentsEditor v-model:group-ids="form.group_ids" v-model:team-ids="form.team_ids" :groups="props.groups" :teams="props.teams" :errors="form.errors" /></section>
 <section v-show="activeSection === 'contact'" class="space-y-6"><PhoneNumbersEditor ref="phoneNumbersRef" v-model="form.phone_numbers" :errors="form.errors" /><AddressesEditor ref="addressesRef" v-model="form.addresses" :errors="form.errors" /></section>
+<section v-show="activeSection === 'other'"><CustomFieldsPanel v-model="form.custom_fields" :fields="props.customFields" :errors="form.errors" /></section>
 <section v-show="activeSection === 'access'"><UserRoleEditor v-model="form.role_ids" :roles="props.roles" :errors="form.errors" /></section>
 <section v-show="activeSection === 'attachments'"><AttachmentUploader ref="attachmentsRef" v-model="form.attachments" v-model:existingAttachments="form.existing_attachments" v-model:removeAttachmentIds="form.remove_attachment_ids" :errors="form.errors" :show-existing="isEdit" /></section>
 <div class="flex gap-3 border-t pt-5"><Button type="submit" :disabled="form.processing">{{ form.processing ? 'Saving...' : 'Create Person' }}</Button><Link href="/portal/people"><Button type="button" variant="outline">Cancel</Button></Link></div>
@@ -31,6 +31,7 @@
 <script setup>
 import { Link, useForm } from '@inertiajs/vue3'
 import { computed, ref } from 'vue'
+import CustomFieldsPanel from '@/components/custom-fields/CustomFieldsPanel.vue'
 import AttachmentUploader from '@/components/attachments/AttachmentUploader.vue'
 import AddressesEditor from '@/components/forms/AddressesEditor.vue'
 import AssignmentsEditor from '@/components/forms/AssignmentsEditor.vue'
@@ -41,7 +42,6 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Textarea } from '@/components/ui/textarea'
 import { useAppLabels } from '@/composables/useAppLabels'
 const { label } = useAppLabels()
 const activeSection = ref('details')
@@ -52,12 +52,13 @@ const createEmptyPhoneNumber = (isPrimary=false) => ({ id:null, phone_number:'',
 const createEmptyAddress = (isPrimary=false) => ({ id:null, address_type:'', line_1:'', line_2:'', city:'', state:'', postal_code:'', country:'USA', is_primary:isPrimary, notes:'' })
 
 const isEdit = false
-const props = defineProps({ roles:{type:Array,default:()=>[]}, groups:{type:Array,default:()=>[]}, teams:{type:Array,default:()=>[]} })
-const form = useForm({ person_code:'', first_name:'', alternate_first_name:'', preferred_name:'', last_name:'', alternate_last_name:'', company_name:'', email:'', employment_status:'', notes:'', group_ids:[], team_ids:[], role_ids:[], phone_numbers:[createEmptyPhoneNumber(true)], addresses:[createEmptyAddress(true)], attachments:[], existing_attachments:[], remove_attachment_ids:[] })
+const props = defineProps({ roles:{type:Array,default:()=>[]}, groups:{type:Array,default:()=>[]}, teams:{type:Array,default:()=>[]}, customFields:{type:Array,default:()=>[]} })
+const form = useForm({ person_code:'', first_name:'', alternate_first_name:'', preferred_name:'', last_name:'', alternate_last_name:'', company_name:'', email:'', employment_status:'', group_ids:[], team_ids:[], role_ids:[], phone_numbers:[createEmptyPhoneNumber(true)], addresses:[createEmptyAddress(true)], attachments:[], existing_attachments:[], remove_attachment_ids:[], custom_fields:{} })
 const sections = computed(() => [
 {id:'details',title:'Person Details',description:'Identity and employment.',complete:Boolean(form.person_code && form.first_name && form.last_name)},
 {id:'organization',title:'Organization',description:'Groups and teams.',complete:Boolean(form.group_ids.length || form.team_ids.length)},
 {id:'contact',title:'Contact Information',description:'Phone numbers and addresses.',complete:Boolean(form.phone_numbers.some(p=>p.phone_number) || form.addresses.some(a=>a.line_1))},
+{id:'other',title:'Other Information',description:'Installation-specific fields.',complete:Object.values(form.custom_fields).some(v=>Array.isArray(v)?v.length:Boolean(v))},
 {id:'access',title:'Roles & Access',description:'Application roles.',complete:Boolean(form.role_ids.length)},
 {id:'attachments',title:'Attachments',description:'Documents and files.',complete:Boolean(form.attachments.length)},])
 function validate(){ form.clearErrors(); let error=false; if(!form.person_code?.trim()){form.setError('person_code','Person code is required.');error=true} if(!form.first_name?.trim()){form.setError('first_name','First name is required.');error=true} if(!form.last_name?.trim()){form.setError('last_name','Last name is required.');error=true} if(phoneNumbersRef.value&&!phoneNumbersRef.value.validate())error=true; if(addressesRef.value&&!addressesRef.value.validate())error=true; if(attachmentsRef.value&&!attachmentsRef.value.validate())error=true; return !error }

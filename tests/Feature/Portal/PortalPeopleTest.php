@@ -2,6 +2,7 @@
 
 use App\Models\Permission;
 use App\Models\Person;
+use App\Models\PersonNote;
 use App\Models\User;
 use App\Services\PermissionService;
 use Database\Seeders\PermissionSeeder;
@@ -110,6 +111,51 @@ it('renders portal person detail and edit pages', function () {
             ->has('groups')
             ->has('teams')
         );
+});
+
+it('records categorized person notes with the entered date and user', function () {
+    $user = portalCrudPeopleUser(['access_people', 'read_people', 'update_people']);
+    $person = Person::factory()->create();
+
+    $response = $this->actingAs($user)
+        ->post(route('portal.people.notes.store', $person), [
+            'category' => 'kudos',
+            'note' => 'Recognized for excellent customer support.',
+        ]);
+
+    $response->assertRedirect();
+
+    $note = PersonNote::query()->where('person_id', $person->id)->firstOrFail();
+
+    expect($note->category)->toBe('kudos')
+        ->and($note->note)->toBe('Recognized for excellent customer support.')
+        ->and($note->entered_by_user_id)->toBe($user->id)
+        ->and($note->entered_by_name)->toBe($user->name)
+        ->and($note->created_at)->not->toBeNull();
+
+    $this->actingAs($user)
+        ->get(route('portal.people.show', $person->id))
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->where('person.person_notes.0.category', 'kudos')
+            ->where('person.person_notes.0.entered_by_name', $user->name)
+        );
+});
+
+it('rejects unsupported person note categories', function () {
+    $user = portalCrudPeopleUser(['access_people', 'read_people', 'update_people']);
+    $person = Person::factory()->create();
+
+    $this->actingAs($user)
+        ->from(route('portal.people.edit', $person->id))
+        ->post(route('portal.people.notes.store', $person), [
+            'category' => 'private',
+            'note' => 'This category is not allowed.',
+        ])
+        ->assertRedirect(route('portal.people.edit', $person->id))
+        ->assertSessionHasErrors('category');
+
+    expect(PersonNote::query()->where('person_id', $person->id)->exists())->toBeFalse();
 });
 
 it('protects portal people actions with existing granular permissions', function () {

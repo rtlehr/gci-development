@@ -1,0 +1,79 @@
+{
+  "format": "irad-page-help",
+  "version": 1,
+  "exported_at": "2026-08-12T09:02:00-04:00",
+  "help_pages": [
+    {
+      "help_key": "public.home",
+      "title": "IRAD Portal Home",
+      "content_html": "<p>The IRAD Portal home page is the starting point for program information, resources, contacts, support, and authenticated portal tools.</p>\n<h3>Explore Program Information</h3>\n<p>Use the page sections and main navigation to find program details, contacts, resources, frequently asked questions, and other published information.</p>\n<h3>Open the Portal</h3>\n<p>If IRAD has already identified you as an authorized user, use the primary portal action to open your dashboard and role-appropriate tools.</p>\n<h3>Need Help?</h3>\n<p>Use the Support area when you need assistance with IRAD or need to report an issue. The Help button provides guidance for the page you are currently viewing.</p>",
+      "is_active": true
+    },
+    {
+      "help_key": "content.program-overview",
+      "title": "Program Overview",
+      "content_html": "<p>The Program Overview explains the purpose of the IRAD Portal and the information and services available to the program community.</p>\n<h3>Use This Page To</h3>\n<ul>\n<li>Understand the purpose of the portal.</li>\n<li>Learn what types of program information and operational tools are available.</li>\n<li>Identify where to go next for contacts, resources, workforce information, or support.</li>\n</ul>\n<p>Use the main portal navigation to move to the area that best matches what you need to accomplish.</p>",
+      "is_active": true
+    },
+    {
+      "help_key": "content.program-contacts",
+      "title": "Program Contacts",
+      "content_html": "<p>Program Contacts provides the current points of contact for program leadership, operations, contracting, PMO support, and other published responsibilities.</p>\n<h3>Choose the Right Contact</h3>\n<p>Review the listed role or responsibility before reaching out so your question is directed to the appropriate person or team.</p>\n<h3>Keep Contact Information Current</h3>\n<p>If you notice outdated contact information, submit a support request or contact the appropriate administrator so the published information can be corrected.</p>",
+      "is_active": true
+    },
+    {
+      "help_key": "content.resources",
+      "title": "Program Resources",
+      "content_html": "<p>The Resources page brings together frequently used program links, documentation, forms, templates, policies, and reference material.</p>\n<h3>Finding a Resource</h3>\n<p>Review the available sections and descriptions to locate the resource you need. Links may open another IRAD page, a shared repository, or an approved external system.</p>\n<h3>Missing or Outdated Resources</h3>\n<p>If an important resource is missing or a link no longer works, submit a support request so the resource library can be updated.</p>",
+      "is_active": true
+    },
+    {
+      "help_key": "content.faqs",
+      "title": "Frequently Asked Questions",
+      "content_html": "<p>The Frequently Asked Questions page provides quick answers to common questions about the program and IRAD Portal.</p>\n<h3>View an Answer</h3>\n<p>Select a question to expand its answer. Select it again to collapse the answer when you are finished.</p>\n<h3>Still Need Help?</h3>\n<p>If your question is not covered here, use the Support area to submit a request. Frequently asked support questions may be added to this page over time.</p>",
+      "is_active": true
+    },
+    {
+      "help_key": "content.policies-documentation",
+      "title": "Policies and Documentation",
+      "content_html": "<p>This page provides approved program policies, procedures, and authoritative documentation made available through IRAD.</p>\n<h3>Use the Current Version</h3>\n<p>Review document titles, dates, and other available version information before relying on a policy or procedure.</p>\n<h3>Questions About a Policy</h3>\n<p>Use the identified program contact when the document provides one. For portal access or document-link problems, submit an IRAD support request.</p>",
+      "is_active": true
+    },
+    {
+      "help_key": "content.announcements",
+      "title": "Program Announcements",
+      "content_html": "<p>Program Announcements contains current notices and time-sensitive information published for the IRAD community.</p>\n<h3>Review Current Notices</h3>\n<p>Pay attention to dates, deadlines, affected groups, and any requested actions included in an announcement.</p>\n<h3>Expired Announcements</h3>\n<p>Announcements may automatically stop displaying after their configured availability period. Contact the appropriate program office if you need information from an older notice.</p>",
+      "is_active": true
+    },
+    {
+      "help_key": "public.contentpages.show",
+      "title": "Program Information",
+      "content_html": "<p>This page contains program information published through IRAD.</p>\n<h3>Using the Page</h3>\n<p>Review the title, summary, and page content for the information you need. Some pages may include expandable questions, resource links, contacts, policies, or announcements.</p>\n<h3>Need More Information?</h3>\n<p>Use the main portal navigation to explore related program content or submit a support request when you need assistance.</p>",
+      "is_active": true
+    },
+    {
+      "help_key": "tickets.create",
+      "title": "Submit a Request",
+      "content_html": "<p>Use this page to report an IRAD problem or request an improvement.</p>\n<h3>Describe What You Need</h3>\n<ul>\n<li>Enter a short, meaningful title.</li>\n<li>Select the request type, importance, and category that best describe the issue.</li>\n<li>Explain what happened, what you expected, and any useful steps for reproducing the problem.</li>\n<li>Keep the Source URL when the request relates to the page you came from.</li>\n<li>Add a screenshot when it will help explain the issue.</li>\n</ul>\n<h3>Before Submitting</h3>\n<p>Do not include passwords or sensitive authentication information. Provide enough detail that support can begin investigating without having to guess what occurred.</p>",
+      "is_active": true
+    },
+    {
+      "help_key": "settings.profile",
+      "title": "Profile Settings",
+      "content_html": "<p>Profile Settings lets you review and maintain the basic account information associated with your IRAD user profile.</p>\n<h3>Profile Information</h3>\n<p>Update your name or email address when those values are editable for your account. Some account information may be supplied by IRAD's identity mechanism and may not be intended for manual changes.</p>\n<h3>Email Verification</h3>\n<p>If email verification is required and your address is not verified, use the available verification action to request a new verification message.</p>\n<h3>Save Changes</h3>\n<p>Review your information before saving. Changes to account identity information may affect notifications or how your name appears within IRAD.</p>",
+      "is_active": true
+    },
+    {
+      "help_key": "settings.appearance",
+      "title": "Appearance Settings",
+      "content_html": "<p>Appearance Settings controls how IRAD is displayed for your account.</p>\n<h3>Choose Your Preference</h3>\n<p>Select the available light, dark, or system-based appearance option that works best for you. A system-based option follows the appearance preference configured on your device or browser.</p>\n<h3>Personal Setting</h3>\n<p>Changing appearance affects your own IRAD experience and does not change the site-wide branding configured by administrators.</p>",
+      "is_active": true
+    },
+    {
+      "help_key": "settings.security",
+      "title": "Security Settings",
+      "content_html": "<p>Security Settings contains the account-security controls available to your IRAD user profile.</p>\n<h3>Password</h3>\n<p>When password management is available for your account, use a long, unique password and do not reuse credentials from other systems.</p>\n<h3>Two-Factor Authentication</h3>\n<p>If two-factor authentication is available, follow the setup process carefully and store recovery codes in a secure location separate from the device used for authentication.</p>\n<h3>Identity-Managed Accounts</h3>\n<p>Some IRAD accounts are resolved through the existing identity environment. In those cases, certain password or authentication controls may be managed outside IRAD and may not be available here.</p>",
+      "is_active": true
+    }
+  ]
+}

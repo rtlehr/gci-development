@@ -629,6 +629,22 @@ class PermissionSeeder extends Seeder
                 'is_system' => false,
                 'is_locked' => false,
             ],
+            [
+                'name' => 'access_custom_fields',
+                'group_name' => 'Custom Fields',
+                'label' => 'Access Custom Fields',
+                'description' => 'Can view custom field configuration in Admin.',
+                'is_system' => false,
+                'is_locked' => false,
+            ],
+            [
+                'name' => 'manage_custom_fields',
+                'group_name' => 'Custom Fields',
+                'label' => 'Manage Custom Fields',
+                'description' => 'Can create and maintain custom fields for people and positions.',
+                'is_system' => false,
+                'is_locked' => false,
+            ],
         ];
 
         foreach ($permissions as $permission) {

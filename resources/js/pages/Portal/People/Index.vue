@@ -27,7 +27,34 @@
             search-placeholder="Search visible columns..."
             @apply="applyFilters"
             @reset="resetFilters"
-        />
+        >
+            <template v-if="customFieldFilters.length" #advanced-filters>
+                <div class="grid gap-4 border-t pt-4 md:grid-cols-2 xl:grid-cols-3">
+                    <div v-for="field in customFieldFilters" :key="field.id" class="space-y-2">
+                        <Label :for="`custom-filter-${field.id}`">{{ field.name }}</Label>
+                        <Input
+                            v-if="['text', 'textarea'].includes(field.field_type)"
+                            :id="`custom-filter-${field.id}`"
+                            v-model="filterForm.custom_filters[field.id]"
+                            placeholder="Contains..."
+                        />
+                        <Input
+                            v-else-if="field.field_type === 'date'"
+                            :id="`custom-filter-${field.id}`"
+                            v-model="filterForm.custom_filters[field.id]"
+                            type="date"
+                        />
+                        <Select v-else v-model="filterForm.custom_filters[field.id]">
+                            <SelectTrigger :id="`custom-filter-${field.id}`"><SelectValue placeholder="Any value" /></SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="__all__">Any value</SelectItem>
+                                <SelectItem v-for="option in field.options" :key="option.value" :value="option.value">{{ option.label }}</SelectItem>
+                            </SelectContent>
+                        </Select>
+                    </div>
+                </div>
+            </template>
+        </ListFilters>
 
         <!-- Table -->
         <ListTableShell label="People results">
@@ -192,6 +219,9 @@ import {
 } from 'lucide-vue-next'
 
 import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 
 import {
     AlertDialog,
@@ -260,6 +290,10 @@ const props = defineProps({
         type: String,
         default: 'last_name',
     },
+    customFieldFilters: {
+        type: Array,
+        default: () => [],
+    },
     direction: {
         type: String,
         default: 'asc',
@@ -272,6 +306,7 @@ const showColumnSettings = ref(false)
 // Local reactive filter state used by the search form.
 const filterForm = reactive({
     search: props.filters?.search ?? '',
+    custom_filters: { ...(props.filters?.custom_filters ?? {}) },
 })
 
 // Local editable column configuration state.
@@ -349,6 +384,7 @@ function updateColumnSettings(updatedColumns) {
 function getFilterPayload() {
     return {
         search: filterForm.search,
+        custom_filters: Object.fromEntries(Object.entries(filterForm.custom_filters).filter(([, value]) => value !== '' && value !== '__all__')),
     }
 }
 
@@ -384,6 +420,7 @@ function applyFilters() {
  */
 function resetFilters() {
     filterForm.search = ''
+    filterForm.custom_filters = {}
 
     router.get('/portal/people', {
         sort: props.sort,

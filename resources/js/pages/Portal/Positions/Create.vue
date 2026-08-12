@@ -6,7 +6,9 @@ import {
     Building2,
     BriefcaseBusiness,
     MapPinned,
+    ListPlus,
 } from 'lucide-vue-next'
+import CustomFieldsPanel from '@/components/custom-fields/CustomFieldsPanel.vue'
 import PortalSectionNav from '@/components/portal/PortalSectionNav.vue'
 import PositionFormFields from '@/components/positions/PositionFormFields.vue'
 import { Button } from '@/components/ui/button'
@@ -14,16 +16,18 @@ import { Button } from '@/components/ui/button'
 type GenericRecord = Record<string, any>
 type OrganizationOption = { id: number; name: string; full_path: string; depth?: number }
 
-type CreateSection = 'details' | 'qualifications' | 'mission' | 'organization'
+type CreateSection = 'details' | 'qualifications' | 'mission' | 'organization' | 'other'
 
 const props = withDefaults(defineProps<{
     organizations?: OrganizationOption[]
     jobTitles?: GenericRecord[]
     projectManagers?: GenericRecord[]
+    customFields?: GenericRecord[]
 }>(), {
     organizations: () => [],
     jobTitles: () => [],
     projectManagers: () => [],
+    customFields: () => [],
 })
 
 const activeSection = ref<CreateSection>('details')
@@ -48,6 +52,7 @@ const form = useForm({
     position_organization_id: null as number | null,
     sponsoring_organization_id: null as number | null,
     funding_organization_id: null as number | null,
+    custom_fields: {} as Record<string, any>,
 })
 
 const sections = computed(() => [
@@ -78,6 +83,12 @@ const sections = computed(() => [
         description: 'Owning, sponsoring, and funding organizations.',
         icon: Building2,
         complete: Boolean(form.position_organization_id || form.sponsoring_organization_id || form.funding_organization_id),
+    },    {
+        id: 'other',
+        title: 'Other Information',
+        description: 'Installation-specific fields.',
+        icon: ListPlus,
+        complete: Object.values(form.custom_fields).some((value) => Array.isArray(value) ? value.length > 0 : Boolean(value)),
     },
 ])
 
@@ -131,7 +142,15 @@ onBeforeUnmount(() => window.removeEventListener('beforeunload', handleBeforeUnl
                 />
 
                 <div class="min-w-0 space-y-6">
+                    <CustomFieldsPanel
+                        v-if="activeSection === 'other'"
+                        v-model="form.custom_fields"
+                        :fields="customFields"
+                        :errors="form.errors"
+                    />
+
                     <PositionFormFields
+                        v-else
                         :form="form"
                         :organizations="organizations"
                         :job-titles="jobTitles"

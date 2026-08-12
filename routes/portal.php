@@ -5,6 +5,7 @@ use App\Http\Controllers\Portal\CandidateController;
 use App\Http\Controllers\Portal\DashboardController;
 use App\Http\Controllers\Portal\PositionController;
 use App\Http\Controllers\Portal\PeopleController;
+use App\Http\Controllers\Portal\PersonNoteController;
 use App\Http\Controllers\Portal\JobTitleController;
 use App\Http\Controllers\Portal\TicketController;
 use App\Http\Controllers\PositionCandidateController;
@@ -59,6 +60,10 @@ Route::middleware(['auth', 'permission:access_portal'])
         Route::put('/people/{id}', [PeopleController::class, 'update'])
             ->middleware('permission:update_people')
             ->name('people.update');
+
+        Route::post('/people/{person}/notes', [PersonNoteController::class, 'store'])
+            ->middleware('permission:update_people')
+            ->name('people.notes.store');
 
         Route::delete('/people/{id}', [PeopleController::class, 'destroy'])
             ->middleware('permission:delete_people')

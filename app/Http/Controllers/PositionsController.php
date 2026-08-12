@@ -10,6 +10,7 @@ use App\Models\Person;
 use App\Models\Workflow;
 use App\Models\User;
 use App\Models\UserListPreference;
+use App\Services\CustomFieldListService;
 use App\Services\ListEngine;
 use App\Services\ListExportService;
 use App\Services\PositionService;
@@ -27,7 +28,7 @@ class PositionsController extends Controller
         UserResolver $userResolver,
         ListEngine $listEngine
     ) {
-        $definition = PositionsDefinition::get();
+        $definition = app(CustomFieldListService::class)->augmentDefinition(PositionsDefinition::get(), 'position');
 
         $list = $listEngine->run(
             request: $request,
@@ -375,7 +376,7 @@ class PositionsController extends Controller
         Request $request,
         UserResolver $userResolver
     ) {
-        $definition = PositionsDefinition::get();
+        $definition = app(CustomFieldListService::class)->augmentDefinition(PositionsDefinition::get(), 'position');
 
         $validKeys = collect($definition['columns'])
             ->pluck('key')
@@ -426,7 +427,7 @@ class PositionsController extends Controller
 
     public function resetPreferences(UserResolver $userResolver)
     {
-        $definition = PositionsDefinition::get();
+        $definition = app(CustomFieldListService::class)->augmentDefinition(PositionsDefinition::get(), 'position');
 
         UserListPreference::where('user_id', $userResolver->resolveUserId())
             ->where('list_key', $definition['list_key'])
@@ -443,7 +444,7 @@ class PositionsController extends Controller
     ): StreamedResponse {
         return $listExportService->exportCsv(
             request: $request,
-            definition: PositionsDefinition::get(),
+            definition: app(CustomFieldListService::class)->augmentDefinition(PositionsDefinition::get(), 'position'),
             query: Position::query(),
             filenamePrefix: 'positions-export',
             filterCallback: function ($query, $request) {

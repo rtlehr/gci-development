@@ -27,6 +27,7 @@ import PositionSectionNavigation, {
 import PositionCandidatesTable from '@/components/positions/PositionCandidatesTable.vue'
 import StatCard from '@/components/data/StatCard.vue'
 import StatusBadge from '@/components/data/StatusBadge.vue'
+import CustomFieldsDisplay from '@/components/custom-fields/CustomFieldsDisplay.vue'
 import DetailCard from '@/components/show/DetailCard.vue'
 import FlagItem from '@/components/show/FlagItem.vue'
 import { Button } from '@/components/ui/button'
@@ -65,6 +66,7 @@ const props = withDefaults(defineProps<{
     customTasks?: GenericRecord[]
     positionCandidates?: GenericRecord[]
     initialSection?: PositionSection
+    customFieldDisplay?: GenericRecord[]
 }>(), {
     jobTitleSkills: () => [],
     jobTitleTasks: () => [],
@@ -72,6 +74,7 @@ const props = withDefaults(defineProps<{
     customTasks: () => [],
     positionCandidates: () => [],
     initialSection: 'general',
+    customFieldDisplay: () => [],
 })
 
 const { can } = useAuth()
@@ -560,6 +563,10 @@ function confirmDelete(): void {
                         </p>
                     </CardContent>
                 </Card>
+            </template>
+
+            <template v-else-if="activeSection === 'other'">
+                <CustomFieldsDisplay :fields="customFieldDisplay" />
             </template>
 
             <template v-else-if="activeSection === 'requirements'">

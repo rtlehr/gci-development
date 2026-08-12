@@ -16,6 +16,7 @@ import {
     LayoutDashboard,
     LifeBuoy,
     ListChecks,
+    ListPlus,
     ListTodo,
     Palette,
     Plus,
@@ -260,6 +261,18 @@ export const adminPortalItems: AdminPortalItem[] = [
         action: 'Manage',
     },
 
+    {
+        id: 'custom-fields',
+        title: 'Custom Fields',
+        description: 'Configure installation-specific fields for Person and Position records.',
+        href: '/admin/custom-fields',
+        group: 'Configuration',
+        icon: ListPlus,
+        permission: 'access_custom_fields',
+        keywords: ['custom fields', 'other information', 'person fields', 'position fields', 'configuration'],
+        action: 'Configure',
+        quick: true,
+    },
     {
         id: 'content-pages',
         title: 'Content Pages',

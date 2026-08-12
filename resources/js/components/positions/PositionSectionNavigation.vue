@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import { BriefcaseBusiness, ClipboardList, Users } from 'lucide-vue-next'
+import { BriefcaseBusiness, ClipboardList, ListPlus, Users } from 'lucide-vue-next'
 
-export type PositionSection = 'general' | 'requirements' | 'candidates'
+export type PositionSection = 'general' | 'other' | 'requirements' | 'candidates'
 
 defineProps<{
     modelValue: PositionSection
@@ -14,6 +14,7 @@ const emit = defineEmits<{
 
 const sections = [
     { value: 'general' as const, label: 'General Information', icon: BriefcaseBusiness },
+    { value: 'other' as const, label: 'Other Information', icon: ListPlus },
     { value: 'requirements' as const, label: 'Requirements', icon: ClipboardList },
     { value: 'candidates' as const, label: 'Candidates', icon: Users },
 ]
@@ -21,7 +22,7 @@ const sections = [
 
 <template>
     <nav class="rounded-xl border bg-background p-2" aria-label="Position sections">
-        <div class="grid gap-1 sm:grid-cols-3">
+        <div class="grid gap-1 sm:grid-cols-4">
             <button
                 v-for="section in sections"
                 :key="section.value"

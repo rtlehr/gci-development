@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { Link, router, useForm } from '@inertiajs/vue3'
-import { BadgeCheck, BriefcaseBusiness, Building2, ClipboardList, MapPinned, Settings2, Trash2, Users } from 'lucide-vue-next'
+import { BadgeCheck, BriefcaseBusiness, Building2, ClipboardList, ListPlus, MapPinned, Settings2, Trash2, Users } from 'lucide-vue-next'
+import CustomFieldsPanel from '@/components/custom-fields/CustomFieldsPanel.vue'
 import FormField from '@/components/forms/FormField.vue'
 import FormSection from '@/components/forms/FormSection.vue'
 import PositionCandidatesPanel from '@/components/positions/PositionCandidatesPanel.vue'
@@ -25,6 +26,8 @@ const props = withDefaults(defineProps<{
     positionCandidates?: GenericRecord[]
     workflows?: GenericRecord[]
     initialSection?: string
+    customFields?: GenericRecord[]
+    customFieldValues?: Record<string, any>
 }>(), {
     organizations: () => [],
     jobTitles: () => [],
@@ -35,10 +38,12 @@ const props = withDefaults(defineProps<{
     positionCandidates: () => [],
     workflows: () => [],
     initialSection: 'general',
+    customFields: () => [],
+    customFieldValues: () => ({}),
 })
 
 
-type PositionEditSection = 'details' | 'qualifications' | 'mission' | 'organization' | 'operations' | 'requirements' | 'candidates'
+type PositionEditSection = 'details' | 'qualifications' | 'mission' | 'organization' | 'other' | 'operations' | 'requirements' | 'candidates'
 
 const normalizedInitialSection = props.initialSection === 'general' ? 'details' : props.initialSection
 const activeSection = ref<PositionEditSection>((normalizedInitialSection as PositionEditSection) || 'details')
@@ -79,6 +84,7 @@ const form = useForm({
     customer_lead_name: props.position.customer_lead_name ?? '',
     customer_created_at: formatDateForInput(props.position.customer_created_at),
     notes: props.position.notes ?? '',
+    custom_fields: { ...props.customFieldValues },
 })
 
 const customSkillForm = useForm({ name: '', description: '', requirement_type: 'required' })
@@ -117,6 +123,7 @@ const sections = computed(() => [
     { id: 'qualifications', title: 'Qualifications', description: 'Certifications, training, and experience.', icon: BadgeCheck, complete: Boolean(form.certifications_required || form.training_required || form.experience) },
     { id: 'mission', title: 'Mission & Location', description: 'Operational flags, workplace, and mission.', icon: MapPinned, complete: Boolean(form.location || form.building || form.mission_description) },
     { id: 'organization', title: 'Organizations', description: 'Owning, sponsoring, and funding organizations.', icon: Building2, complete: Boolean(form.position_organization_id || form.sponsoring_organization_id || form.funding_organization_id) },
+    { id: 'other', title: 'Other Information', description: 'Installation-specific fields.', icon: ListPlus, complete: Object.values(form.custom_fields).some((value) => Array.isArray(value) ? value.length > 0 : Boolean(value)) },
     { id: 'operations', title: 'Operations', description: 'Funding, closure, customer, and internal details.', icon: Settings2, complete: Boolean(form.funding_info || form.customer_lead_name || form.notes) },
     { id: 'requirements', title: 'Skills & Tasks', description: 'Job-title defaults and position-specific requirements.', icon: ClipboardList, complete: Boolean(props.jobTitleSkills.length || props.jobTitleTasks.length || customSkills.value.length || customTasks.value.length) },
     { id: 'candidates', title: 'Candidates', description: 'Connected candidates and workflow activity.', icon: Users, badge: props.positionCandidates.length, complete: Boolean(props.positionCandidates.length) },
@@ -212,8 +219,15 @@ onBeforeUnmount(() => window.removeEventListener('beforeunload', handleBeforeUnl
                 class="min-w-0 space-y-6"
                 @submit.prevent="submit"
             >
+                    <CustomFieldsPanel
+                        v-if="activeSection === 'other'"
+                        v-model="form.custom_fields"
+                        :fields="customFields"
+                        :errors="form.errors"
+                    />
+
                     <PositionFormFields
-                        v-if="!['requirements', 'candidates'].includes(activeSection)"
+                        v-else-if="!['requirements', 'candidates'].includes(activeSection)"
                         :form="form"
                         :organizations="organizations"
                         :job-titles="jobTitles"

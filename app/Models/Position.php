@@ -316,4 +316,9 @@ class Position extends Model
             }
         });
     }
+    public function customFieldValues()
+    {
+        return $this->morphMany(CustomFieldValue::class, 'fieldable');
+    }
+
 }

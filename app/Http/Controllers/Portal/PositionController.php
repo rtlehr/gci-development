@@ -11,6 +11,8 @@ use App\Models\Person;
 use App\Models\Workflow;
 use App\Models\User;
 use App\Models\UserListPreference;
+use App\Services\CustomFieldService;
+use App\Services\CustomFieldListService;
 use App\Services\ListEngine;
 use App\Services\ListExportService;
 use App\Services\PositionService;
@@ -18,6 +20,7 @@ use App\Services\PortalWorkforceAccessService;
 use App\Services\UserResolver;
 use App\Support\ListDefinitions\PositionsDefinition;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 use Symfony\Component\HttpFoundation\StreamedResponse;
@@ -34,7 +37,7 @@ class PositionController extends Controller
         UserResolver $userResolver,
         ListEngine $listEngine
     ) {
-        $definition = PositionsDefinition::get();
+        $definition = app(CustomFieldListService::class)->augmentDefinition(PositionsDefinition::get(), 'position');
 
         $list = $listEngine->run(
             request: $request,
@@ -58,6 +61,7 @@ class PositionController extends Controller
             'filters' => $list['filters'],
             'sort' => $list['sort'],
             'direction' => $list['direction'],
+            'customFieldFilters' => app(CustomFieldListService::class)->filterDefinitions('position'),
         ]);
     }
 
@@ -85,6 +89,7 @@ class PositionController extends Controller
             'organizations' => $organizations,
             'jobTitles' => $jobTitles,
             'projectManagers' => $projectManagers,
+            'customFields' => app(CustomFieldService::class)->definitions('position'),
         ]);
     }
 
@@ -94,11 +99,19 @@ class PositionController extends Controller
         PositionService $positionService
     ) {
         $validated = $this->validatePosition($request);
+        $customFieldValues = $validated['custom_fields'] ?? [];
+        unset($validated['custom_fields']);
 
-        $position = $positionService->create(
-            attributes: $validated,
-            userId: $userResolver->resolveUserId(),
-        );
+        $position = DB::transaction(function () use ($validated, $customFieldValues, $positionService, $userResolver) {
+            $position = $positionService->create(
+                attributes: $validated,
+                userId: $userResolver->resolveUserId(),
+            );
+
+            app(CustomFieldService::class)->syncValues($position, 'position', $customFieldValues);
+
+            return $position;
+        });
 
         return redirect()
             ->route('portal.positions.edit', $position->id)
@@ -202,6 +215,7 @@ class PositionController extends Controller
             'customTasks' => $customTasks,
             'positionCandidates' => $positionCandidates,
             'initialSection' => request()->query('section', 'general'),
+            'customFieldDisplay' => app(CustomFieldService::class)->displayValues($position, 'position'),
         ]);
     }
 
@@ -326,6 +340,8 @@ class PositionController extends Controller
             'positionCandidates' => $positionCandidates,
             'workflows' => $workflows,
             'initialSection' => request()->query('section', 'general'),
+            'customFields' => app(CustomFieldService::class)->definitions('position'),
+            'customFieldValues' => app(CustomFieldService::class)->valuesForForm($position, 'position'),
         ]);
     }
 
@@ -338,12 +354,18 @@ class PositionController extends Controller
         $position = Position::findOrFail($id);
 
         $validated = $this->validatePosition($request, $position);
+        $customFieldValues = $validated['custom_fields'] ?? [];
+        unset($validated['custom_fields']);
 
-        $positionService->update(
-            position: $position,
-            attributes: $validated,
-            userId: $userResolver->resolveUserId(),
-        );
+        DB::transaction(function () use ($position, $validated, $customFieldValues, $positionService, $userResolver) {
+            $positionService->update(
+                position: $position,
+                attributes: $validated,
+                userId: $userResolver->resolveUserId(),
+            );
+
+            app(CustomFieldService::class)->syncValues($position, 'position', $customFieldValues);
+        });
 
         return redirect()
             ->route('portal.positions.edit', $position->id)
@@ -384,7 +406,7 @@ class PositionController extends Controller
         Request $request,
         UserResolver $userResolver
     ) {
-        $definition = PositionsDefinition::get();
+        $definition = app(CustomFieldListService::class)->augmentDefinition(PositionsDefinition::get(), 'position');
 
         $validKeys = collect($definition['columns'])
             ->pluck('key')
@@ -435,7 +457,7 @@ class PositionController extends Controller
 
     public function resetPreferences(UserResolver $userResolver)
     {
-        $definition = PositionsDefinition::get();
+        $definition = app(CustomFieldListService::class)->augmentDefinition(PositionsDefinition::get(), 'position');
 
         UserListPreference::where('user_id', $userResolver->resolveUserId())
             ->where('list_key', $definition['list_key'])
@@ -452,7 +474,7 @@ class PositionController extends Controller
     ): StreamedResponse {
         return $listExportService->exportCsv(
             request: $request,
-            definition: PositionsDefinition::get(),
+            definition: app(CustomFieldListService::class)->augmentDefinition(PositionsDefinition::get(), 'position'),
             query: $this->workforceAccess->scopePositions(Position::query()),
             filenamePrefix: 'positions-export',
             filterCallback: function ($query, $request) {
@@ -613,7 +635,7 @@ class PositionController extends Controller
                 'nullable',
                 'string',
             ],
-        ]);
+        ] + app(CustomFieldService::class)->rules('position'));
 
         app(PositionService::class)->assertEligibleProjectManager(
             $validated['project_manager_user_id'] ?? null

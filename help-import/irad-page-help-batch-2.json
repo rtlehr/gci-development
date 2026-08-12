@@ -1,0 +1,103 @@
+{
+  "format": "irad-page-help",
+  "version": 1,
+  "exported_at": "2026-08-12T08:52:00-04:00",
+  "help_pages": [
+    {
+      "help_key": "portal.jobtitles.index",
+      "title": "Job Titles",
+      "content_html": "<p>The Job Titles page contains the standard job classifications used by IRAD positions. Each job title can define default skills and tasks that help keep position requirements consistent.</p>\n<h3>Find a Job Title</h3>\n<p>Use Search, sorting, and Column Settings to locate and organize job titles. Select a job title to review its details and requirements.</p>\n<h3>Job Title Requirements</h3>\n<p>A job title can include Required Skills, Desired Skills, and Tasks. These serve as the standard requirement template for positions using that title.</p>\n<h3>Actions</h3>\n<p>Select <strong>Create Job Title</strong> to add a new title. Use the row actions to View or Edit an existing title when your permissions allow it.</p>\n<p>Inactive job titles remain in IRAD for historical use but are not available for new position selections.</p>",
+      "is_active": true
+    },
+    {
+      "help_key": "portal.jobtitles.create",
+      "title": "Create Job Title",
+      "content_html": "<p>Use this page to create a standard job title that can be assigned to positions.</p>\n<h3>Job Title Details</h3>\n<ul>\n<li>Enter a clear Name and useful Description.</li>\n<li>Use Sort Order to control where the title appears in lists; lower numbers appear first.</li>\n<li>Keep Active enabled when the title should be available for positions.</li>\n</ul>\n<h3>Requirement Template</h3>\n<p>You can optionally clone the skills and tasks from an existing job title. The copied requirements become independent records, so later changes to either job title will not automatically change the other.</p>\n<h3>Create</h3>\n<p>Review the details and select <strong>Create Job Title</strong>. You can then manage its Required Skills, Desired Skills, and Tasks.</p>",
+      "is_active": true
+    },
+    {
+      "help_key": "portal.jobtitles.show",
+      "title": "Job Title Details",
+      "content_html": "<p>The Job Title Details page is the main workspace for reviewing a job title and maintaining the standard requirements associated with it.</p>\n<h3>Job Title Information</h3>\n<p>Review the title, description, active status, and sort order at the top of the record.</p>\n<h3>Required and Desired Skills</h3>\n<p>Required Skills represent capabilities normally expected for the job title. Desired Skills identify useful capabilities that are preferred but not mandatory.</p>\n<h3>Tasks</h3>\n<p>Tasks describe standard duties or work associated with the job title.</p>\n<h3>Managing Requirements</h3>\n<p>Use the Add Skill and Add Task areas to create new requirements. Existing skills and tasks can be maintained from their corresponding sections when your permissions allow it.</p>\n<p>These requirements provide defaults for positions that use this job title.</p>",
+      "is_active": true
+    },
+    {
+      "help_key": "portal.jobtitles.edit",
+      "title": "Edit Job Title",
+      "content_html": "<p>Use this page to update a job title's core information and move to its skills and tasks when requirement changes are needed.</p>\n<h3>Job Title Details</h3>\n<p>Update the Name, Description, Sort Order, or Active status as needed. Lower sort-order numbers appear earlier in lists.</p>\n<h3>Active Status</h3>\n<p>Deactivate a job title when it should no longer be available for new positions. Existing records can continue to retain the historical relationship.</p>\n<h3>Skills &amp; Tasks</h3>\n<p>Use the Skills &amp; Tasks section to manage the default requirements and duties associated with this title.</p>\n<p>Select <strong>Update Job Title</strong> to save changes.</p>",
+      "is_active": true
+    },
+    {
+      "help_key": "jobtitlerequirements.index",
+      "title": "Job Title Requirements",
+      "content_html": "<p>This page provides a central starting point for maintaining the standard requirements attached to job titles.</p>\n<h3>Select a Job Title</h3>\n<p>Each card represents a job title and summarizes its current skills and tasks. Select the job title you want to maintain.</p>\n<h3>What You Can Manage</h3>\n<ul>\n<li><strong>Required Skills</strong> — skills normally required for the job title.</li>\n<li><strong>Desired Skills</strong> — preferred skills that are useful but not mandatory.</li>\n<li><strong>Tasks</strong> — standard duties associated with the job title.</li>\n</ul>\n<p>Changes made to job-title requirements establish the defaults used by positions associated with that title. Position-specific requirements may still be maintained separately.</p>",
+      "is_active": true
+    },
+    {
+      "help_key": "jobtitleskills.index",
+      "title": "Job Title Skills",
+      "content_html": "<p>Use this page to select a job title and maintain its standard Required and Desired skills.</p>\n<h3>Select a Job Title</h3>\n<p>Each job-title card shows the title and its current requirement counts. Select <strong>Manage Skills</strong> to open that title's skill section.</p>\n<h3>Required vs. Desired</h3>\n<p>Use Required for capabilities that are normally necessary for the position. Use Desired for capabilities that strengthen a candidate but are not mandatory.</p>\n<p>Keeping these defaults accurate helps position owners and staffing teams evaluate position requirements consistently.</p>",
+      "is_active": true
+    },
+    {
+      "help_key": "jobtitletasks.index",
+      "title": "Job Title Tasks",
+      "content_html": "<p>Use this page to select a job title and maintain the standard tasks associated with it.</p>\n<h3>Select a Job Title</h3>\n<p>Each card summarizes a job title and its current requirements. Select <strong>Manage Tasks</strong> to open the task section for that title.</p>\n<h3>Task Guidance</h3>\n<p>Tasks should describe standard duties or responsibilities that commonly apply to positions using the job title. Keep descriptions clear enough that position owners and candidates understand the expected work.</p>\n<p>Position-specific tasks can be added separately when a particular position requires duties beyond the job-title defaults.</p>",
+      "is_active": true
+    },
+    {
+      "help_key": "positionassignments.create",
+      "title": "Create Assignment",
+      "content_html": "<p>Use this page to assign a person to a position and create the staffing relationship between those records.</p>\n<h3>Choose the Records Carefully</h3>\n<p>Confirm that you are assigning the correct person to the correct position before saving. Assignment information affects staffing status and the current-assignment views throughout IRAD.</p>\n<h3>Assignment Details</h3>\n<p>Complete the assignment dates, status, role, or other available assignment information that applies to the person's placement.</p>\n<h3>Save</h3>\n<p>Select <strong>Create Assignment</strong> when the information is correct. If IRAD identifies a conflict or missing required value, correct the displayed validation messages before trying again.</p>",
+      "is_active": true
+    },
+    {
+      "help_key": "positionassignments.edit",
+      "title": "Edit Assignment",
+      "content_html": "<p>Use this page to update an existing position assignment as staffing circumstances change.</p>\n<h3>Review Before Editing</h3>\n<p>Confirm the person and position associated with the assignment before changing dates, status, role, or other assignment information.</p>\n<h3>Maintain Accurate History</h3>\n<p>When an assignment ends or changes, update the applicable information rather than creating conflicting active assignments. Accurate assignment history supports position status, staffing counts, and reporting.</p>\n<p>Select <strong>Update Assignment</strong> to save the changes.</p>",
+      "is_active": true
+    },
+    {
+      "help_key": "workflows.index",
+      "title": "Workflows",
+      "content_html": "<p>The Workflows page manages the reusable processes IRAD can apply to candidate and staffing activity.</p>\n<h3>Find a Workflow</h3>\n<p>Use Search, sorting, and the list controls to locate an existing workflow. Select a workflow's actions to edit it when permitted.</p>\n<h3>Workflow Purpose</h3>\n<p>A workflow defines an ordered set of steps used to track progress through a repeatable process. Keeping workflow definitions consistent allows users to understand where candidates are and what remains to be completed.</p>\n<h3>Create a Workflow</h3>\n<p>Select <strong>Create Workflow</strong> when a new repeatable process is needed. Avoid creating duplicate workflows when an existing one can be updated or reused.</p>",
+      "is_active": true
+    },
+    {
+      "help_key": "workflows.create",
+      "title": "Create Workflow",
+      "content_html": "<p>Use this page to define a reusable workflow and the steps users will follow when that workflow is assigned.</p>\n<h3>Workflow Details</h3>\n<p>Enter a clear workflow name and description so users understand when the process should be used.</p>\n<h3>Workflow Steps</h3>\n<p>Add the steps in the order they should normally occur. Step names should be concise and describe a meaningful point in the process.</p>\n<h3>Before Saving</h3>\n<ul>\n<li>Confirm that the workflow does not duplicate an existing process.</li>\n<li>Review the order of all steps.</li>\n<li>Use descriptions where additional guidance will help users understand the process.</li>\n</ul>\n<p>Select <strong>Create Workflow</strong> when the definition is complete.</p>",
+      "is_active": true
+    },
+    {
+      "help_key": "workflows.edit",
+      "title": "Edit Workflow",
+      "content_html": "<p>Use this page to maintain a workflow definition and its ordered steps.</p>\n<h3>Workflow Details</h3>\n<p>Update the workflow name or description when the purpose of the process needs clarification.</p>\n<h3>Workflow Steps</h3>\n<p>Add, remove, rename, or reorder steps carefully. Workflow definitions may be used to guide active candidate processes, so changes should preserve a clear and understandable progression.</p>\n<h3>Review Changes</h3>\n<p>Before saving, confirm that the step order reflects the actual process users should follow. Select <strong>Update Workflow</strong> to save the revised definition.</p>",
+      "is_active": true
+    },
+    {
+      "help_key": "portal.tickets.index",
+      "title": "My Support Tickets",
+      "content_html": "<p>My Support Tickets shows the requests you have submitted to the IRAD support team and lets you follow their progress.</p>\n<h3>Find a Ticket</h3>\n<p>Use Search to find a request by ticket number, title, or description. Select Reset to clear the search.</p>\n<h3>Review Status</h3>\n<p>Each ticket shows its current status and other available tracking information. Open a ticket to review the original request, activity, and any resolution information.</p>\n<h3>Submit a New Request</h3>\n<p>Select <strong>Submit a Request</strong> when you need help with IRAD, encounter a problem, or want to report something that needs attention.</p>",
+      "is_active": true
+    },
+    {
+      "help_key": "portal.tickets.create",
+      "title": "Submit a Support Request",
+      "content_html": "<p>Use this page to send an IRAD support request when you encounter a problem, need assistance, or want to report an improvement opportunity.</p>\n<h3>Describe the Request</h3>\n<ul>\n<li>Give the request a short, meaningful title.</li>\n<li>Include the page URL when the issue relates to a specific IRAD screen.</li>\n<li>Explain what happened, what you expected, and any steps that may help reproduce the issue.</li>\n<li>Add a screenshot when it will help support understand the problem.</li>\n</ul>\n<h3>Before Submitting</h3>\n<p>Do not include passwords or other sensitive authentication information in the request. Select <strong>Submit Request</strong> when the description provides enough information for support to begin working the issue.</p>",
+      "is_active": true
+    },
+    {
+      "help_key": "portal.tickets.show",
+      "title": "Support Ticket Details",
+      "content_html": "<p>This page shows the complete history and current status of one of your support requests.</p>\n<h3>Request Details</h3>\n<p>Review the ticket number, status, description, related page information, and screenshot when one was included.</p>\n<h3>Activity</h3>\n<p>The Activity section shows updates made as the support request is reviewed and worked.</p>\n<h3>Resolution</h3>\n<p>When the issue is resolved, the Resolution section provides the available outcome or explanation.</p>\n<p>Select <strong>Return to Tickets</strong> to go back to your complete support-request list.</p>",
+      "is_active": true
+    },
+    {
+      "help_key": "portal.alerts.index",
+      "title": "Alerts",
+      "content_html": "<p>The Alerts page shows IRAD notifications that require your awareness or may need your attention.</p>\n<h3>Filter Alerts</h3>\n<p>Use All, Unread, and Read to focus the list. The counts show how many alerts are currently available in each state.</p>\n<h3>Mark Alerts Read</h3>\n<p>Select <strong>Read</strong> on an individual alert after reviewing it, or use <strong>Mark all read</strong> when you have reviewed all unread alerts.</p>\n<h3>Open Related Work</h3>\n<p>When an alert includes a link to a person, position, candidate, ticket, or other IRAD record, use that link to open the related work.</p>\n<p>Marking an alert read does not change the underlying record; it only changes your notification state.</p>",
+      "is_active": true
+    }
+  ]
+}

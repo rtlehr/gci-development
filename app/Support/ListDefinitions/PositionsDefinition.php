@@ -8,6 +8,8 @@ class PositionsDefinition
     {
         return [
             'list_key' => 'positions',
+            'entity_model' => \App\Models\Position::class,
+            'entity_table' => 'positions',
             'default_sort' => 'created_at',
             'default_direction' => 'desc',
 

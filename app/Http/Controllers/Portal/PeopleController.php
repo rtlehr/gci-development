@@ -11,6 +11,8 @@ use App\Models\User;
 use App\Models\UserListPreference;
 use App\Services\AddressService;
 use App\Services\AttachmentService;
+use App\Services\CustomFieldService;
+use App\Services\CustomFieldListService;
 use App\Services\ListEngine;
 use App\Services\ListExportService;
 use App\Services\PersonPhoneService;
@@ -77,7 +79,7 @@ class PeopleController extends Controller
         UserResolver $userResolver,
         ListEngine $listEngine
     ) {
-        $definition = PeopleDefinition::get();
+        $definition = app(CustomFieldListService::class)->augmentDefinition(PeopleDefinition::get(), 'person');
         $userId = $userResolver->resolveUserId();
 
         $list = $listEngine->run(
@@ -95,6 +97,7 @@ class PeopleController extends Controller
             'filters' => $list['filters'],
             'sort' => $list['sort'],
             'direction' => $list['direction'],
+            'customFieldFilters' => app(CustomFieldListService::class)->filterDefinitions('person'),
         ]);
     }
 
@@ -116,11 +119,14 @@ class PeopleController extends Controller
             'team_name',
         ]);
 
+        $customFieldService = app(CustomFieldService::class);
+
         return inertia('Portal/People/Create', [
             'users' => $users,
             'roles' => $roles,
             'groups' => $groups,
             'teams' => $teams,
+            'customFields' => $customFieldService->definitions('person'),
         ]);
     }
 
@@ -179,7 +185,7 @@ class PeopleController extends Controller
 
             'role_ids' => ['nullable', 'array'],
             'role_ids.*' => ['integer', 'exists:roles,id'],
-        ]);
+        ] + app(CustomFieldService::class)->rules('person'));
 
         $newAttachments = $request->file('new_attachments', []);
 
@@ -197,6 +203,7 @@ class PeopleController extends Controller
             $groupIds = $validated['group_ids'] ?? [];
             $teamIds = $validated['team_ids'] ?? [];
             $roleIds = $validated['role_ids'] ?? [];
+            $customFieldValues = $validated['custom_fields'] ?? [];
 
             unset(
                 $validated['phone_numbers'],
@@ -205,7 +212,8 @@ class PeopleController extends Controller
                 $validated['attachment_meta'],
                 $validated['group_ids'],
                 $validated['team_ids'],
-                $validated['role_ids']
+                $validated['role_ids'],
+                $validated['custom_fields']
             );
 
             $user = $personUserAccountService->createForPerson($validated);
@@ -221,6 +229,7 @@ class PeopleController extends Controller
 
             $personPhoneService->createForPerson($person, $phoneNumbersInput);
             $addressService->createForPerson($person, $addressesInput);
+            app(CustomFieldService::class)->syncValues($person, 'person', $customFieldValues);
 
             $attachmentService->validatePrimaryPerCategory($attachmentMeta);
             $attachmentService->uploadForModel(
@@ -248,10 +257,12 @@ class PeopleController extends Controller
             'groups',
             'teams',
             'user.roles:id,name,label,description',
+            'personNotes.enteredBy:id,name',
         ])->findOrFail($id);
 
         return inertia('Portal/People/Show', [
             'person' => $person,
+            'customFieldDisplay' => app(CustomFieldService::class)->displayValues($person, 'person'),
         ]);
     }
 
@@ -270,6 +281,7 @@ class PeopleController extends Controller
             'groups:id,group_name',
             'teams:id,team_name',
             'user.roles:id,name,label,description',
+            'personNotes.enteredBy:id,name',
         ])->findOrFail($id);
 
         $users = User::orderBy('name')->get(['id', 'name']);
@@ -296,6 +308,8 @@ class PeopleController extends Controller
             ? $person->user->roles()->pluck('roles.id')->map(fn ($id) => (int) $id)->values()
             : collect();
 
+        $customFieldService = app(CustomFieldService::class);
+
         return inertia('Portal/People/Edit', [
             'person' => $person,
             'selectedRoleIds' => $selectedRoleIds,
@@ -303,6 +317,8 @@ class PeopleController extends Controller
             'roles' => $roles,
             'groups' => $groups,
             'teams' => $teams,
+            'customFields' => $customFieldService->definitions('person'),
+            'customFieldValues' => $customFieldService->valuesForForm($person, 'person'),
         ]);
     }
 
@@ -367,7 +383,7 @@ class PeopleController extends Controller
 
             'role_ids' => ['nullable', 'array'],
             'role_ids.*' => ['integer', 'exists:roles,id'],
-        ]);
+        ] + app(CustomFieldService::class)->rules('person'));
 
         $newAttachments = $request->file('new_attachments', []);
 
@@ -387,6 +403,7 @@ class PeopleController extends Controller
             $groupIds = $validated['group_ids'] ?? [];
             $teamIds = $validated['team_ids'] ?? [];
             $roleIds = $validated['role_ids'] ?? [];
+            $customFieldValues = $validated['custom_fields'] ?? [];
 
             unset(
                 $validated['phone_numbers'],
@@ -396,7 +413,8 @@ class PeopleController extends Controller
                 $validated['remove_attachment_ids'],
                 $validated['group_ids'],
                 $validated['team_ids'],
-                $validated['role_ids']
+                $validated['role_ids'],
+                $validated['custom_fields']
             );
 
             $person->update($validated);
@@ -412,6 +430,7 @@ class PeopleController extends Controller
             }
             $personPhoneService->sync($person, $phoneNumbersInput);
             $addressService->sync($person, $addressesInput);
+            app(CustomFieldService::class)->syncValues($person, 'person', $customFieldValues);
 
             $attachmentService->validatePrimaryPerCategory($attachmentMeta);
             $attachmentService->syncForModel(
@@ -447,7 +466,7 @@ class PeopleController extends Controller
 
     public function savePreferences(Request $request, UserResolver $userResolver)
     {
-        $definition = PeopleDefinition::get();
+        $definition = app(CustomFieldListService::class)->augmentDefinition(PeopleDefinition::get(), 'person');
         $validKeys = collect($definition['columns'])->pluck('key')->toArray();
 
         $validated = $request->validate([
@@ -487,7 +506,7 @@ class PeopleController extends Controller
 
     public function resetPreferences(UserResolver $userResolver)
     {
-        $definition = PeopleDefinition::get();
+        $definition = app(CustomFieldListService::class)->augmentDefinition(PeopleDefinition::get(), 'person');
         $userId = $userResolver->resolveUserId();
 
         UserListPreference::where('user_id', $userId)
@@ -505,7 +524,7 @@ class PeopleController extends Controller
     ): StreamedResponse {
         return $listExportService->exportCsv(
             request: $request,
-            definition: PeopleDefinition::get(),
+            definition: app(CustomFieldListService::class)->augmentDefinition(PeopleDefinition::get(), 'person'),
             query: $this->peopleListQuery(),
             filenamePrefix: 'people-export'
         );

@@ -10,6 +10,8 @@ class PeopleDefinition
     {
         return [
             'list_key' => 'people',
+            'entity_model' => \App\Models\Person::class,
+            'entity_table' => 'people',
             'default_sort' => 'last_name',
             'default_direction' => 'asc',
 

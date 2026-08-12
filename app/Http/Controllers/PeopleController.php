@@ -10,6 +10,7 @@ use App\Models\User;
 use App\Models\UserListPreference;
 use App\Services\AddressService;
 use App\Services\AttachmentService;
+use App\Services\CustomFieldListService;
 use App\Services\ListEngine;
 use App\Services\ListExportService;
 use App\Services\PersonPhoneService;
@@ -76,7 +77,7 @@ class PeopleController extends Controller
         UserResolver $userResolver,
         ListEngine $listEngine
     ) {
-        $definition = PeopleDefinition::get();
+        $definition = app(CustomFieldListService::class)->augmentDefinition(PeopleDefinition::get(), 'person');
         $userId = $userResolver->resolveUserId();
 
         $list = $listEngine->run(
@@ -446,7 +447,7 @@ class PeopleController extends Controller
 
     public function savePreferences(Request $request, UserResolver $userResolver)
     {
-        $definition = PeopleDefinition::get();
+        $definition = app(CustomFieldListService::class)->augmentDefinition(PeopleDefinition::get(), 'person');
         $validKeys = collect($definition['columns'])->pluck('key')->toArray();
 
         $validated = $request->validate([
@@ -486,7 +487,7 @@ class PeopleController extends Controller
 
     public function resetPreferences(UserResolver $userResolver)
     {
-        $definition = PeopleDefinition::get();
+        $definition = app(CustomFieldListService::class)->augmentDefinition(PeopleDefinition::get(), 'person');
         $userId = $userResolver->resolveUserId();
 
         UserListPreference::where('user_id', $userId)
@@ -504,7 +505,7 @@ class PeopleController extends Controller
     ): StreamedResponse {
         return $listExportService->exportCsv(
             request: $request,
-            definition: PeopleDefinition::get(),
+            definition: app(CustomFieldListService::class)->augmentDefinition(PeopleDefinition::get(), 'person'),
             query: $this->peopleListQuery(),
             filenamePrefix: 'people-export'
         );

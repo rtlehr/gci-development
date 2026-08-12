@@ -35,6 +35,10 @@ const themeStyle = computed(() => ({
 
 const currentHelpKey = computed(() => {
     if (props.helpKey?.trim()) return props.helpKey;
+
+    const contentPage = page.props.contentPage as { help_key?: string | null } | undefined;
+    if (contentPage?.help_key?.trim()) return contentPage.help_key;
+
     return (page.component ?? '').replace(/\//g, '.').toLowerCase();
 });
 

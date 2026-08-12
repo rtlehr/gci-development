@@ -45,6 +45,32 @@
                     </select>
                 </div>
             </template>
+            <template v-if="customFieldFilters.length" #advanced-filters>
+                <div class="grid gap-4 border-t pt-4 md:grid-cols-2 xl:grid-cols-3">
+                    <div v-for="field in customFieldFilters" :key="field.id" class="space-y-2">
+                        <Label :for="`custom-filter-${field.id}`">{{ field.name }}</Label>
+                        <Input
+                            v-if="['text', 'textarea'].includes(field.field_type)"
+                            :id="`custom-filter-${field.id}`"
+                            v-model="filterForm.custom_filters[field.id]"
+                            placeholder="Contains..."
+                        />
+                        <Input
+                            v-else-if="field.field_type === 'date'"
+                            :id="`custom-filter-${field.id}`"
+                            v-model="filterForm.custom_filters[field.id]"
+                            type="date"
+                        />
+                        <Select v-else v-model="filterForm.custom_filters[field.id]">
+                            <SelectTrigger :id="`custom-filter-${field.id}`"><SelectValue placeholder="Any value" /></SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="__all__">Any value</SelectItem>
+                                <SelectItem v-for="option in field.options" :key="option.value" :value="option.value">{{ option.label }}</SelectItem>
+                            </SelectContent>
+                        </Select>
+                    </div>
+                </div>
+            </template>
         </ListFilters>
 
         <!-- Table -->
@@ -210,7 +236,9 @@ import {
 } from 'lucide-vue-next'
 
 import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Badge } from '@/components/ui/badge'
 import { useFileDownload } from '@/composables/useFileDownload'
 import ColumnSettings from '@/components/Lists/ColumnSettings.vue'
@@ -289,6 +317,10 @@ const props = defineProps({
         type: String,
         default: 'created_at',
     },
+    customFieldFilters: {
+        type: Array,
+        default: () => [],
+    },
     direction: {
         type: String,
         default: 'desc',
@@ -302,6 +334,7 @@ const showColumnSettings = ref(false)
 const filterForm = reactive({
     search: props.filters?.search ?? '',
     status: props.filters?.status ?? '',
+    custom_filters: { ...(props.filters?.custom_filters ?? {}) },
 })
 
 // Local editable column configuration state.
@@ -387,6 +420,7 @@ function applyFilters() {
 function resetFilters() {
     filterForm.search = ''
     filterForm.status = ''
+    filterForm.custom_filters = {}
 
     router.get('/portal/positions', {
         sort: props.sort,
@@ -628,6 +662,7 @@ function getFilterPayload() {
     return {
         search: filterForm.search,
         status: filterForm.status,
+        custom_filters: Object.fromEntries(Object.entries(filterForm.custom_filters).filter(([, value]) => value !== '' && value !== '__all__')),
     }
 }
 

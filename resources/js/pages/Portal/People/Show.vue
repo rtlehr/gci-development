@@ -2,9 +2,11 @@
 import { Link, router } from '@inertiajs/vue3'
 import { computed, ref } from 'vue'
 import { MoreHorizontal } from 'lucide-vue-next'
+import CustomFieldsDisplay from '@/components/custom-fields/CustomFieldsDisplay.vue'
 import AttachmentList from '@/components/attachments/AttachmentList.vue'
 import DetailItem from '@/components/DetailItem.vue'
 import PersonSectionNav from '@/components/portal/people/PersonSectionNav.vue'
+import PersonNotesPanel from '@/components/portal/people/PersonNotesPanel.vue'
 import { useAppLabels } from '@/composables/useAppLabels'
 import { useAuth } from '@/composables/useAuth'
 import { Permissions } from '@/constants/permissions'
@@ -40,6 +42,7 @@ import {
 
 const props = defineProps({
     person: { type: Object, required: true },
+    customFieldDisplay: { type: Array, default: () => [] },
 })
 
 const { label } = useAppLabels()
@@ -62,6 +65,7 @@ const groups = computed(() => props.person.groups ?? [])
 const teams = computed(() => props.person.teams ?? [])
 const roles = computed(() => props.person.user?.roles ?? [])
 const attachments = computed(() => props.person.attachments ?? [])
+const personNotes = computed(() => props.person.person_notes ?? props.person.personNotes ?? [])
 
 const activeAssignments = computed(() => {
     return (props.person.assignments ?? []).filter((assignment) => {
@@ -78,6 +82,12 @@ const sections = computed(() => [
         complete: Boolean(props.person.person_code && props.person.first_name && props.person.last_name),
     },
     {
+        id: 'notes',
+        title: 'Notes',
+        description: 'Kudos, reprimands, and general notes.',
+        complete: Boolean(personNotes.value.length),
+    },
+    {
         id: 'organization',
         title: 'Organization',
         description: 'Groups, teams, and assignments.',
@@ -88,6 +98,12 @@ const sections = computed(() => [
         title: 'Contact Information',
         description: 'Phone numbers and addresses.',
         complete: Boolean(phoneNumbers.value.length || addresses.value.length),
+    },
+    {
+        id: 'other',
+        title: 'Other Information',
+        description: 'Installation-specific fields.',
+        complete: Boolean(props.customFieldDisplay.some((field) => Array.isArray(field.value) ? field.value.length : field.value)),
     },
     {
         id: 'access',
@@ -192,14 +208,16 @@ function confirmDelete() {
                                 <DetailItem label="Created" :value="formatDate(person.created_at)" />
                             </div>
 
-                            <div class="border-t pt-5">
-                                <p class="text-sm font-medium">Notes</p>
-                                <p class="mt-2 whitespace-pre-line text-sm text-muted-foreground">
-                                    {{ person.notes || 'No notes available.' }}
-                                </p>
-                            </div>
                         </CardContent>
                     </Card>
+                </section>
+
+                <section v-show="activeSection === 'other'">
+                    <CustomFieldsDisplay :fields="customFieldDisplay" />
+                </section>
+
+                <section v-show="activeSection === 'notes'">
+                    <PersonNotesPanel :person-id="person.id" :notes="personNotes" />
                 </section>
 
                 <section v-show="activeSection === 'organization'" class="space-y-6">

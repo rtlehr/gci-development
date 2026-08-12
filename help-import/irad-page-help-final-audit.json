@@ -1,0 +1,13 @@
+{
+  "format": "irad-page-help",
+  "version": 1,
+  "exported_at": "2026-08-12T09:06:00-04:00",
+  "help_pages": [
+    {
+      "help_key": "portal.jobtitlerequirements.index",
+      "title": "Job Title Requirements",
+      "content_html": "<p>Job Title Requirements is the central workspace for maintaining the standard skills and tasks associated with IRAD job titles.</p>\n<h3>Select a Job Title</h3>\n<p>Each card summarizes a job title and its current skill and task counts. Select <strong>Manage Requirements</strong> to open that job title and maintain its requirements.</p>\n<h3>Required and Desired Skills</h3>\n<p>Required Skills identify capabilities normally expected for the job title. Desired Skills identify useful capabilities that strengthen a candidate but are not mandatory.</p>\n<h3>Tasks</h3>\n<p>Tasks describe the standard duties or responsibilities commonly associated with the job title.</p>\n<h3>Keep Defaults Current</h3>\n<p>These requirements provide a consistent starting point for positions that use the job title. Position-specific requirements can still be added when a particular position needs something different.</p>",
+      "is_active": true
+    }
+  ]
+}

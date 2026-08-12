@@ -2,6 +2,7 @@
 import {
     Building2,
     ContactRound,
+    MessageSquareText,
     Paperclip,
     ShieldCheck,
     UserRound,
@@ -17,6 +18,7 @@ const emit = defineEmits(['update:activeSection'])
 
 const icons = {
     details: UserRound,
+    notes: MessageSquareText,
     organization: Building2,
     contact: ContactRound,
     access: ShieldCheck,
