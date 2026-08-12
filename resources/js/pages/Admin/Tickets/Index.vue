@@ -2,6 +2,9 @@
 import { computed, reactive, ref } from 'vue'
 import { Link, router } from '@inertiajs/vue3'
 import ColumnSettings from '@/components/Lists/ColumnSettings.vue'
+import ListRowActions from '@/components/Lists/ListRowActions.vue'
+import ListTableShell from '@/components/Lists/ListTableShell.vue'
+import PageContainer from '@/components/layout/PageContainer.vue'
 import ListToolbar from '@/components/Lists/ListToolbar.vue'
 import ListFilters from '@/components/Lists/ListFilters.vue'
 
@@ -12,6 +15,7 @@ import {
 } from 'lucide-vue-next'
 
 import { Button } from '@/components/ui/button'
+import { DropdownMenuItem } from '@/components/ui/dropdown-menu'
 import { Label } from '@/components/ui/label'
 import { Badge } from '@/components/ui/badge'
 
@@ -356,7 +360,7 @@ function exportCsv() {
 </script>
 
 <template>
-    <div class="p-6 space-y-6">
+    <PageContainer>
         <ListToolbar
             title="Tickets"
             :can-export="false"
@@ -424,7 +428,7 @@ function exportCsv() {
             </template>
         </ListFilters>
 
-        <div class="border rounded-xl bg-background overflow-hidden">
+        <ListTableShell label="Ticket results">
             <Table>
                 <TableHeader>
                     <TableRow>
@@ -476,14 +480,16 @@ function exportCsv() {
                         </TableCell>
 
                         <TableCell class="text-right">
-                            <Link :href="`/admin/tickets/${ticket.id}`">
-                                <Button size="sm">Open</Button>
-                            </Link>
+                            <ListRowActions :aria-label="`Actions for ticket ${ticket.ticket_number}`">
+                                <DropdownMenuItem as-child>
+                                    <Link :href="`/admin/tickets/${ticket.id}`">Open</Link>
+                                </DropdownMenuItem>
+                            </ListRowActions>
                         </TableCell>
                     </TableRow>
                 </TableBody>
             </Table>
-        </div>
+        </ListTableShell>
 
         <div class="flex justify-between">
             <div>
@@ -520,5 +526,5 @@ function exportCsv() {
                 </Button>
             </div>
         </div>
-    </div>
+    </PageContainer>
 </template>

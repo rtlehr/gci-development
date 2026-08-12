@@ -12,6 +12,8 @@
             @export="exportCsv"
         />
 
+        <DownloadErrorAlert :error="downloadError" />
+
         <!-- Column Settings Panel -->
         <ColumnSettings
             v-model:open="showColumnSettings"
@@ -172,7 +174,7 @@
                                     <DropdownMenuItem
                                          v-if="can(Permissions.POSITIONS_DELETE)"
                                         @click="openDeleteDialog(position.id)"
-                                        class="text-red-600 focus:text-red-600"
+                                        class="text-destructive focus:text-destructive"
                                     >
                                         Delete
                                     </DropdownMenuItem>
@@ -213,7 +215,7 @@
 
                     <AlertDialogAction
                         @click="confirmDelete"
-                        class="bg-red-600 text-white hover:bg-red-700"
+                        class="bg-destructive text-destructive-foreground hover:bg-destructive/90"
                     >
                         Delete
                     </AlertDialogAction>
@@ -242,6 +244,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Badge } from '@/components/ui/badge'
 import { useFileDownload } from '@/composables/useFileDownload'
 import ColumnSettings from '@/components/Lists/ColumnSettings.vue'
+import DownloadErrorAlert from '@/components/Lists/DownloadErrorAlert.vue'
 import ListToolbar from '@/components/Lists/ListToolbar.vue'
 import ListFilters from '@/components/Lists/ListFilters.vue'
 import ListEmptyRow from '@/components/Lists/ListEmptyRow.vue'
@@ -283,6 +286,7 @@ import { Permissions } from '@/constants/permissions'
 const {
     downloadFile,
     isDownloading,
+    downloadError,
 } = useFileDownload()
 
 const { can } = useAuth()

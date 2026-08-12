@@ -1,5 +1,5 @@
 <template>
-    <div class="p-6 space-y-6">
+    <PageContainer>
         <ListToolbar
             title="Organizations"
             description="Manage organization hierarchy and parent relationships."
@@ -11,6 +11,8 @@
             @open-column-settings="showColumnSettings = true"
             @export="exportCsv"
         />
+
+        <DownloadErrorAlert :error="downloadError" />
 
         <ColumnSettings
             v-model:open="showColumnSettings"
@@ -29,7 +31,7 @@
             @reset="resetFilters"
         />
 
-        <div class="border rounded-xl bg-background overflow-hidden">
+        <ListTableShell label="Organization results">
             <Table>
                 <TableHeader>
                     <TableRow>
@@ -97,7 +99,7 @@
                                     <DropdownMenuItem
                                         v-if="can(Permissions.ADMIN) && organization.id !== 1"
                                         @click="openDeleteDialog(organization.id)"
-                                        class="text-red-600 focus:text-red-600"
+                                        class="text-destructive focus:text-destructive"
                                     >
                                         Delete
                                     </DropdownMenuItem>
@@ -107,7 +109,7 @@
                     </TableRow>
                 </TableBody>
             </Table>
-        </div>
+        </ListTableShell>
 
         <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
             <div class="text-sm text-muted-foreground">
@@ -162,14 +164,14 @@
 
                     <AlertDialogAction
                         @click="confirmDelete"
-                        class="bg-red-600 text-white hover:bg-red-700"
+                        class="bg-destructive text-destructive-foreground hover:bg-destructive/90"
                     >
                         Delete
                     </AlertDialogAction>
                 </AlertDialogFooter>
             </AlertDialogContent>
         </AlertDialog>
-    </div>
+    </PageContainer>
 </template>
 
 <script setup>
@@ -178,8 +180,11 @@ import { Link, router } from '@inertiajs/vue3'
 import { useAuth } from '@/composables/useAuth'
 import { useFileDownload } from '@/composables/useFileDownload'
 import ColumnSettings from '@/components/Lists/ColumnSettings.vue'
+import DownloadErrorAlert from '@/components/Lists/DownloadErrorAlert.vue'
 import ListToolbar from '@/components/Lists/ListToolbar.vue'
 import ListFilters from '@/components/Lists/ListFilters.vue'
+import ListTableShell from '@/components/Lists/ListTableShell.vue'
+import PageContainer from '@/components/layout/PageContainer.vue'
 
 import {
     ArrowDown,
@@ -226,6 +231,7 @@ const { can } = useAuth()
 const {
     downloadFile,
     isDownloading,
+    downloadError,
 } = useFileDownload()
 
 const props = defineProps({

@@ -12,6 +12,8 @@
             @export="exportCsv"
         />
 
+        <DownloadErrorAlert :error="downloadError" />
+
         <ColumnSettings
             v-model:open="showColumnSettings"
             :columns="columnsForSettings"
@@ -120,7 +122,7 @@
                                     <DropdownMenuItem
                                         v-if="can(Permissions.PEOPLE_DELETE)"
                                         @click="openDeleteDialog(person.id)"
-                                        class="text-red-600 focus:text-red-600"
+                                        class="text-destructive focus:text-destructive"
                                     >
                                         Delete
                                     </DropdownMenuItem>
@@ -161,7 +163,7 @@
 
                     <AlertDialogAction
                         @click="confirmDelete"
-                        class="bg-red-600 text-white hover:bg-red-700"
+                        class="bg-destructive text-destructive-foreground hover:bg-destructive/90"
                     >
                         Delete
                     </AlertDialogAction>
@@ -177,6 +179,7 @@ import { Link, router } from '@inertiajs/vue3'
 import { useAuth } from '@/composables/useAuth'
 import { useFileDownload } from '@/composables/useFileDownload'
 import ColumnSettings from '@/components/Lists/ColumnSettings.vue'
+import DownloadErrorAlert from '@/components/Lists/DownloadErrorAlert.vue'
 import ListToolbar from '@/components/Lists/ListToolbar.vue'
 import ListFilters from '@/components/Lists/ListFilters.vue'
 import ListEmptyRow from '@/components/Lists/ListEmptyRow.vue'
@@ -229,6 +232,7 @@ const { can } = useAuth()
 const {
     downloadFile,
     isDownloading,
+    downloadError,
 } = useFileDownload()
 
 // Backend-provided people data, filters,

@@ -936,7 +936,7 @@ function confirmDelete(): void {
                     </AlertDialogCancel>
 
                     <AlertDialogAction
-                        class="bg-red-600 text-white hover:bg-red-700"
+                        class="bg-destructive text-destructive-foreground hover:bg-destructive/90"
                         @click="confirmDelete"
                     >
                         Delete

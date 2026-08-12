@@ -1,5 +1,5 @@
 <template>
-    <div class="p-6 space-y-6">
+    <PageContainer>
         <ListToolbar
             title="Workflows"
             create-label="Create Workflow"
@@ -26,7 +26,7 @@
             @reset="resetFilters"
         />
 
-        <div class="border rounded-xl bg-background overflow-hidden">
+        <ListTableShell label="Workflow results">
             <Table>
                 <TableHeader>
                     <TableRow>
@@ -86,7 +86,7 @@
 
                                     <DropdownMenuItem
                                         @click="openDeleteDialog(workflow.id)"
-                                        class="text-red-600 focus:text-red-600"
+                                        class="text-destructive focus:text-destructive"
                                     >
                                         Delete
                                     </DropdownMenuItem>
@@ -96,7 +96,7 @@
                     </TableRow>
                 </TableBody>
             </Table>
-        </div>
+        </ListTableShell>
 
         <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
             <div class="text-sm text-muted-foreground">
@@ -135,13 +135,13 @@
 
                 <AlertDialogFooter>
                     <AlertDialogCancel @click="deleteDialogOpen = false">Cancel</AlertDialogCancel>
-                    <AlertDialogAction @click="confirmDelete" class="bg-red-600 text-white hover:bg-red-700">
+                    <AlertDialogAction @click="confirmDelete" class="bg-destructive text-destructive-foreground hover:bg-destructive/90">
                         Delete
                     </AlertDialogAction>
                 </AlertDialogFooter>
             </AlertDialogContent>
         </AlertDialog>
-    </div>
+    </PageContainer>
 </template>
 
 <script setup>
@@ -151,6 +151,8 @@ import { ArrowDown, ArrowUp, ArrowUpDown, MoreHorizontal } from 'lucide-vue-next
 import ColumnSettings from '@/components/Lists/ColumnSettings.vue'
 import ListToolbar from '@/components/Lists/ListToolbar.vue'
 import ListFilters from '@/components/Lists/ListFilters.vue'
+import ListTableShell from '@/components/Lists/ListTableShell.vue'
+import PageContainer from '@/components/layout/PageContainer.vue'
 import { Button } from '@/components/ui/button'
 import {
     AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,

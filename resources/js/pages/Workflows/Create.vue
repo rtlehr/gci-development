@@ -20,7 +20,7 @@
                     <div>
                         <Label>Name</Label>
                         <Input v-model="form.name" />
-                        <div v-if="form.errors.name" class="mt-1 text-sm text-red-600">
+                        <div v-if="form.errors.name" class="mt-1 text-sm text-destructive">
                             {{ form.errors.name }}
                         </div>
                     </div>
@@ -28,7 +28,7 @@
                     <div>
                         <Label>Code</Label>
                         <Input v-model="form.code" />
-                        <div v-if="form.errors.code" class="mt-1 text-sm text-red-600">
+                        <div v-if="form.errors.code" class="mt-1 text-sm text-destructive">
                             {{ form.errors.code }}
                         </div>
                     </div>
@@ -40,7 +40,7 @@
                             rows="4"
                             class="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
                         ></textarea>
-                        <div v-if="form.errors.description" class="mt-1 text-sm text-red-600">
+                        <div v-if="form.errors.description" class="mt-1 text-sm text-destructive">
                             {{ form.errors.description }}
                         </div>
                     </div>
@@ -69,7 +69,7 @@
 
                 <WorkflowStepsEditor v-model="form.steps" />
 
-                <div v-if="form.errors.steps" class="text-sm text-red-600">
+                <div v-if="form.errors.steps" class="text-sm text-destructive">
                     {{ form.errors.steps }}
                 </div>
             </div>

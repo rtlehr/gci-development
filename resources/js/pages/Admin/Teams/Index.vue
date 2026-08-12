@@ -1,5 +1,5 @@
 <template>
-    <div class="p-6 space-y-6">
+    <PageContainer>
         <ListToolbar
             title="Teams"
             create-label="Add Team"
@@ -28,7 +28,7 @@
         />
 
         <!-- Table -->
-        <div class="border rounded-xl bg-background overflow-hidden">
+        <ListTableShell label="Team results">
             <Table>
                 <TableHeader>
                     <TableRow>
@@ -96,7 +96,7 @@
                                     <DropdownMenuItem
                                         v-if="can('view_admin')"
                                         @click="openDeleteDialog(team.id)"
-                                        class="text-red-600 focus:text-red-600"
+                                        class="text-destructive focus:text-destructive"
                                     >
                                         Delete
                                     </DropdownMenuItem>
@@ -106,7 +106,7 @@
                     </TableRow>
                 </TableBody>
             </Table>
-        </div>
+        </ListTableShell>
 
         <!-- Pagination -->
         <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
@@ -162,14 +162,14 @@
 
                     <AlertDialogAction
                         @click="confirmDelete"
-                        class="bg-red-600 text-white hover:bg-red-700"
+                        class="bg-destructive text-destructive-foreground hover:bg-destructive/90"
                     >
                         Delete
                     </AlertDialogAction>
                 </AlertDialogFooter>
             </AlertDialogContent>
         </AlertDialog>
-    </div>
+    </PageContainer>
 </template>
 
 <script setup>
@@ -179,6 +179,8 @@ import { useAuth } from '@/composables/useAuth'
 import ColumnSettings from '@/components/Lists/ColumnSettings.vue'
 import ListToolbar from '@/components/Lists/ListToolbar.vue'
 import ListFilters from '@/components/Lists/ListFilters.vue'
+import ListTableShell from '@/components/Lists/ListTableShell.vue'
+import PageContainer from '@/components/layout/PageContainer.vue'
 
 import {
     ArrowDown,

@@ -55,7 +55,7 @@ function submit(): void {
                 <div class="space-y-2 md:col-span-2">
                     <Label for="title">Title</Label>
                     <Input id="title" v-model="form.title" placeholder="Briefly describe the request" />
-                    <p v-if="form.errors.title" class="text-sm text-red-600">{{ form.errors.title }}</p>
+                    <p v-if="form.errors.title" class="text-sm text-destructive">{{ form.errors.title }}</p>
                 </div>
 
                 <div class="space-y-2">
@@ -90,13 +90,13 @@ function submit(): void {
                 <div class="space-y-2 md:col-span-2">
                     <Label for="source-url">Source page</Label>
                     <Input id="source-url" v-model="form.source_url" placeholder="Optional page URL related to this request" />
-                    <p v-if="form.errors.source_url" class="text-sm text-red-600">{{ form.errors.source_url }}</p>
+                    <p v-if="form.errors.source_url" class="text-sm text-destructive">{{ form.errors.source_url }}</p>
                 </div>
 
                 <div class="space-y-2 md:col-span-2">
                     <Label for="description">Explanation of request</Label>
                     <Textarea id="description" v-model="form.description" rows="8" placeholder="Explain what happened, what you expected, or what should be improved." />
-                    <p v-if="form.errors.description" class="text-sm text-red-600">{{ form.errors.description }}</p>
+                    <p v-if="form.errors.description" class="text-sm text-destructive">{{ form.errors.description }}</p>
                 </div>
 
                 <div class="space-y-2 md:col-span-2">
@@ -105,7 +105,7 @@ function submit(): void {
                         <Input id="screenshot" type="file" accept="image/*" @change="selectScreenshot" />
                         <p class="mt-2 flex items-center gap-2 text-xs text-[#3a3a3a]/60"><Upload class="h-3.5 w-3.5" /> Optional image, up to 5 MB.</p>
                     </div>
-                    <p v-if="form.errors.screenshot" class="text-sm text-red-600">{{ form.errors.screenshot }}</p>
+                    <p v-if="form.errors.screenshot" class="text-sm text-destructive">{{ form.errors.screenshot }}</p>
                 </div>
             </div>
 

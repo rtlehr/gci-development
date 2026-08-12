@@ -2,6 +2,9 @@
 import { computed, reactive, ref } from 'vue'
 import { Link, router } from '@inertiajs/vue3'
 import ColumnSettings from '@/components/Lists/ColumnSettings.vue'
+import ListRowActions from '@/components/Lists/ListRowActions.vue'
+import ListTableShell from '@/components/Lists/ListTableShell.vue'
+import PageContainer from '@/components/layout/PageContainer.vue'
 import ListToolbar from '@/components/Lists/ListToolbar.vue'
 import ListFilters from '@/components/Lists/ListFilters.vue'
 
@@ -12,6 +15,7 @@ import {
 } from 'lucide-vue-next'
 
 import { Button } from '@/components/ui/button'
+import { DropdownMenuItem } from '@/components/ui/dropdown-menu'
 import { Badge } from '@/components/ui/badge'
 
 import {
@@ -334,7 +338,7 @@ function exportCsv() {
 </script>
 
 <template>
-    <div class="p-6 space-y-6">
+    <PageContainer>
         <ListToolbar
             title="User Permissions"
             @open-column-settings="showColumnSettings = true"
@@ -357,7 +361,7 @@ function exportCsv() {
             @reset="resetFilters"
         />
 
-        <div class="border rounded-xl bg-background overflow-hidden">
+        <ListTableShell label="User permission results">
             <Table>
                 <TableHeader>
                     <TableRow>
@@ -433,16 +437,16 @@ function exportCsv() {
                         </TableCell>
 
                         <TableCell class="text-right">
-                            <Link :href="`/admin/users/${user.id}/permissions`">
-                                <Button variant="outline" size="sm">
-                                    Edit Permissions
-                                </Button>
-                            </Link>
+                            <ListRowActions :aria-label="`Actions for ${user.full_name || user.email || 'user'}`">
+                                <DropdownMenuItem as-child>
+                                    <Link :href="`/admin/users/${user.id}/permissions`">Edit Permissions</Link>
+                                </DropdownMenuItem>
+                            </ListRowActions>
                         </TableCell>
                     </TableRow>
                 </TableBody>
             </Table>
-        </div>
+        </ListTableShell>
 
         <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
             <div class="text-sm text-muted-foreground">
@@ -479,5 +483,5 @@ function exportCsv() {
                 </Button>
             </div>
         </div>
-    </div>
+    </PageContainer>
 </template>

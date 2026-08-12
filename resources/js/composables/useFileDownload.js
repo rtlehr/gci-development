@@ -47,7 +47,6 @@ export function useFileDownload() {
             const message = await getDownloadErrorMessage(error)
 
             downloadError.value = message
-            alert(message)
 
             return false
         }

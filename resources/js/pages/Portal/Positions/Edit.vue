@@ -2,6 +2,7 @@
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { Link, router, useForm } from '@inertiajs/vue3'
 import { BadgeCheck, BriefcaseBusiness, Building2, ClipboardList, ListPlus, MapPinned, Settings2, Trash2, Users } from 'lucide-vue-next'
+import ConfirmActionDialog from '@/components/ConfirmActionDialog.vue'
 import CustomFieldsPanel from '@/components/custom-fields/CustomFieldsPanel.vue'
 import FormField from '@/components/forms/FormField.vue'
 import FormSection from '@/components/forms/FormSection.vue'
@@ -47,6 +48,8 @@ type PositionEditSection = 'details' | 'qualifications' | 'mission' | 'organizat
 
 const normalizedInitialSection = props.initialSection === 'general' ? 'details' : props.initialSection
 const activeSection = ref<PositionEditSection>((normalizedInitialSection as PositionEditSection) || 'details')
+const deleteDialogOpen = ref(false)
+const pendingCustomDelete = ref<{ type: 'skill' | 'task'; id: number } | null>(null)
 
 watch(activeSection, (section) => {
     const url = new URL(window.location.href)
@@ -164,11 +167,28 @@ function submitCustomTask(): void {
 }
 
 function deleteCustomSkill(id: number): void {
-    if (confirm('Delete this custom skill?')) router.delete(`/portal/positions/${props.position.id}/custom-skills/${id}`, { preserveScroll: true })
+    pendingCustomDelete.value = { type: 'skill', id }
+    deleteDialogOpen.value = true
 }
 
 function deleteCustomTask(id: number): void {
-    if (confirm('Delete this custom task?')) router.delete(`/portal/positions/${props.position.id}/custom-tasks/${id}`, { preserveScroll: true })
+    pendingCustomDelete.value = { type: 'task', id }
+    deleteDialogOpen.value = true
+}
+
+function confirmCustomDelete(): void {
+    if (!pendingCustomDelete.value) return
+
+    const { type, id } = pendingCustomDelete.value
+    const segment = type === 'skill' ? 'custom-skills' : 'custom-tasks'
+
+    router.delete(`/portal/positions/${props.position.id}/${segment}/${id}`, {
+        preserveScroll: true,
+        onFinish: () => {
+            deleteDialogOpen.value = false
+            pendingCustomDelete.value = null
+        },
+    })
 }
 
 function handleBeforeUnload(event: BeforeUnloadEvent): void {
@@ -680,4 +700,13 @@ onBeforeUnmount(() => window.removeEventListener('beforeunload', handleBeforeUnl
                 </div>
             </div>
     </div>
+
+    <ConfirmActionDialog
+        v-model:open="deleteDialogOpen"
+        :title="pendingCustomDelete?.type === 'skill' ? 'Delete Custom Skill?' : 'Delete Custom Task?'"
+        description="This custom item will be permanently deleted. This action cannot be undone."
+        confirm-label="Delete"
+        destructive
+        @confirm="confirmCustomDelete"
+    />
 </template>

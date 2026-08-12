@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { Link, router, useForm } from '@inertiajs/vue3'
+import ListTableShell from '@/components/Lists/ListTableShell.vue'
 import { computed, reactive, ref } from 'vue'
 import { Download, MoreHorizontal, Plus, Upload } from 'lucide-vue-next'
 import PageContainer from '@/components/layout/PageContainer.vue'
@@ -142,7 +143,7 @@ function typeLabel(type: string): string {
                 <Button type="button" variant="outline" @click="resetFilters">Reset</Button>
             </form>
 
-            <div class="overflow-hidden rounded-xl border bg-background">
+            <ListTableShell label="Custom field results">
                 <Table>
                     <TableHeader>
                         <TableRow>
@@ -180,7 +181,7 @@ function typeLabel(type: string): string {
                                         <DropdownMenuLabel>Actions</DropdownMenuLabel>
                                         <DropdownMenuSeparator />
                                         <DropdownMenuItem as-child><Link :href="`/admin/custom-fields/${field.id}/edit`">Edit</Link></DropdownMenuItem>
-                                        <DropdownMenuItem class="text-red-600 focus:text-red-600" @click="openDelete(field)">
+                                        <DropdownMenuItem class="text-destructive focus:text-destructive" @click="openDelete(field)">
                                             {{ field.values_count > 0 ? 'Deactivate / Remove' : 'Delete' }}
                                         </DropdownMenuItem>
                                     </DropdownMenuContent>
@@ -189,7 +190,7 @@ function typeLabel(type: string): string {
                         </TableRow>
                     </TableBody>
                 </Table>
-            </div>
+            </ListTableShell>
 
             <div v-if="fields.last_page > 1" class="flex items-center justify-between text-sm">
                 <span class="text-muted-foreground">Showing {{ fields.from ?? 0 }}–{{ fields.to ?? 0 }} of {{ fields.total ?? 0 }}</span>

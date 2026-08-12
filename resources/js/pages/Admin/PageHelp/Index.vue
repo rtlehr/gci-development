@@ -1,5 +1,5 @@
 <template>
-    <div class="space-y-6 p-6">
+    <PageContainer>
         <ListToolbar
             title="Page Help"
             description="Manage help content shown in the help panel."
@@ -58,7 +58,7 @@
             @reset="resetFilters"
         />
 
-        <div class="overflow-hidden rounded-xl border bg-background">
+        <ListTableShell label="Page help results">
             <Table>
                 <TableHeader>
                     <TableRow>
@@ -84,32 +84,38 @@
                         <TableCell>{{ item.title }}</TableCell>
                         <TableCell>{{ item.is_active ? 'Active' : 'Inactive' }}</TableCell>
                         <TableCell class="text-right">
-                            <div class="flex justify-end gap-2">
-                                <Link :href="`/admin/page-help/${item.id}/edit`">
-                                    <Button variant="outline" size="sm">Edit</Button>
-                                </Link>
-
-                                <Button
-                                    variant="outline"
-                                    size="sm"
-                                    class="text-red-600"
-                                    @click="deleteItem(item.id)"
-                                >
+                            <ListRowActions :aria-label="`Actions for ${item.title}`">
+                                <DropdownMenuItem as-child>
+                                    <Link :href="`/admin/page-help/${item.id}/edit`">Edit</Link>
+                                </DropdownMenuItem>
+                                <DropdownMenuItem class="text-destructive focus:text-destructive" @click="deleteItem(item.id)">
                                     Delete
-                                </Button>
-                            </div>
+                                </DropdownMenuItem>
+                            </ListRowActions>
                         </TableCell>
                     </TableRow>
                 </TableBody>
             </Table>
-        </div>
-    </div>
+        </ListTableShell>
+        <ConfirmActionDialog
+            v-model:open="deleteDialogOpen"
+            title="Delete Help Page?"
+            description="This help page will be permanently deleted. This action cannot be undone."
+            confirm-label="Delete"
+            destructive
+            @confirm="confirmDelete"
+        />
+    </PageContainer>
 </template>
 
 <script setup>
 import { reactive, ref } from 'vue'
 import { Link, router, useForm } from '@inertiajs/vue3'
 import { CircleAlert, Info, Upload } from 'lucide-vue-next'
+import ConfirmActionDialog from '@/components/ConfirmActionDialog.vue'
+import ListRowActions from '@/components/Lists/ListRowActions.vue'
+import ListTableShell from '@/components/Lists/ListTableShell.vue'
+import PageContainer from '@/components/layout/PageContainer.vue'
 import ListToolbar from '@/components/Lists/ListToolbar.vue'
 import ListFilters from '@/components/Lists/ListFilters.vue'
 import {
@@ -118,6 +124,7 @@ import {
     AlertTitle,
 } from '@/components/ui/alert'
 import { Button } from '@/components/ui/button'
+import { DropdownMenuItem } from '@/components/ui/dropdown-menu'
 import {
     Table,
     TableBody,
@@ -148,6 +155,8 @@ const filterForm = reactive({
 })
 
 const importFileInput = ref(null)
+const deleteDialogOpen = ref(false)
+const pendingDeleteId = ref(null)
 const importForm = useForm({
     help_file: null,
 })
@@ -223,10 +232,19 @@ function importHelp(event) {
  * @param {number|string} id
  */
 function deleteItem(id) {
-    if (!confirm('Delete this help page?')) return
+    pendingDeleteId.value = id
+    deleteDialogOpen.value = true
+}
 
-    router.delete(`/admin/page-help/${id}`, {
+function confirmDelete() {
+    if (!pendingDeleteId.value) return
+
+    router.delete(`/admin/page-help/${pendingDeleteId.value}`, {
         preserveScroll: true,
+        onFinish: () => {
+            deleteDialogOpen.value = false
+            pendingDeleteId.value = null
+        },
     })
 }
 </script>

@@ -38,6 +38,7 @@ import PageHeader from '@/components/layout/PageHeader.vue'
 import SectionHeader from '@/components/layout/SectionHeader.vue'
 import ListFilters from '@/components/Lists/ListFilters.vue'
 import ListPagination from '@/components/Lists/ListPagination.vue'
+import ListRowActions from '@/components/Lists/ListRowActions.vue'
 import ListTableShell from '@/components/Lists/ListTableShell.vue'
 import ListToolbar from '@/components/Lists/ListToolbar.vue'
 import DetailCard from '@/components/show/DetailCard.vue'
@@ -46,6 +47,7 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { DropdownMenuItem } from '@/components/ui/dropdown-menu'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
@@ -227,14 +229,24 @@ const formTemplateCode = `<PageContainer>
                                 <TableCell>Digital Solutions</TableCell>
                                 <TableCell><StatusBadge label="Open" tone="success" /></TableCell>
                                 <TableCell>Norfolk, VA</TableCell>
-                                <TableCell class="text-right"><Button size="sm" variant="outline">View</Button></TableCell>
+                                <TableCell class="text-right">
+                                    <ListRowActions aria-label="Actions for Frontend Developer">
+                                        <DropdownMenuItem>View</DropdownMenuItem>
+                                        <DropdownMenuItem>Edit</DropdownMenuItem>
+                                    </ListRowActions>
+                                </TableCell>
                             </TableRow>
                             <TableRow>
                                 <TableCell class="font-medium">Program Manager</TableCell>
                                 <TableCell>Program Operations</TableCell>
                                 <TableCell><StatusBadge label="In Process" tone="info" /></TableCell>
                                 <TableCell>Remote</TableCell>
-                                <TableCell class="text-right"><Button size="sm" variant="outline">View</Button></TableCell>
+                                <TableCell class="text-right">
+                                    <ListRowActions aria-label="Actions for Program Manager">
+                                        <DropdownMenuItem>View</DropdownMenuItem>
+                                        <DropdownMenuItem>Edit</DropdownMenuItem>
+                                    </ListRowActions>
+                                </TableCell>
                             </TableRow>
                         </TableBody>
                     </Table>
@@ -369,6 +381,8 @@ const formTemplateCode = `<PageContainer>
                 <GuidelineCard title="Icons" description="Icons clarify meaning; they do not replace visible labels for primary actions." :icon="Palette" />
                 <GuidelineCard title="Status color" description="Always pair color with status text, and use the shared StatusBadge tones." :icon="ShieldCheck" />
                 <GuidelineCard title="Notifications" description="Messages state the outcome, affected record, and next step where one is required." :icon="Bell" />
+                <GuidelineCard title="Row actions" description="View, Edit, Delete, Manage, and other record actions belong in the shared actions dropdown, not separate table buttons." :icon="ClipboardList" />
+                <GuidelineCard title="Confirmations" description="Never use browser alert() or confirm(). Use IRAD Alert/AlertDialog components so feedback is accessible and visually consistent." :icon="CircleAlert" />
             </div>
         </section>
 

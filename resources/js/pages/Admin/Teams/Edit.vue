@@ -19,7 +19,7 @@
                         class="mt-1"
                     />
 
-                    <p v-if="form.errors.team_name" class="mt-1 text-sm text-red-600">
+                    <p v-if="form.errors.team_name" class="mt-1 text-sm text-destructive">
                         {{ form.errors.team_name }}
                     </p>
                 </div>

@@ -31,7 +31,7 @@
                                 {{ person.full_name ?? `${person.first_name} ${person.last_name}` }}
                             </option>
                         </select>
-                        <div v-if="form.errors.person_id" class="mt-1 text-sm text-red-600">
+                        <div v-if="form.errors.person_id" class="mt-1 text-sm text-destructive">
                             {{ form.errors.person_id }}
                         </div>
                     </div>
@@ -53,7 +53,7 @@
                                 {{ position.job_title ?? position.title ?? `Position #${position.id}` }}
                             </option>
                         </select>
-                        <div v-if="form.errors.position_id" class="mt-1 text-sm text-red-600">
+                        <div v-if="form.errors.position_id" class="mt-1 text-sm text-destructive">
                             {{ form.errors.position_id }}
                         </div>
                     </div>
@@ -71,7 +71,7 @@
                             <option value="approved">Approved</option>
                             <option value="assigned">Assigned</option>
                         </select>
-                        <div v-if="form.errors.status" class="mt-1 text-sm text-red-600">
+                        <div v-if="form.errors.status" class="mt-1 text-sm text-destructive">
                             {{ form.errors.status }}
                         </div>
                     </div>
@@ -86,7 +86,7 @@
                             step="0.01"
                             class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
                         />
-                        <div v-if="form.errors.candidate_fbr" class="mt-1 text-sm text-red-600">
+                        <div v-if="form.errors.candidate_fbr" class="mt-1 text-sm text-destructive">
                             {{ form.errors.candidate_fbr }}
                         </div>
                     </div>
@@ -100,7 +100,7 @@
                             type="datetime-local"
                             class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
                         />
-                        <div v-if="form.errors.submitted_at" class="mt-1 text-sm text-red-600">
+                        <div v-if="form.errors.submitted_at" class="mt-1 text-sm text-destructive">
                             {{ form.errors.submitted_at }}
                         </div>
                     </div>
@@ -124,7 +124,7 @@
                         </select>
                         <div
                             v-if="form.errors.submitted_by_person_id"
-                            class="mt-1 text-sm text-red-600"
+                            class="mt-1 text-sm text-destructive"
                         >
                             {{ form.errors.submitted_by_person_id }}
                         </div>
@@ -141,7 +141,7 @@
                         />
                         <div
                             v-if="form.errors.scheduled_start_date"
-                            class="mt-1 text-sm text-red-600"
+                            class="mt-1 text-sm text-destructive"
                         >
                             {{ form.errors.scheduled_start_date }}
                         </div>

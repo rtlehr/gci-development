@@ -2,11 +2,13 @@
 import { Head, router } from '@inertiajs/vue3';
 import { History, Search, UserRoundCog } from 'lucide-vue-next';
 import { computed, ref } from 'vue';
+import ListTableShell from '@/components/Lists/ListTableShell.vue';
 import PageContainer from '@/components/layout/PageContainer.vue';
 import PageHeader from '@/components/layout/PageHeader.vue';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 
 type UserOption = {
     id: number;
@@ -146,36 +148,35 @@ function begin(): void {
                 </div>
             </div>
 
-            <div class="overflow-x-auto rounded-xl border bg-card">
-                <table class="w-full min-w-[900px] text-sm">
-                    <thead class="bg-muted/40 text-left">
-                        <tr>
-                            <th class="p-3">Started</th>
-                            <th class="p-3">Impersonator</th>
-                            <th class="p-3">Impersonated User</th>
-                            <th class="p-3">Ended</th>
-                            <th class="p-3">IP Address</th>
-                            <th class="p-3">Reason</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr
-                            v-for="log in logs.data"
-                            :key="log.id"
-                            class="border-t align-top"
-                        >
-                            <td class="p-3">{{ new Date(log.started_at).toLocaleString() }}</td>
-                            <td class="p-3">{{ log.impersonator?.name || log.impersonator?.email }}</td>
-                            <td class="p-3">{{ log.impersonated_user?.name || log.impersonated_user?.email }}</td>
-                            <td class="p-3">
-                                {{ log.ended_at ? new Date(log.ended_at).toLocaleString() : 'Active' }}
-                            </td>
-                            <td class="p-3">{{ log.ip_address || '—' }}</td>
-                            <td class="max-w-md whitespace-pre-wrap p-3">{{ log.reason || '—' }}</td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
+            <ListTableShell label="Impersonation audit log">
+                <Table class="min-w-[900px]">
+                    <TableHeader>
+                        <TableRow>
+                            <TableHead>Started</TableHead>
+                            <TableHead>Impersonator</TableHead>
+                            <TableHead>Impersonated User</TableHead>
+                            <TableHead>Ended</TableHead>
+                            <TableHead>IP Address</TableHead>
+                            <TableHead>Reason</TableHead>
+                        </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                        <TableRow v-if="!logs.data?.length">
+                            <TableCell colspan="6" class="py-8 text-center text-muted-foreground">
+                                No impersonation history found.
+                            </TableCell>
+                        </TableRow>
+                        <TableRow v-for="log in logs.data" :key="log.id" class="align-top">
+                            <TableCell>{{ new Date(log.started_at).toLocaleString() }}</TableCell>
+                            <TableCell>{{ log.impersonator?.name || log.impersonator?.email }}</TableCell>
+                            <TableCell>{{ log.impersonated_user?.name || log.impersonated_user?.email }}</TableCell>
+                            <TableCell>{{ log.ended_at ? new Date(log.ended_at).toLocaleString() : 'Active' }}</TableCell>
+                            <TableCell>{{ log.ip_address || '—' }}</TableCell>
+                            <TableCell class="max-w-md whitespace-pre-wrap">{{ log.reason || '—' }}</TableCell>
+                        </TableRow>
+                    </TableBody>
+                </Table>
+            </ListTableShell>
         </section>
     </PageContainer>
 </template>

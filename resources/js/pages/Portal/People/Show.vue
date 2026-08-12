@@ -266,7 +266,7 @@ function confirmDelete() {
                                                 <DropdownMenuSeparator />
                                                 <DropdownMenuItem as-child><Link :href="`/position-assignments/${assignment.id}/edit?return_to=/portal/people/${person.id}`">Edit</Link></DropdownMenuItem>
                                                 <DropdownMenuSeparator />
-                                                <DropdownMenuItem class="text-red-600 focus:text-red-600" @click="openDeleteDialog(assignment.id)">Delete</DropdownMenuItem>
+                                                <DropdownMenuItem class="text-destructive focus:text-destructive" @click="openDeleteDialog(assignment.id)">Delete</DropdownMenuItem>
                                             </DropdownMenuContent>
                                         </DropdownMenu>
                                     </div>
@@ -370,7 +370,7 @@ function confirmDelete() {
         <AlertDialog :open="deleteDialogOpen" @update:open="deleteDialogOpen = $event">
             <AlertDialogContent>
                 <AlertDialogHeader><AlertDialogTitle>Delete Assignment?</AlertDialogTitle><AlertDialogDescription>This action cannot be undone.</AlertDialogDescription></AlertDialogHeader>
-                <AlertDialogFooter><AlertDialogCancel>Cancel</AlertDialogCancel><AlertDialogAction class="bg-red-600 text-white hover:bg-red-700" @click="confirmDelete">Delete</AlertDialogAction></AlertDialogFooter>
+                <AlertDialogFooter><AlertDialogCancel>Cancel</AlertDialogCancel><AlertDialogAction class="bg-destructive text-destructive-foreground hover:bg-destructive/90" @click="confirmDelete">Delete</AlertDialogAction></AlertDialogFooter>
             </AlertDialogContent>
         </AlertDialog>
     </div>

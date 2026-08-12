@@ -1,5 +1,5 @@
 <template>
-    <div class="p-6 space-y-6">
+    <PageContainer>
         <ListToolbar
             title="Job Titles"
             description="Manage master job titles, default skills, and default tasks."
@@ -20,7 +20,7 @@
             @reset-defaults="resetPreferencesOnServer"
         />
 
-        <div class="border rounded-xl bg-background overflow-hidden">
+        <ListTableShell label="Job title results">
             <Table>
                 <TableHeader>
                     <TableRow>
@@ -63,42 +63,44 @@
                         </TableCell>
 
                         <TableCell class="text-right">
-                            <div class="flex justify-end gap-2">
-                                <Link :href="`/portal/job-titles/${jobTitle.id}`">
-                                    <Button variant="outline" size="sm">
-                                        View
-                                    </Button>
-                                </Link>
-
-                                <Link :href="`/portal/job-titles/${jobTitle.id}/edit`">
-                                    <Button variant="outline" size="sm">
-                                        Edit
-                                    </Button>
-                                </Link>
-
-                                <Button
-                                    variant="destructive"
-                                    size="sm"
-                                    @click="deleteJobTitle(jobTitle.id)"
-                                >
+                            <ListRowActions :aria-label="`Actions for ${jobTitle.name}`">
+                                <DropdownMenuItem as-child>
+                                    <Link :href="`/portal/job-titles/${jobTitle.id}`">View</Link>
+                                </DropdownMenuItem>
+                                <DropdownMenuItem as-child>
+                                    <Link :href="`/portal/job-titles/${jobTitle.id}/edit`">Edit</Link>
+                                </DropdownMenuItem>
+                                <DropdownMenuItem class="text-destructive focus:text-destructive" @click="deleteJobTitle(jobTitle.id)">
                                     Delete
-                                </Button>
-                            </div>
+                                </DropdownMenuItem>
+                            </ListRowActions>
                         </TableCell>
                     </TableRow>
                 </TableBody>
             </Table>
-        </div>
-    </div>
+        </ListTableShell>
+        <ConfirmActionDialog
+            v-model:open="deleteDialogOpen"
+            title="Delete Job Title?"
+            description="This job title will be permanently deleted. This action cannot be undone."
+            confirm-label="Delete"
+            destructive
+            @confirm="confirmDelete"
+        />
+    </PageContainer>
 </template>
 
 <script setup>
 import { computed, reactive, ref } from 'vue'
 import { Link, router } from '@inertiajs/vue3'
+import ConfirmActionDialog from '@/components/ConfirmActionDialog.vue'
 import ColumnSettings from '@/components/Lists/ColumnSettings.vue'
+import ListRowActions from '@/components/Lists/ListRowActions.vue'
+import ListTableShell from '@/components/Lists/ListTableShell.vue'
+import PageContainer from '@/components/layout/PageContainer.vue'
 import ListToolbar from '@/components/Lists/ListToolbar.vue'
 
-import { Button } from '@/components/ui/button'
+import { DropdownMenuItem } from '@/components/ui/dropdown-menu'
 import { Badge } from '@/components/ui/badge'
 
 import {
@@ -151,6 +153,8 @@ const props = defineProps({
 })
 
 const showColumnSettings = ref(false)
+const deleteDialogOpen = ref(false)
+const pendingDeleteId = ref(null)
 
 const settingsForm = reactive({
     visibleColumns: [...(props.visibleColumns ?? [])],
@@ -246,12 +250,19 @@ function formatCell(jobTitle, key) {
 }
 
 function deleteJobTitle(id) {
-    if (!confirm('Delete this Job Title?')) {
-        return
-    }
+    pendingDeleteId.value = id
+    deleteDialogOpen.value = true
+}
 
-    router.delete(`/portal/job-titles/${id}`, {
+function confirmDelete() {
+    if (!pendingDeleteId.value) return
+
+    router.delete(`/portal/job-titles/${pendingDeleteId.value}`, {
         preserveScroll: true,
+        onFinish: () => {
+            deleteDialogOpen.value = false
+            pendingDeleteId.value = null
+        },
     })
 }
 </script>
