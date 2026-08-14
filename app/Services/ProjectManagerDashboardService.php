@@ -6,9 +6,9 @@ use App\Models\Candidate;
 use App\Models\Person;
 use App\Models\Position;
 use App\Models\User;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Str;
-use Illuminate\Support\Carbon;
 
 class ProjectManagerDashboardService
 {
@@ -22,17 +22,25 @@ class ProjectManagerDashboardService
         return $this->positionQuery()
             ->where('project_manager_user_id', $user->id)
             ->get()
-            ->map(fn (Position $position) => $this->transformPosition($position))
+            ->map(function (Position $position) use ($user): array {
+                $metrics = $this->transformPosition($position);
+
+                return [
+                    ...$metrics,
+                    'project_manager_name' => $user->name,
+                    'search_text' => trim(($metrics['search_text'] ?? '').' '.$user->name),
+                ];
+            })
             ->sortBy([
-                ['attention_rank', 'asc'],
-                ['days_open', 'desc'],
+                ['staffing_rank', 'asc'],
+                ['created_at_sort', 'asc'],
                 ['position_code', 'asc'],
             ])
             ->values();
     }
 
     /**
-     * Return every position for the PMO dashboard.
+     * Return every position for the PMO/COTR staffing dashboard.
      *
      * @return Collection<int, array<string, mixed>>
      */
@@ -70,16 +78,17 @@ class ProjectManagerDashboardService
                         'email' => $projectManager?->email,
                         'person_id' => $person?->id,
                     ],
+                    'project_manager_name' => $projectManager?->name,
+                    'search_text' => trim(($metrics['search_text'] ?? '').' '.($projectManager?->name ?? '').' '.($projectManager?->email ?? '')),
                 ];
             })
             ->sortBy([
-                ['attention_rank', 'asc'],
-                ['days_open', 'desc'],
+                ['staffing_rank', 'asc'],
+                ['created_at_sort', 'asc'],
                 ['position_code', 'asc'],
             ])
             ->values();
     }
-
 
     /**
      * Return opportunities and workflow progress for the Person linked to the
@@ -128,14 +137,65 @@ class ProjectManagerDashboardService
             ->values();
     }
 
+    /**
+     * Column definition shared by the dashboard staffing matrix, preferences,
+     * and CSV export. The default view includes the staffing status alongside
+     * the core position fields and workflow link.
+     *
+     * @return array<int, array{key:string,label:string,default_visible:bool,default_order:int}>
+     */
+    public function staffingColumns(): array
+    {
+        return [
+            ['key' => 'position_code', 'label' => 'ID', 'default_visible' => true, 'default_order' => 10],
+            ['key' => 'title', 'label' => 'Job Title', 'default_visible' => true, 'default_order' => 20],
+            ['key' => 'staffing_state', 'label' => 'Staffing Status', 'default_visible' => true, 'default_order' => 30],
+            ['key' => 'level', 'label' => 'Level', 'default_visible' => true, 'default_order' => 40],
+            ['key' => 'team_name', 'label' => 'Team Name', 'default_visible' => true, 'default_order' => 50],
+            ['key' => 'location', 'label' => 'Location', 'default_visible' => true, 'default_order' => 60],
+            ['key' => 'building', 'label' => 'Building', 'default_visible' => true, 'default_order' => 70],
+            ['key' => 'created_at', 'label' => 'Created', 'default_visible' => true, 'default_order' => 80],
+            ['key' => 'closed_at', 'label' => 'Closed', 'default_visible' => true, 'default_order' => 90],
+            ['key' => 'workflow_link', 'label' => 'Workflow', 'default_visible' => true, 'default_order' => 100],
+            ['key' => 'current_person_name', 'label' => 'Current Person', 'default_visible' => false, 'default_order' => 110],
+            ['key' => 'employer', 'label' => 'Employer', 'default_visible' => false, 'default_order' => 120],
+            ['key' => 'project_team_name', 'label' => 'Project Team', 'default_visible' => false, 'default_order' => 130],
+            ['key' => 'project_manager_name', 'label' => 'Project Manager', 'default_visible' => false, 'default_order' => 140],
+            ['key' => 'current_workflow_step', 'label' => 'Current Workflow Step', 'default_visible' => false, 'default_order' => 150],
+            ['key' => 'scheduled_start_date', 'label' => 'Scheduled Start', 'default_visible' => false, 'default_order' => 160],
+            ['key' => 'actual_start_date', 'label' => 'Actual Start', 'default_visible' => false, 'default_order' => 170],
+            ['key' => 'departure_date', 'label' => 'Departure', 'default_visible' => false, 'default_order' => 180],
+            ['key' => 'last_updated', 'label' => 'Last Updated', 'default_visible' => false, 'default_order' => 190],
+        ];
+    }
+
+    /**
+     * Build the five staffing totals shown above position dashboard tables.
+     *
+     * @param Collection<int, array<string, mixed>> $positions
+     * @return array{vacant:int,selected:int,filled:int,departing:int,onHold:int}
+     */
+    public function staffingSummary(Collection $positions): array
+    {
+        $counts = $positions->countBy('staffing_state');
+
+        return [
+            'vacant' => (int) $counts->get('vacant', 0),
+            'selected' => (int) $counts->get('selected', 0),
+            'filled' => (int) $counts->get('filled', 0),
+            'departing' => (int) $counts->get('departing', 0),
+            'onHold' => (int) $counts->get('on_hold', 0),
+        ];
+    }
+
     private function positionQuery()
     {
         return Position::query()
             ->with([
-                'candidates.person:id,first_name,preferred_name,last_name',
+                'candidates.person:id,person_code,first_name,alternate_first_name,preferred_name,last_name,alternate_last_name,company_name,employment_status',
                 'candidates.workflow.steps',
                 'candidates.stepEvents.workflowStep',
-                'assignments',
+                'assignments.person:id,person_code,first_name,alternate_first_name,preferred_name,last_name,alternate_last_name,company_name,employment_status',
             ]);
     }
 
@@ -151,9 +211,17 @@ class ProjectManagerDashboardService
             ->sortByDesc('step_number')
             ->first();
 
-        $currentStage = $this->currentStage($candidateMetrics, $mostAdvanced);
-        $daysOpen = $this->daysOpen($position);
-        $nextAction = $this->nextAction($position, $candidateMetrics, $mostAdvanced);
+        $staffingState = $this->staffingState($position, $candidateMetrics);
+        $currentAssignment = $this->currentAssignment($position);
+        $workflowCandidates = $position->candidates
+            ->map(fn (Candidate $candidate) => $this->workflowCandidate($candidate))
+            ->values();
+
+        $selectedCandidate = $this->selectedCandidate($position->candidates);
+        $currentPerson = $currentAssignment?->person;
+        $currentWorkflow = $this->currentWorkflow($workflowCandidates);
+        $lastUpdated = $this->lastUpdated($position);
+        $createdAt = $position->customer_created_at ?? $position->created_at;
 
         return [
             'id' => $position->id,
@@ -162,76 +230,55 @@ class ProjectManagerDashboardService
                 ?? $position->title
                 ?? $position->team_name
                 ?? 'Untitled Position',
+            'level' => $position->level,
+            'team_name' => $position->team_name,
+            'project_team_name' => $position->project_team_name,
+            'location' => $position->location,
+            'building' => $position->building,
+            'created_at' => $createdAt?->toDateString(),
+            'created_at_sort' => $createdAt?->timestamp ?? PHP_INT_MAX,
+            'closed_at' => $position->close_date?->toDateString(),
             'status' => $position->status,
-            'candidates_count' => $position->candidates->count(),
-            'candidate_names' => $position->candidates
-                ->map(fn (Candidate $candidate) => $this->candidateName($candidate))
-                ->filter()
-                ->values()
-                ->all(),
-            'candidate_summaries' => $candidateMetrics
-                ->map(fn (array $metrics) => [
-                    'id' => $metrics['candidate_id'],
-                    'person_id' => $metrics['person_id'],
-                    'name' => $metrics['candidate_name'],
-                    'status' => $metrics['candidate_status'],
-                    'stage' => $metrics['step_name'],
-                ])
-                ->values()
-                ->all(),
-            'current_stage' => $currentStage['label'],
-            'current_stage_count' => $currentStage['count'],
-            'current_stage_candidate_id' => $mostAdvanced['candidate_id'] ?? null,
-            'days_open' => $daysOpen,
-            'next_action' => $nextAction['label'],
-            'next_action_tone' => $nextAction['tone'],
-            'attention_rank' => $nextAction['rank'],
-            'staffing_state' => $this->staffingState($position, $candidateMetrics),
+            'staffing_state' => $staffingState,
+            'staffing_label' => $this->staffingLabel($staffingState),
+            'staffing_rank' => $this->staffingRank($staffingState),
+            'current_person' => $currentPerson ? $this->personDetails($currentPerson) : null,
+            'current_person_name' => $currentPerson ? $this->personName($currentPerson) : null,
+            'employer' => $currentPerson?->company_name
+                ?? $selectedCandidate?->person?->company_name,
+            'actual_start_date' => $currentAssignment?->start_date
+                ? Carbon::parse($currentAssignment->start_date)->toDateString()
+                : null,
+            'departure_date' => $currentAssignment?->end_date
+                ? Carbon::parse($currentAssignment->end_date)->toDateString()
+                : null,
+            'assignment_status' => $currentAssignment?->assignment_status,
+            'scheduled_start_date' => $selectedCandidate?->scheduled_start_date?->toDateString(),
+            'current_workflow_step' => $currentWorkflow['step_name'],
+            'current_workflow_name' => $currentWorkflow['workflow_name'],
+            'current_workflow_candidate_id' => $currentWorkflow['candidate_id'],
+            'workflow_candidates' => $workflowCandidates->all(),
+            'workflow_link' => 'View Workflow',
+            'last_updated' => $lastUpdated?->toIso8601String(),
+            'search_text' => $this->searchText($position, $staffingState, $currentPerson, $workflowCandidates),
         ];
     }
 
     /**
-     * Build the four staffing totals shown above position dashboard tables.
-     *
-     * @param Collection<int, array<string, mixed>> $positions
-     * @return array{vacant: int, selected: int, departing: int, onHold: int}
-     */
-    public function staffingSummary(Collection $positions): array
-    {
-        $counts = $positions->countBy('staffing_state');
-
-        return [
-            'vacant' => (int) $counts->get('vacant', 0),
-            'selected' => (int) $counts->get('selected', 0),
-            'departing' => (int) $counts->get('departing', 0),
-            'onHold' => (int) $counts->get('on_hold', 0),
-        ];
-    }
-
-    /**
-     * Determine the staffing condition independently of the recruiting status
-     * displayed in the positions table.
+     * Determine the staffing condition independently of recruiting workflow names.
      *
      * @param Collection<int, array<string, mixed>> $candidateMetrics
      */
     private function staffingState(Position $position, Collection $candidateMetrics): string
     {
-        $positionStatus = Str::of((string) $position->status)
-            ->lower()
-            ->replace(['-', '_'], ' ')
-            ->squish()
-            ->toString();
+        $positionStatus = $this->normalize($position->status);
 
         if (Str::contains($positionStatus, ['on hold', 'hold'])) {
             return 'on_hold';
         }
 
         $departingAssignment = $position->assignments->first(function ($assignment): bool {
-            $assignmentStatus = Str::of((string) $assignment->assignment_status)
-                ->lower()
-                ->replace(['-', '_'], ' ')
-                ->squish()
-                ->toString();
+            $assignmentStatus = $this->normalize($assignment->assignment_status);
 
             if (Str::contains($assignmentStatus, ['departing', 'ending'])) {
                 return true;
@@ -251,12 +298,19 @@ class ProjectManagerDashboardService
             return 'departing';
         }
 
+        $hasActiveAssignment = $position->assignments->contains(function ($assignment): bool {
+            $assignmentStatus = $this->normalize($assignment->assignment_status);
+
+            return in_array($assignmentStatus, ['active', 'filled'], true)
+                && (! $assignment->end_date || Carbon::parse($assignment->end_date)->isFuture());
+        });
+
+        if ($hasActiveAssignment || Str::contains($positionStatus, ['filled'])) {
+            return 'filled';
+        }
+
         $hasSelectedCandidate = $candidateMetrics->contains(function (array $metrics): bool {
-            $candidateStatus = Str::of((string) ($metrics['candidate_status'] ?? ''))
-                ->lower()
-                ->replace(['-', '_'], ' ')
-                ->squish()
-                ->toString();
+            $candidateStatus = $this->normalize($metrics['candidate_status'] ?? '');
 
             return in_array($candidateStatus, [
                 'selected',
@@ -267,14 +321,14 @@ class ProjectManagerDashboardService
             ], true);
         });
 
-        $hasStaffedAssignment = $position->assignments->contains(function ($assignment): bool {
-            $assignmentStatus = Str::lower((string) $assignment->assignment_status);
+        $hasPlannedAssignment = $position->assignments->contains(function ($assignment): bool {
+            $assignmentStatus = $this->normalize($assignment->assignment_status);
 
-            return in_array($assignmentStatus, ['active', 'planned', 'selected'], true)
+            return in_array($assignmentStatus, ['planned', 'selected'], true)
                 && (! $assignment->end_date || Carbon::parse($assignment->end_date)->isFuture());
         });
 
-        if ($hasSelectedCandidate || $hasStaffedAssignment || Str::contains($positionStatus, ['selected', 'filled'])) {
+        if ($hasSelectedCandidate || $hasPlannedAssignment || Str::contains($positionStatus, ['selected'])) {
             return 'selected';
         }
 
@@ -313,104 +367,212 @@ class ProjectManagerDashboardService
     }
 
     /**
-     * @param Collection<int, array<string, mixed>> $candidateMetrics
-     * @param array<string, mixed>|null $mostAdvanced
-     * @return array{label: string, count: int}
+     * Build the customer-configurable candidate workflow timeline. Nothing here
+     * assumes step names such as Resume Accepted, Extra Check, or Crossover.
+     *
+     * @return array<string, mixed>
      */
-    private function currentStage(Collection $candidateMetrics, ?array $mostAdvanced): array
+    private function workflowCandidate(Candidate $candidate): array
     {
-        if ($candidateMetrics->isEmpty()) {
-            return [
-                'label' => 'No candidates',
-                'count' => 0,
-            ];
-        }
+        $eventsByStep = $candidate->stepEvents
+            ->sortByDesc(fn ($event) => $event->completed_at
+                ?? $event->scheduled_at
+                ?? $event->requested_at
+                ?? $event->updated_at)
+            ->unique('workflow_step_id')
+            ->keyBy('workflow_step_id');
 
-        $stage = $mostAdvanced['step_name'] ?? 'Not started';
-        $count = $candidateMetrics
-            ->filter(fn (array $metrics) => $metrics['step_name'] === $stage)
-            ->count();
+        $steps = ($candidate->workflow?->steps ?? collect())
+            ->sortBy('step_order')
+            ->map(function ($step) use ($eventsByStep): array {
+                $event = $eventsByStep->get($step->id);
+
+                return [
+                    'id' => $step->id,
+                    'name' => $step->name,
+                    'step_order' => (int) $step->step_order,
+                    'status_code' => $event?->status_code,
+                    'requested_at' => $event?->requested_at?->toIso8601String(),
+                    'scheduled_at' => $event?->scheduled_at?->toIso8601String(),
+                    'completed_at' => $event?->completed_at?->toIso8601String(),
+                    'notes' => $event?->notes,
+                    'comments' => $event?->comments,
+                    'has_event' => (bool) $event,
+                ];
+            })
+            ->values();
+
+        $metrics = $this->candidateMetrics($candidate);
 
         return [
-            'label' => $stage,
-            'count' => $count,
+            'candidate_id' => $candidate->id,
+            'candidate_code' => $candidate->candidate_code,
+            'candidate_status' => $candidate->status,
+            'scheduled_start_date' => $candidate->scheduled_start_date?->toDateString(),
+            'person' => $candidate->person ? $this->personDetails($candidate->person) : null,
+            'workflow_id' => $candidate->workflow_id,
+            'workflow_name' => $candidate->workflow?->name,
+            'current_step' => $metrics['step_name'],
+            'current_step_number' => $metrics['step_number'],
+            'step_count' => $metrics['step_count'],
+            'steps' => $steps->all(),
         ];
     }
 
-    private function daysOpen(Position $position): int
+    private function currentAssignment(Position $position)
     {
-        $openedAt = $position->customer_created_at ?? $position->created_at;
-        $closedAt = $position->close_date ?? now();
+        return $position->assignments
+            ->sortByDesc(fn ($assignment) => $assignment->start_date ?? $assignment->created_at)
+            ->first(function ($assignment): bool {
+                $status = $this->normalize($assignment->assignment_status);
 
-        if (! $openedAt) {
-            return 0;
-        }
+                return ! in_array($status, ['ended', 'inactive'], true)
+                    && (! $assignment->end_date || Carbon::parse($assignment->end_date)->isFuture());
+            });
+    }
 
-        return max(0, $openedAt->startOfDay()->diffInDays($closedAt->startOfDay()));
+    private function selectedCandidate(Collection $candidates): ?Candidate
+    {
+        return $candidates
+            ->first(function (Candidate $candidate): bool {
+                return in_array($this->normalize($candidate->status), [
+                    'selected', 'approved', 'assigned', 'hired', 'onboarding',
+                ], true);
+            }) ?? $candidates->first();
     }
 
     /**
-     * @param Collection<int, array<string, mixed>> $candidateMetrics
-     * @param array<string, mixed>|null $mostAdvanced
-     * @return array{label: string, tone: string, rank: int}
+     * @param Collection<int, array<string,mixed>> $workflowCandidates
+     * @return array{candidate_id:int|null,workflow_name:string|null,step_name:string}
      */
-    private function nextAction(
+    private function currentWorkflow(Collection $workflowCandidates): array
+    {
+        $candidate = $workflowCandidates
+            ->sortByDesc('current_step_number')
+            ->first();
+
+        return [
+            'candidate_id' => $candidate['candidate_id'] ?? null,
+            'workflow_name' => $candidate['workflow_name'] ?? null,
+            'step_name' => $candidate['current_step'] ?? 'No candidate workflow',
+        ];
+    }
+
+    private function lastUpdated(Position $position): ?Carbon
+    {
+        $timestamps = collect([$position->updated_at]);
+
+        foreach ($position->assignments as $assignment) {
+            $timestamps->push($assignment->updated_at);
+        }
+
+        foreach ($position->candidates as $candidate) {
+            $timestamps->push($candidate->updated_at);
+
+            foreach ($candidate->stepEvents as $event) {
+                $timestamps->push($event->updated_at);
+            }
+        }
+
+        $latest = $timestamps->filter()->sortDesc()->first();
+
+        return $latest ? Carbon::parse($latest) : null;
+    }
+
+    private function searchText(
         Position $position,
-        Collection $candidateMetrics,
-        ?array $mostAdvanced
-    ): array {
-        $positionStatus = Str::lower((string) $position->status);
+        string $staffingState,
+        $currentPerson,
+        Collection $workflowCandidates,
+    ): string {
+        $workflowText = $workflowCandidates
+            ->flatMap(function (array $candidate): array {
+                return [
+                    $candidate['candidate_code'] ?? null,
+                    $candidate['candidate_status'] ?? null,
+                    $candidate['person']['name'] ?? null,
+                    $candidate['person']['company_name'] ?? null,
+                    $candidate['workflow_name'] ?? null,
+                    $candidate['current_step'] ?? null,
+                    ...collect($candidate['steps'] ?? [])->pluck('name')->all(),
+                ];
+            });
 
-        if (in_array($positionStatus, ['closed', 'cancelled', 'canceled'], true)) {
-            return ['label' => 'Closed', 'tone' => 'neutral', 'rank' => 50];
-        }
+        return collect([
+            $position->position_code,
+            $position->job_title,
+            $position->title ?? null,
+            $position->level,
+            $position->team_name,
+            $position->project_team_name,
+            $position->location,
+            $position->building,
+            $position->status,
+            $this->staffingLabel($staffingState),
+            $currentPerson ? $this->personName($currentPerson) : null,
+            $currentPerson?->company_name,
+            ...$workflowText->all(),
+        ])->filter(fn ($value) => $value !== null && $value !== '')
+            ->implode(' ');
+    }
 
-        if ($candidateMetrics->isEmpty()) {
-            return ['label' => 'Need Candidates', 'tone' => 'danger', 'rank' => 10];
-        }
+    /** @return array<string,mixed> */
+    private function personDetails(Person $person): array
+    {
+        return [
+            'id' => $person->id,
+            'person_code' => $person->person_code,
+            'name' => $this->personName($person),
+            'first_name' => $person->first_name,
+            'alternate_first_name' => $person->alternate_first_name,
+            'preferred_name' => $person->preferred_name,
+            'last_name' => $person->last_name,
+            'alternate_last_name' => $person->alternate_last_name,
+            'company_name' => $person->company_name,
+            'employment_status' => $person->employment_status,
+        ];
+    }
 
-        $candidateStatus = Str::lower((string) ($mostAdvanced['candidate_status'] ?? ''));
-        $step = Str::lower((string) ($mostAdvanced['step_name'] ?? ''));
-        $statusCode = Str::lower((string) ($mostAdvanced['status_code'] ?? ''));
-        $combined = trim("{$candidateStatus} {$step} {$statusCode}");
-
-        if (Str::contains($combined, ['offer accepted', 'selected', 'hired', 'onboarding'])) {
-            return ['label' => 'Ready to Hire', 'tone' => 'success', 'rank' => 20];
-        }
-
-        if (Str::contains($combined, ['offer'])) {
-            return ['label' => 'Await Candidate', 'tone' => 'warning', 'rank' => 25];
-        }
-
-        if (Str::contains($combined, ['customer', 'client', 'manager review', 'approval'])) {
-            return ['label' => 'Customer Review', 'tone' => 'warning', 'rank' => 15];
-        }
-
-        if (Str::contains($combined, ['interview'])) {
-            return ['label' => 'Complete Interview', 'tone' => 'warning', 'rank' => 12];
-        }
-
-        if (Str::contains($combined, ['background', 'security', 'clearance'])) {
-            return ['label' => 'Monitor Screening', 'tone' => 'info', 'rank' => 30];
-        }
-
-        if (Str::contains($combined, ['submitted', 'review', 'screen', 'not started'])) {
-            return ['label' => 'Review Candidates', 'tone' => 'info', 'rank' => 11];
-        }
-
-        return ['label' => 'Advance Workflow', 'tone' => 'info', 'rank' => 35];
+    private function personName(Person $person): string
+    {
+        return trim(
+            ($person->preferred_name ?: $person->first_name)
+            .' '
+            .$person->last_name
+        );
     }
 
     private function candidateName(Candidate $candidate): ?string
     {
-        if (! $candidate->person) {
-            return null;
-        }
+        return $candidate->person ? $this->personName($candidate->person) : null;
+    }
 
-        return trim(
-            ($candidate->person->preferred_name ?: $candidate->person->first_name)
-            .' '
-            .$candidate->person->last_name
-        );
+    private function normalize(mixed $value): string
+    {
+        return Str::of((string) $value)
+            ->lower()
+            ->replace(['-', '_'], ' ')
+            ->squish()
+            ->toString();
+    }
+
+    private function staffingLabel(string $state): string
+    {
+        return match ($state) {
+            'on_hold' => 'On-Hold',
+            default => Str::headline($state),
+        };
+    }
+
+    private function staffingRank(string $state): int
+    {
+        return match ($state) {
+            'vacant' => 10,
+            'selected' => 20,
+            'filled' => 30,
+            'departing' => 40,
+            'on_hold' => 50,
+            default => 99,
+        };
     }
 }

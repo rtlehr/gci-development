@@ -22,7 +22,18 @@ Route::middleware(['auth', 'permission:access_portal'])
         Route::get('/dashboard', DashboardController::class)
             ->middleware('permission:portal_view_dashboard')
             ->name('dashboard');
-        Route::get('/alerts', [AlertController::class, 'index'])->name('alerts.index');
+        Route::post('/dashboard/staffing/preferences', [DashboardController::class, 'saveStaffingPreferences'])
+            ->middleware('permission:portal_view_dashboard')
+            ->name('dashboard.staffing.preferences.save');
+        Route::delete('/dashboard/staffing/preferences', [DashboardController::class, 'resetStaffingPreferences'])
+            ->middleware('permission:portal_view_dashboard')
+            ->name('dashboard.staffing.preferences.reset');
+        Route::post('/dashboard/staffing/export/csv', [DashboardController::class, 'exportStaffingCsv'])
+            ->middleware('permission:portal_view_dashboard')
+            ->name('dashboard.staffing.export.csv');
+        Route::get('/alerts', [AlertController::class, 'index'])
+            ->middleware('portal-feature:features.alerts,view_admin')
+            ->name('alerts.index');
 
 
         Route::get('/people', [PeopleController::class, 'index'])
@@ -221,18 +232,18 @@ Route::middleware(['auth', 'permission:access_portal'])
             ->name('candidates.destroy');
 
         Route::get('/tickets', [TicketController::class, 'index'])
-            ->middleware('permission:portal_view_own_tickets')
+            ->middleware(['permission:portal_view_own_tickets', 'portal-feature:features.support_tickets'])
             ->name('tickets.index');
 
         Route::get('/tickets/create', [TicketController::class, 'create'])
-            ->middleware('permission:portal_create_tickets')
+            ->middleware(['permission:portal_create_tickets', 'portal-feature:features.support_tickets'])
             ->name('tickets.create');
 
         Route::post('/tickets', [TicketController::class, 'store'])
-            ->middleware('permission:portal_create_tickets')
+            ->middleware(['permission:portal_create_tickets', 'portal-feature:features.support_tickets'])
             ->name('tickets.store');
 
         Route::get('/tickets/{ticket}', [TicketController::class, 'show'])
-            ->middleware('permission:portal_view_own_tickets')
+            ->middleware(['permission:portal_view_own_tickets', 'portal-feature:features.support_tickets'])
             ->name('tickets.show');
     });

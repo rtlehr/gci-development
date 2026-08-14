@@ -86,6 +86,11 @@ class SiteSettingsService
                 'pmo_title' => 'PMO',
                 'pmo_description' => 'Connect with the program management office and operational support team.',
             ],
+            'features' => [
+                'support_tickets' => true,
+                'alerts' => true,
+                'help' => true,
+            ],
             'footer' => [
                 'copyright_name' => 'ZION INSIGHT Portal',
                 'support_label' => 'Support',

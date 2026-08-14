@@ -46,6 +46,11 @@ class SiteSettingSeeder extends Seeder
             ['key' => 'home.pmo_title', 'group' => 'Homepage', 'label' => 'PMO title', 'description' => 'Title of the PMO feature card.', 'type' => 'text', 'value' => 'PMO', 'sort_order' => 130],
             ['key' => 'home.pmo_description', 'group' => 'Homepage', 'label' => 'PMO description', 'description' => 'Description of the PMO feature card.', 'type' => 'textarea', 'value' => 'Connect with the program management office and operational support team.', 'sort_order' => 140],
 
+            // Portal Features
+            ['key' => 'features.support_tickets', 'group' => 'Portal Features', 'label' => 'Support Tickets', 'description' => 'Allow portal users to submit and review support tickets. Administrative ticket management remains available when disabled.', 'type' => 'boolean', 'value' => '1', 'sort_order' => 10],
+            ['key' => 'features.alerts', 'group' => 'Portal Features', 'label' => 'Alerts', 'description' => 'Show alerts, notification counts, and alert history in the Public and Portal experience. Administrative alert access remains available when disabled.', 'type' => 'boolean', 'value' => '1', 'sort_order' => 20],
+            ['key' => 'features.help', 'group' => 'Portal Features', 'label' => 'Help', 'description' => 'Show contextual Help buttons and Help content in the Public and Portal experience. Page Help administration remains available when disabled.', 'type' => 'boolean', 'value' => '1', 'sort_order' => 30],
+
             // Footer
             ['key' => 'footer.copyright_name', 'group' => 'Footer', 'label' => 'Copyright name', 'description' => 'Name displayed after the copyright year.', 'type' => 'text', 'value' => 'ZION INSIGHT Portal', 'sort_order' => 10],
             ['key' => 'footer.support_label', 'group' => 'Footer', 'label' => 'Support link label', 'description' => 'Text used for the footer Support link.', 'type' => 'text', 'value' => 'Support', 'sort_order' => 20],

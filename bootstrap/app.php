@@ -28,6 +28,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->alias([
             'security' => \App\Http\Middleware\CheckSecurityLevel::class,
             'permission' => \App\Http\Middleware\CheckPermission::class,
+            'portal-feature' => \App\Http\Middleware\EnsurePortalFeatureEnabled::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

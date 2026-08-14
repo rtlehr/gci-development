@@ -5,11 +5,12 @@ use App\Http\Controllers\TicketController;
 use App\Http\Controllers\TicketAdminController;
 
 Route::get('/tickets/create', fn () => redirect()->route('portal.tickets.create'))
+    ->middleware('portal-feature:features.support_tickets')
     ->name('tickets.create');
 
 Route::post('/tickets', [TicketController::class, 'store'])
     ->name('tickets.store')
-    ->middleware('permission:create_tickets');
+    ->middleware(['permission:create_tickets', 'portal-feature:features.support_tickets']);
 
 Route::get('/admin/tickets', [TicketAdminController::class, 'index'])   
     ->name('admin.tickets.index')

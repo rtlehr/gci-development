@@ -28,6 +28,10 @@ type HeaderAlerts = {
 };
 
 const page = usePage();
+const featureEnabled = computed(() => {
+    const enabled = (page.props.siteSettings as { features?: { alerts?: boolean } })?.features?.alerts ?? true;
+    return enabled || page.url.startsWith('/admin');
+});
 
 const alerts = computed<HeaderAlerts>(() => {
     return (page.props.headerAlerts as HeaderAlerts) ?? {
@@ -94,7 +98,7 @@ function viewItem(alert: HeaderAlert) {
 </script>
 
 <template>
-    <DropdownMenu>
+    <DropdownMenu v-if="featureEnabled">
         <DropdownMenuTrigger as-child>
             <Button variant="ghost" size="icon" class="relative" aria-label="Open alerts">
                 <Bell class="h-5 w-5" />

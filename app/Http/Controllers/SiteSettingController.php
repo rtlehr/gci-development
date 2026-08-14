@@ -39,6 +39,7 @@ class SiteSettingController extends Controller
         foreach ($settings as $setting) {
             $rules["settings.{$setting->id}"] = match ($setting->type) {
                 'color' => ['sometimes', 'required', 'string', 'regex:/^#[0-9a-fA-F]{6}$/'],
+                'boolean' => ['sometimes', 'boolean'],
                 default => ['sometimes', 'nullable', 'string', 'max:5000'],
             };
         }
@@ -48,8 +49,12 @@ class SiteSettingController extends Controller
 
         foreach ($settings as $setting) {
             if (array_key_exists((string) $setting->id, $values) || array_key_exists($setting->id, $values)) {
+                $value = $values[$setting->id] ?? $values[(string) $setting->id] ?? null;
+
                 $setting->update([
-                    'value' => $values[$setting->id] ?? $values[(string) $setting->id] ?? null,
+                    'value' => $setting->type === 'boolean'
+                        ? ($value ? '1' : '0')
+                        : $value,
                 ]);
             }
         }

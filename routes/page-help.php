@@ -6,6 +6,7 @@ use Illuminate\Support\Facades\Route;
 
 Route::get('/page-help/{helpKey}', [PageHelpController::class, 'show'])
     ->where('helpKey', '.*')
+    ->middleware('portal-feature:features.help,view_admin')
     ->name('page-help.show');
 
 Route::prefix('admin/page-help')

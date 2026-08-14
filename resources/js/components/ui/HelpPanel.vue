@@ -2,9 +2,14 @@
 import { ref, watch, computed  } from 'vue'
 import { X } from 'lucide-vue-next'
 import { useAuth } from '@/composables/useAuth'
-import { Link } from '@inertiajs/vue3'
+import { Link, usePage } from '@inertiajs/vue3'
 
 const { can } = useAuth()
+const page = usePage()
+const featureEnabled = computed(() => {
+    const enabled = (page.props.siteSettings as { features?: { help?: boolean } })?.features?.help ?? true
+    return enabled || page.url.startsWith('/admin')
+})
 
 const createHelpUrl = computed(() => {
     if (!props.helpKey) return '/admin/page-help/create'
@@ -63,7 +68,7 @@ const loadHelp = async () => {
 watch(
     () => [props.open, props.helpKey],
     ([open]) => {
-        if (open) {
+        if (open && featureEnabled.value) {
             loadHelp()
         }
     },
@@ -73,7 +78,7 @@ watch(
 
 <template>
     <aside
-        v-if="open"
+        v-if="open && featureEnabled"
         class="flex h-full w-[520px] min-w-[520px] max-w-[520px] flex-col border-l bg-background"
     >
         <div class="flex items-center justify-between border-b px-4 py-3">

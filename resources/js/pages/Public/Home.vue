@@ -1,7 +1,13 @@
 <script setup lang="ts">
-import { Head, Link } from '@inertiajs/vue3';
+import { Head, Link, usePage } from '@inertiajs/vue3';
 import { ArrowRight, BookOpen, CircleHelp, ContactRound, FileText, LifeBuoy, UsersRound } from 'lucide-vue-next';
 import { Button } from '@/components/ui/button';
+import { computed } from 'vue';
+
+const page = usePage();
+const supportEnabled = computed(() =>
+    ((page.props.siteSettings as { features?: { support_tickets?: boolean } })?.features?.support_tickets ?? true),
+);
 
 defineProps<{
     isAuthenticated: boolean;
@@ -89,7 +95,7 @@ defineProps<{
                 <h2 class="mt-4 text-lg font-bold">{{ homeContent.faqs_title }}</h2>
                 <p class="mt-2 text-sm leading-6 text-[color:var(--portal-text-muted)]">{{ homeContent.faqs_description }}</p>
             </article>
-            <article id="support" class="rounded-xl border border-[var(--portal-border)] bg-[var(--portal-surface)] p-6 shadow-sm">
+            <article v-if="supportEnabled" id="support" class="rounded-xl border border-[var(--portal-border)] bg-[var(--portal-surface)] p-6 shadow-sm">
                 <LifeBuoy class="h-7 w-7 text-[var(--portal-primary)]" />
                 <h2 class="mt-4 text-lg font-bold">{{ homeContent.support_title }}</h2>
                 <p class="mt-2 text-sm leading-6 text-[color:var(--portal-text-muted)]">{{ homeContent.support_description }}</p>

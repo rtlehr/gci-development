@@ -38,7 +38,10 @@ class HandleInertiaRequests extends Middleware
         $alertCount = 0;
         $recentAlerts = [];
 
-        if ($user) {
+        $alertsEnabledForRequest = $this->siteSettings->get('features.alerts', true) === true
+            || $request->is('admin*');
+
+        if ($user && $alertsEnabledForRequest) {
             $unreadAlerts = Alert::query()
                 ->where('user_id', $user->id)
                 ->whereNull('read_at');

@@ -29,6 +29,9 @@ const siteSettings = computed(() => page.props.siteSettings as {
     };
 });
 const { user, username, can } = useAuth();
+const supportEnabled = computed(() =>
+    ((page.props.siteSettings as { features?: { support_tickets?: boolean } })?.features?.support_tickets ?? true),
+);
 const mobileOpen = ref(false);
 
 const canOpenAdminDashboard = computed(() => can('view_admin'));
@@ -73,6 +76,7 @@ const canViewPortalDashboard = computed(
 );
 
 const supportHref = computed(() => {
+    if (!supportEnabled.value) return null;
     if (can('portal_view_own_tickets')) return '/portal/tickets';
     if (can('portal_create_tickets')) return '/portal/tickets/create';
 
@@ -172,7 +176,7 @@ function closeMobile(): void {
                         </Link>
                         <Link v-for="item in contentNavigation" :key="item.href" :href="item.href" class="rounded-md px-3 py-2 font-medium hover:bg-[var(--portal-primary-soft)]" :class="isActive(item.href) ? 'bg-[var(--portal-primary-soft)] text-[var(--portal-primary)]' : ''" @click="closeMobile">{{ item.label }}</Link>
                         <Link v-if="user && supportHref" :href="supportHref" class="rounded-md px-3 py-2 font-medium hover:bg-[var(--portal-primary-soft)]" :class="isActive('/portal/tickets') ? 'bg-[var(--portal-primary-soft)] text-[var(--portal-primary)]' : ''" @click="closeMobile">Support</Link>
-                        <a v-else href="/#support" class="rounded-md px-3 py-2 font-medium hover:bg-[var(--portal-primary-soft)]" @click="closeMobile">Support</a>
+                        <a v-else-if="supportEnabled" href="/#support" class="rounded-md px-3 py-2 font-medium hover:bg-[var(--portal-primary-soft)]" @click="closeMobile">Support</a>
                     </div>
                 </section>
 

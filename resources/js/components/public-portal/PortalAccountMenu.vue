@@ -1,6 +1,7 @@
 <script setup lang="ts">
-import { Link } from '@inertiajs/vue3';
+import { Link, usePage } from '@inertiajs/vue3';
 import { Bell, Settings, Shield, UserRound } from 'lucide-vue-next';
+import { computed } from 'vue';
 import { useAuth } from '@/composables/useAuth';
 import { Button } from '@/components/ui/button';
 import {
@@ -13,6 +14,10 @@ import {
 } from '@/components/ui/dropdown-menu';
 
 const { user, username, can } = useAuth();
+const page = usePage();
+const alertsEnabled = computed(() =>
+    ((page.props.siteSettings as { features?: { alerts?: boolean } })?.features?.alerts ?? true),
+);
 </script>
 
 <template>
@@ -34,7 +39,7 @@ const { user, username, can } = useAuth();
                 <div class="truncate text-xs font-normal text-muted-foreground">{{ user.email }}</div>
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
-            <DropdownMenuItem as-child>
+            <DropdownMenuItem v-if="alertsEnabled" as-child>
                 <Link href="/portal/alerts">
                     <Bell class="mr-2 h-4 w-4" />
                     Alerts

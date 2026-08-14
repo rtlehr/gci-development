@@ -5,12 +5,16 @@ import { useAuth } from '@/composables/useAuth';
 
 const page = usePage();
 const { user, can } = useAuth();
+const supportEnabled = computed(() =>
+    ((page.props.siteSettings as { features?: { support_tickets?: boolean } })?.features?.support_tickets ?? true),
+);
 
 const cmsItems = computed(
     () => (page.props.contentNavigation as Array<{ label: string; href: string }>) ?? [],
 );
 
 const supportHref = computed(() => {
+    if (!supportEnabled.value) return null;
     if (!user.value) return '/#support';
     if (can('portal_view_own_tickets')) return '/portal/tickets';
     if (can('portal_create_tickets')) return '/portal/tickets/create';
