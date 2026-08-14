@@ -90,6 +90,8 @@ class SiteSettingsService
                 'support_tickets' => true,
                 'alerts' => true,
                 'help' => true,
+                'candidate_opportunities' => true,
+                'content_pages' => true,
             ],
             'footer' => [
                 'copyright_name' => 'ZION INSIGHT Portal',

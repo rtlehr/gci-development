@@ -5,6 +5,7 @@ use App\Http\Controllers\Public\ContentPageController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/pages/{contentPage:slug}', [ContentPageController::class, 'show'])
+    ->middleware('portal-feature:features.content_pages,view_admin')
     ->name('content-pages.show');
 
 Route::prefix('admin/content-pages')

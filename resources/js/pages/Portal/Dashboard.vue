@@ -12,10 +12,11 @@ import { computed } from 'vue';
 const { username } = useAuth();
 const page = usePage();
 const features = computed(() =>
-    ((page.props.siteSettings as { features?: { support_tickets?: boolean; alerts?: boolean } })?.features ?? {}),
+    ((page.props.siteSettings as { features?: { support_tickets?: boolean; alerts?: boolean; candidate_opportunities?: boolean } })?.features ?? {}),
 );
 const supportTicketsEnabled = computed(() => features.value.support_tickets ?? true);
 const alertsEnabled = computed(() => features.value.alerts ?? true);
+const candidateOpportunitiesEnabled = computed(() => features.value.candidate_opportunities ?? true);
 
 type StaffingSummary = {
     vacant: number;
@@ -121,7 +122,7 @@ withDefaults(defineProps<{
                 <p class="mt-1 text-sm text-[#3a3a3a]/70">{{ summary.assignedTickets }} active</p>
             </article>
 
-            <article class="rounded-xl border border-[#e3e3e3] bg-white p-5 shadow-sm">
+            <article v-if="candidateOpportunitiesEnabled" class="rounded-xl border border-[#e3e3e3] bg-white p-5 shadow-sm">
                 <BriefcaseBusiness class="h-6 w-6 text-[#005c43]" />
                 <h2 class="mt-3 font-bold">My opportunities</h2>
                 <p class="mt-1 text-sm text-[#3a3a3a]/70">

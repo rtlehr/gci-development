@@ -30,6 +30,7 @@ class DashboardController extends Controller
         $user = $userResolver->resolveUser();
         $supportTicketsEnabled = $siteSettings->get('features.support_tickets', true) === true;
         $alertsEnabled = $siteSettings->get('features.alerts', true) === true;
+        $candidateOpportunitiesEnabled = $siteSettings->get('features.candidate_opportunities', true) === true;
 
         $assignedTickets = $supportTicketsEnabled
             ? Ticket::query()
@@ -99,7 +100,8 @@ class DashboardController extends Controller
                 'portal_view_assigned_positions',
             );
 
-        $showCandidateProgress = ! $showAllPositions
+        $showCandidateProgress = $candidateOpportunitiesEnabled
+            && ! $showAllPositions
             && ! $showAssignedPositions
             && $currentUser->hasPermission(
                 'portal_view_candidate_positions',
