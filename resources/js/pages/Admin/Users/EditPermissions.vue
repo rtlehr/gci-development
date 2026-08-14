@@ -142,11 +142,9 @@ const submit = () => {
                 </p>
             </div>
 
-            <Link href="/admin/users">
-                <Button variant="outline">
+            <Button as-child variant="outline"><Link href="/admin/users">
                     Back to Users
-                </Button>
-            </Link>
+                </Link></Button>
 
         </div>
 
@@ -312,16 +310,11 @@ const submit = () => {
                         {{ form.processing ? 'Saving...' : 'Save Access' }}
                     </Button>
 
-                    <Link href="/admin/users">
-
-                        <Button
-                            type="button"
+                    <Button as-child
                             variant="outline"
-                        >
+                        ><Link href="/admin/users">
                             Cancel
-                        </Button>
-
-                    </Link>
+                        </Link></Button>
 
                 </div>
 

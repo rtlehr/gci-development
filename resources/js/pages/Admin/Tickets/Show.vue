@@ -314,9 +314,7 @@ function unwatchTicket() {
                     Stop Watching
                 </Button>
 
-                <Link href="/admin/tickets">
-                    <Button variant="outline">Back to Tickets</Button>
-                </Link>
+                <Button as-child variant="outline"><Link href="/admin/tickets">Back to Tickets</Link></Button>
             </div>
 
         </div>

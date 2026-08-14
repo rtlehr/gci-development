@@ -224,7 +224,7 @@
 
                         <!-- Primary Address Toggle -->
                         <div class="space-y-2">
-                            <Label>Primary Address</Label>
+                            <p class="text-sm font-medium">Primary Address</p>
 
                             <div class="flex items-center gap-3 rounded-md border p-3">
                                 <input

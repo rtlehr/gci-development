@@ -110,14 +110,19 @@ function toggleCheckbox(field: GenericRecord, optionValue: string, checked: bool
                             :id="`custom_field_${field.id}`"
                             class="grid gap-2 sm:grid-cols-2"
                             role="radiogroup"
+                            :aria-labelledby="`custom_field_${field.id}-label`"
+                            :aria-required="Boolean(field.is_required)"
+                            :aria-invalid="invalid"
                             :aria-describedby="describedBy"
                         >
                             <label
                                 v-for="option in (field.active_options ?? field.activeOptions ?? field.options ?? [])"
                                 :key="option.id"
-                                class="flex cursor-pointer items-center gap-3 rounded-lg border p-3 text-sm hover:bg-muted/40"
+                                :for="`custom_field_${field.id}_option_${option.id}`"
+                                class="flex cursor-pointer items-center gap-3 rounded-lg border p-3 text-sm hover:bg-muted/40 focus-within:ring-2 focus-within:ring-ring"
                             >
                                 <input
+                                    :id="`custom_field_${field.id}_option_${option.id}`"
                                     type="radio"
                                     :name="`custom_field_${field.id}`"
                                     :value="option.value"
@@ -132,14 +137,20 @@ function toggleCheckbox(field: GenericRecord, optionValue: string, checked: bool
                             v-else-if="field.field_type === 'checkbox'"
                             :id="`custom_field_${field.id}`"
                             class="grid gap-2 sm:grid-cols-2"
+                            role="group"
+                            :aria-labelledby="`custom_field_${field.id}-label`"
+                            :aria-required="Boolean(field.is_required)"
+                            :aria-invalid="invalid"
                             :aria-describedby="describedBy"
                         >
                             <label
                                 v-for="option in (field.active_options ?? field.activeOptions ?? field.options ?? [])"
                                 :key="option.id"
-                                class="flex cursor-pointer items-center gap-3 rounded-lg border p-3 text-sm hover:bg-muted/40"
+                                :for="`custom_field_${field.id}_option_${option.id}`"
+                                class="flex cursor-pointer items-center gap-3 rounded-lg border p-3 text-sm hover:bg-muted/40 focus-within:ring-2 focus-within:ring-ring"
                             >
                                 <input
+                                    :id="`custom_field_${field.id}_option_${option.id}`"
                                     type="checkbox"
                                     :value="option.value"
                                     :checked="valueFor(field).includes(option.value)"

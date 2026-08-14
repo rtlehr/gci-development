@@ -126,9 +126,7 @@ onBeforeUnmount(() => window.removeEventListener('beforeunload', handleBeforeUnl
                     Add a new staffing position and define its requirements, organizations, and operational details.
                 </p>
             </div>
-            <Link href="/portal/positions">
-                <Button variant="outline">Back to List</Button>
-            </Link>
+            <Button as-child variant="outline"><Link href="/portal/positions">Back to List</Link></Button>
         </div>
 
         <form @submit.prevent="submit">
@@ -162,9 +160,7 @@ onBeforeUnmount(() => window.removeEventListener('beforeunload', handleBeforeUnl
                         <Button type="submit" :disabled="form.processing">
                             {{ form.processing ? 'Creating…' : 'Create Position' }}
                         </Button>
-                        <Link href="/portal/positions">
-                            <Button type="button" variant="outline">Cancel</Button>
-                        </Link>
+                        <Button as-child variant="outline"><Link href="/portal/positions">Cancel</Link></Button>
                     </div>
                 </div>
             </div>

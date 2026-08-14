@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 import { ArrowDown, ArrowUp, Plus, Trash2 } from 'lucide-vue-next'
 import FormField from '@/components/forms/FormField.vue'
 import FormSection from '@/components/forms/FormSection.vue'
@@ -22,13 +22,21 @@ const props = defineProps<{
 }>()
 
 const usesOptions = computed(() => ['radio', 'checkbox'].includes(props.form.field_type))
+const announcement = ref('')
+
+function announce(message: string): void {
+    announcement.value = ''
+    requestAnimationFrame(() => { announcement.value = message })
+}
 
 function addOption(): void {
     props.form.options.push({ id: null, label: '', is_active: true })
+    announce(`Option ${props.form.options.length} added.`)
 }
 
 function removeOption(index: number): void {
     props.form.options.splice(index, 1)
+    announce(`Option ${index + 1} removed.`)
 }
 
 function moveOption(index: number, direction: -1 | 1): void {
@@ -36,11 +44,13 @@ function moveOption(index: number, direction: -1 | 1): void {
     if (target < 0 || target >= props.form.options.length) return
     const [option] = props.form.options.splice(index, 1)
     props.form.options.splice(target, 0, option)
+    announce(`Option moved to position ${target + 1}.`)
 }
 </script>
 
 <template>
     <div class="space-y-6">
+        <p class="sr-only" aria-live="polite" aria-atomic="true">{{ announcement }}</p>
         <FormSection
             title="Field Details"
             description="Choose where the field appears and how users enter information."
@@ -95,7 +105,7 @@ function moveOption(index: number, direction: -1 | 1): void {
 
             <div class="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
                 <label class="flex cursor-pointer items-start gap-3 rounded-lg border p-4">
-                    <input v-model="form.is_required" type="checkbox" class="mt-1">
+                    <input id="custom-field-required" v-model="form.is_required" type="checkbox" class="mt-1">
                     <span>
                         <span class="block text-sm font-medium">Required</span>
                         <span class="block text-xs text-muted-foreground">Users must complete this field before saving the record.</span>
@@ -103,7 +113,7 @@ function moveOption(index: number, direction: -1 | 1): void {
                 </label>
 
                 <label class="flex cursor-pointer items-start gap-3 rounded-lg border p-4">
-                    <input v-model="form.is_active" type="checkbox" class="mt-1">
+                    <input id="custom-field-active" v-model="form.is_active" type="checkbox" class="mt-1">
                     <span>
                         <span class="block text-sm font-medium">Active</span>
                         <span class="block text-xs text-muted-foreground">Active fields appear in Person or Position screens.</span>
@@ -111,7 +121,7 @@ function moveOption(index: number, direction: -1 | 1): void {
                 </label>
 
                 <label class="flex cursor-pointer items-start gap-3 rounded-lg border p-4">
-                    <input v-model="form.is_list_column" type="checkbox" class="mt-1">
+                    <input id="custom-field-list-column" v-model="form.is_list_column" type="checkbox" class="mt-1">
                     <span>
                         <span class="block text-sm font-medium">Available as List Column</span>
                         <span class="block text-xs text-muted-foreground">Makes this field available in Person or Position column settings and CSV exports.</span>
@@ -119,7 +129,7 @@ function moveOption(index: number, direction: -1 | 1): void {
                 </label>
 
                 <label class="flex cursor-pointer items-start gap-3 rounded-lg border p-4" :class="!form.is_list_column ? 'opacity-60' : ''">
-                    <input v-model="form.is_searchable" type="checkbox" class="mt-1" :disabled="!form.is_list_column">
+                    <input id="custom-field-searchable" v-model="form.is_searchable" type="checkbox" class="mt-1" :disabled="!form.is_list_column">
                     <span>
                         <span class="block text-sm font-medium">Searchable</span>
                         <span class="block text-xs text-muted-foreground">Includes this field in the list search when the column is visible.</span>
@@ -127,7 +137,7 @@ function moveOption(index: number, direction: -1 | 1): void {
                 </label>
 
                 <label class="flex cursor-pointer items-start gap-3 rounded-lg border p-4">
-                    <input v-model="form.is_filterable" type="checkbox" class="mt-1">
+                    <input id="custom-field-filterable" v-model="form.is_filterable" type="checkbox" class="mt-1">
                     <span>
                         <span class="block text-sm font-medium">Filterable</span>
                         <span class="block text-xs text-muted-foreground">Adds a dedicated filter for this field on the Person or Position list.</span>
@@ -147,26 +157,26 @@ function moveOption(index: number, direction: -1 | 1): void {
                     :key="option.id ?? `new-${index}`"
                     class="grid gap-3 rounded-lg border p-4 sm:grid-cols-[minmax(0,1fr)_auto_auto_auto] sm:items-center"
                 >
-                    <Input v-model="option.label" :placeholder="`Option ${index + 1}`" />
-                    <label class="flex items-center gap-2 text-sm">
-                        <input v-model="option.is_active" type="checkbox">
+                    <Input :id="`custom-field-option-${index}-label`" v-model="option.label" :aria-label="`Option ${index + 1} label`" :placeholder="`Option ${index + 1}`" />
+                    <label class="flex items-center gap-2 text-sm" :for="`custom-field-option-${index}-active`">
+                        <input :id="`custom-field-option-${index}-active`" v-model="option.is_active" type="checkbox">
                         Active
                     </label>
                     <div class="flex items-center gap-1">
-                        <Button type="button" variant="ghost" size="icon" title="Move option up" :disabled="index === 0" @click="moveOption(index, -1)">
-                            <ArrowUp class="h-4 w-4" />
+                        <Button type="button" variant="ghost" size="icon" :aria-label="`Move option ${index + 1} up`" :disabled="index === 0" @click="moveOption(index, -1)">
+                            <ArrowUp class="h-4 w-4" aria-hidden="true" />
                         </Button>
-                        <Button type="button" variant="ghost" size="icon" title="Move option down" :disabled="index === form.options.length - 1" @click="moveOption(index, 1)">
-                            <ArrowDown class="h-4 w-4" />
+                        <Button type="button" variant="ghost" size="icon" :aria-label="`Move option ${index + 1} down`" :disabled="index === form.options.length - 1" @click="moveOption(index, 1)">
+                            <ArrowDown class="h-4 w-4" aria-hidden="true" />
                         </Button>
                     </div>
-                    <Button type="button" variant="ghost" size="icon" title="Remove option" @click="removeOption(index)">
-                        <Trash2 class="h-4 w-4" />
+                    <Button type="button" variant="ghost" size="icon" :aria-label="`Remove option ${index + 1}`" @click="removeOption(index)">
+                        <Trash2 class="h-4 w-4" aria-hidden="true" />
                     </Button>
                 </div>
 
                 <Button type="button" variant="outline" @click="addOption">
-                    <Plus class="mr-2 h-4 w-4" />
+                    <Plus class="mr-2 h-4 w-4" aria-hidden="true" />
                     Add Option
                 </Button>
             </div>

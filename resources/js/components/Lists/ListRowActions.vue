@@ -21,7 +21,7 @@ withDefaults(defineProps<{
 <template>
     <DropdownMenu>
         <DropdownMenuTrigger as-child>
-            <Button variant="ghost" size="icon" :aria-label="ariaLabel">
+            <Button variant="ghost" size="icon" :aria-label="ariaLabel" aria-haspopup="menu">
                 <MoreHorizontal class="h-4 w-4" aria-hidden="true" />
             </Button>
         </DropdownMenuTrigger>

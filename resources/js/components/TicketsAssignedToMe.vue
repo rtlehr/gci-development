@@ -41,11 +41,9 @@ function formatLabel(value: string | null) {
                 </p>
             </div>
 
-            <Link href="/admin/tickets">
-                <Button variant="outline" size="sm">
+            <Button as-child variant="outline" size="sm"><Link href="/admin/tickets">
                     View All
-                </Button>
-            </Link>
+                </Link></Button>
         </div>
 
         <div v-if="tickets.length === 0" class="rounded-lg border border-dashed p-6 text-sm text-muted-foreground">
@@ -77,11 +75,9 @@ function formatLabel(value: string | null) {
                         </div>
                     </div>
 
-                    <Link :href="`/admin/tickets/${ticket.id}`">
-                        <Button size="sm" variant="outline">
+                    <Button as-child size="sm" variant="outline"><Link :href="`/admin/tickets/${ticket.id}`">
                             View Ticket
-                        </Button>
-                    </Link>
+                        </Link></Button>
                 </div>
             </div>
         </div>

@@ -10,14 +10,66 @@
                 <section v-show="activeSection === 'details'" class="rounded-xl border bg-white p-6 shadow-sm">
                     <h2 class="text-lg font-semibold">Candidate Details</h2><p class="mb-6 text-sm text-muted-foreground">Person, position, status, submission, and start information.</p>
                     <div class="grid gap-5 md:grid-cols-2">
-                        <div><Label>Person <span class="text-destructive">*</span></Label><select v-model="form.person_id" class="mt-2 h-10 w-full rounded-md border bg-background px-3"><option value="">Select person</option><option v-for="person in people" :key="person.id" :value="person.id">{{ person.full_name ?? `${person.first_name} ${person.last_name}` }}</option></select><p v-if="form.errors.person_id" class="mt-1 text-sm text-destructive">{{ form.errors.person_id }}</p></div>
-                        <div><Label>Position <span class="text-destructive">*</span></Label><select v-model="form.position_id" class="mt-2 h-10 w-full rounded-md border bg-background px-3"><option value="">Select position</option><option v-for="position in positions" :key="position.id" :value="position.id">{{ position.job_title ?? position.title ?? `Position #${position.id}` }}</option></select><p v-if="form.errors.position_id" class="mt-1 text-sm text-destructive">{{ form.errors.position_id }}</p></div>
-                        <div><Label>Status <span class="text-destructive">*</span></Label><select v-model="form.status" class="mt-2 h-10 w-full rounded-md border bg-background px-3"><option value="submitted">Submitted</option><option value="selected">Selected</option><option value="approved">Approved</option><option value="assigned">Assigned</option></select></div>
-                        <div><Label>Candidate FBR</Label><input v-model="form.candidate_fbr" type="number" step="0.01" class="mt-2 h-10 w-full rounded-md border bg-background px-3" /></div>
-                        <div><Label>Submitted At</Label><input v-model="form.submitted_at" type="datetime-local" class="mt-2 h-10 w-full rounded-md border bg-background px-3" /></div>
-                        <div><Label>Submitted By</Label><select v-model="form.submitted_by_person_id" class="mt-2 h-10 w-full rounded-md border bg-background px-3"><option value="">Select person</option><option v-for="person in people" :key="person.id" :value="person.id">{{ person.full_name ?? `${person.first_name} ${person.last_name}` }}</option></select></div>
-                        <div><Label>Scheduled Start Date</Label><input v-model="form.scheduled_start_date" type="date" class="mt-2 h-10 w-full rounded-md border bg-background px-3" /></div>
-                        <div><Label>Workflow</Label><div class="mt-2 rounded-md border bg-muted/40 px-3 py-2 text-sm">{{ workflow?.name }} ({{ workflow?.code }})</div></div>
+                        <FormField label="Person" for-id="portal-candidate-person" :error="form.errors.person_id" required>
+                            <template #default="{ describedBy, invalid }">
+                                <select id="portal-candidate-person" v-model="form.person_id" class="h-10 w-full rounded-md border bg-background px-3 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" :aria-describedby="describedBy" :aria-invalid="invalid" required>
+                                    <option value="">Select person</option>
+                                    <option v-for="person in people" :key="person.id" :value="person.id">{{ person.full_name ?? `${person.first_name} ${person.last_name}` }}</option>
+                                </select>
+                            </template>
+                        </FormField>
+
+                        <FormField label="Position" for-id="portal-candidate-position" :error="form.errors.position_id" required>
+                            <template #default="{ describedBy, invalid }">
+                                <select id="portal-candidate-position" v-model="form.position_id" class="h-10 w-full rounded-md border bg-background px-3 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" :aria-describedby="describedBy" :aria-invalid="invalid" required>
+                                    <option value="">Select position</option>
+                                    <option v-for="position in positions" :key="position.id" :value="position.id">{{ position.job_title ?? position.title ?? `Position #${position.id}` }}</option>
+                                </select>
+                            </template>
+                        </FormField>
+
+                        <FormField label="Status" for-id="portal-candidate-status" :error="form.errors.status" required>
+                            <template #default="{ describedBy, invalid }">
+                                <select id="portal-candidate-status" v-model="form.status" class="h-10 w-full rounded-md border bg-background px-3 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" :aria-describedby="describedBy" :aria-invalid="invalid" required>
+                                    <option value="submitted">Submitted</option>
+                                    <option value="selected">Selected</option>
+                                    <option value="approved">Approved</option>
+                                    <option value="assigned">Assigned</option>
+                                </select>
+                            </template>
+                        </FormField>
+
+                        <FormField label="Candidate FBR" for-id="portal-candidate-fbr" :error="form.errors.candidate_fbr">
+                            <template #default="{ describedBy, invalid }">
+                                <input id="portal-candidate-fbr" v-model="form.candidate_fbr" type="number" step="0.01" class="h-10 w-full rounded-md border bg-background px-3 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" :aria-describedby="describedBy" :aria-invalid="invalid" />
+                            </template>
+                        </FormField>
+
+                        <FormField label="Submitted At" for-id="portal-candidate-submitted-at" :error="form.errors.submitted_at">
+                            <template #default="{ describedBy, invalid }">
+                                <input id="portal-candidate-submitted-at" v-model="form.submitted_at" type="datetime-local" class="h-10 w-full rounded-md border bg-background px-3 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" :aria-describedby="describedBy" :aria-invalid="invalid" />
+                            </template>
+                        </FormField>
+
+                        <FormField label="Submitted By" for-id="portal-candidate-submitted-by" :error="form.errors.submitted_by_person_id">
+                            <template #default="{ describedBy, invalid }">
+                                <select id="portal-candidate-submitted-by" v-model="form.submitted_by_person_id" class="h-10 w-full rounded-md border bg-background px-3 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" :aria-describedby="describedBy" :aria-invalid="invalid">
+                                    <option value="">Select person</option>
+                                    <option v-for="person in people" :key="person.id" :value="person.id">{{ person.full_name ?? `${person.first_name} ${person.last_name}` }}</option>
+                                </select>
+                            </template>
+                        </FormField>
+
+                        <FormField label="Scheduled Start Date" for-id="portal-candidate-start-date" :error="form.errors.scheduled_start_date">
+                            <template #default="{ describedBy, invalid }">
+                                <input id="portal-candidate-start-date" v-model="form.scheduled_start_date" type="date" class="h-10 w-full rounded-md border bg-background px-3 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" :aria-describedby="describedBy" :aria-invalid="invalid" />
+                            </template>
+                        </FormField>
+
+                        <div>
+                            <p class="text-sm font-medium">Workflow</p>
+                            <div class="mt-2 rounded-md border bg-muted/40 px-3 py-2 text-sm">{{ workflow?.name }} ({{ workflow?.code }})</div>
+                        </div>
                     </div>
                 </section>
                 <section v-show="activeSection === 'steps'" class="rounded-xl border bg-white p-6 shadow-sm">
@@ -34,9 +86,9 @@ import { computed, ref } from 'vue'
 import { Link, useForm, usePage } from '@inertiajs/vue3'
 import { ListChecks, UserRound } from 'lucide-vue-next'
 import CandidateWorkflowEditor from '@/components/forms/CandidateWorkflowEditor.vue'
+import FormField from '@/components/forms/FormField.vue'
 import PortalSectionNav from '@/components/portal/PortalSectionNav.vue'
 import { Button } from '@/components/ui/button'
-import { Label } from '@/components/ui/label'
 const props=defineProps({candidate:Object,people:Array,positions:Array,workflow:Object,workflowSteps:Array})
 const page = usePage()
 const requestedSection = new URLSearchParams(page.url.split('?')[1] ?? '').get('section')

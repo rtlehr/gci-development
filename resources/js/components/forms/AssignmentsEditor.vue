@@ -12,25 +12,25 @@
 
         <CardContent class="space-y-6">
             <!-- Groups -->
-            <div class="space-y-3">
-                <div>
-                    <Label>Groups</Label>
+            <fieldset class="space-y-3">
+                <legend class="text-sm font-medium">Groups</legend>
 
-                    <!-- Helper text for the groups checkbox list -->
-                    <p class="text-sm text-muted-foreground">
-                        Select the groups this person belongs to.
-                    </p>
-                </div>
+                <!-- Helper text for the groups checkbox list -->
+                <p id="groups-help" class="text-sm text-muted-foreground">
+                    Select the groups this person belongs to.
+                </p>
 
                 <!-- Responsive grid of available groups -->
-                <div class="grid grid-cols-1 gap-3 md:grid-cols-2">
+                <div class="grid grid-cols-1 gap-3 md:grid-cols-2" aria-describedby="groups-help">
                     <label
                         v-for="group in groups"
                         :key="group.id"
+                        :for="`assignment-group-${group.id}`"
                         class="flex items-center gap-3 rounded-lg border p-3 cursor-pointer hover:bg-muted/50"
                     >
                         <!-- Adds/removes this group ID from the selectedGroupIds array -->
                         <input
+                            :id="`assignment-group-${group.id}`"
                             v-model="selectedGroupIds"
                             :value="group.id"
                             type="checkbox"
@@ -45,31 +45,31 @@
                 </div>
 
                 <!-- Validation error for group assignments -->
-                <p v-if="errors.group_ids" class="text-sm text-red-500">
+                <p v-if="errors.group_ids" class="text-sm text-red-500" role="alert">
                     {{ errors.group_ids }}
                 </p>
-            </div>
+            </fieldset>
 
             <!-- Teams -->
-            <div class="space-y-3">
-                <div>
-                    <Label>Teams</Label>
+            <fieldset class="space-y-3">
+                <legend class="text-sm font-medium">Teams</legend>
 
-                    <!-- Helper text for the teams checkbox list -->
-                    <p class="text-sm text-muted-foreground">
-                        Select the teams this person belongs to.
-                    </p>
-                </div>
+                <!-- Helper text for the teams checkbox list -->
+                <p id="teams-help" class="text-sm text-muted-foreground">
+                    Select the teams this person belongs to.
+                </p>
 
                 <!-- Responsive grid of available teams -->
-                <div class="grid grid-cols-1 gap-3 md:grid-cols-2">
+                <div class="grid grid-cols-1 gap-3 md:grid-cols-2" aria-describedby="teams-help">
                     <label
                         v-for="team in teams"
                         :key="team.id"
+                        :for="`assignment-team-${team.id}`"
                         class="flex items-center gap-3 rounded-lg border p-3 cursor-pointer hover:bg-muted/50"
                     >
                         <!-- Adds/removes this team ID from the selectedTeamIds array -->
                         <input
+                            :id="`assignment-team-${team.id}`"
                             v-model="selectedTeamIds"
                             :value="team.id"
                             type="checkbox"
@@ -84,10 +84,10 @@
                 </div>
 
                 <!-- Validation error for team assignments -->
-                <p v-if="errors.team_ids" class="text-sm text-red-500">
+                <p v-if="errors.team_ids" class="text-sm text-red-500" role="alert">
                     {{ errors.team_ids }}
                 </p>
-            </div>
+            </fieldset>
         </CardContent>
     </Card>
 </template>
@@ -100,7 +100,6 @@ import { computed } from 'vue'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 
 // Shared label UI component
-import { Label } from '@/components/ui/label'
 
 // Props received from the parent form/page
 const props = defineProps({

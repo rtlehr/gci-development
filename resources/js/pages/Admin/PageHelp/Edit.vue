@@ -8,9 +8,7 @@
                 </p>
             </div>
 
-            <Link href="/admin/page-help">
-                <Button variant="outline">Back to List</Button>
-            </Link>
+            <Button as-child variant="outline"><Link href="/admin/page-help">Back to List</Link></Button>
         </div>
 
         <form @submit.prevent="submit" class="space-y-6">
@@ -75,9 +73,7 @@
                     {{ form.processing ? 'Saving...' : 'Save Changes' }}
                 </Button>
 
-                <Link href="/admin/page-help">
-                    <Button type="button" variant="outline">Cancel</Button>
-                </Link>
+                <Button as-child variant="outline"><Link href="/admin/page-help">Cancel</Link></Button>
             </div>
         </form>
     </div>

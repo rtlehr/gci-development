@@ -30,16 +30,11 @@
                 </div>
 
                 <div class="flex flex-wrap gap-2">
-                    <Link href="/portal/candidates">
-                        <Button variant="outline">Back to Candidates</Button>
-                    </Link>
+                    <Button as-child variant="outline"><Link href="/portal/candidates">Back to Candidates</Link></Button>
 
-                    <Link
-                        v-if="can('edit_candidates') || can('view_admin')"
+                    <Button as-child v-if="can('edit_candidates') || can('view_admin')"><Link
                         :href="`/portal/candidates/${candidate.id}/edit`"
-                    >
-                        <Button>Edit Candidate</Button>
-                    </Link>
+                    >Edit Candidate</Link></Button>
                 </div>
             </div>
         </div>
@@ -120,9 +115,7 @@
                 </div>
 
                 <div v-if="candidate.person?.id" class="pt-2">
-                    <Link :href="`/portal/people/${candidate.person.id}`">
-                        <Button variant="outline" size="sm">View Person</Button>
-                    </Link>
+                    <Button as-child variant="outline" size="sm"><Link :href="`/portal/people/${candidate.person.id}`">View Person</Link></Button>
                 </div>
             </div>
 
@@ -141,9 +134,7 @@
                 </div>
 
                 <div v-if="candidate.position?.id" class="pt-2">
-                    <Link :href="`/portal/positions/${candidate.position.id}`">
-                        <Button variant="outline" size="sm">View Position</Button>
-                    </Link>
+                    <Button as-child variant="outline" size="sm"><Link :href="`/portal/positions/${candidate.position.id}`">View Position</Link></Button>
                 </div>
             </div>
         </div>

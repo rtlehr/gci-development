@@ -55,16 +55,13 @@
                             </Badge>
 
                             <!-- Open attachment link -->
-                            <a
-                                v-if="attachment.url"
+                            <Button as-child v-if="attachment.url" variant="outline" size="sm"><a
                                 :href="attachment.url"
                                 target="_blank"
                                 rel="noopener noreferrer"
                             >
-                                <Button type="button" variant="outline" size="sm">
                                     {{ openLabel }}
-                                </Button>
-                            </a>
+                                </a></Button>
                         </div>
                     </div>
                 </div>

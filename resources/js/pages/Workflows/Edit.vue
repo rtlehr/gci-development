@@ -24,37 +24,57 @@
                 </div>
 
                 <div class="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
-                    <div>
-                        <Label>Name</Label>
-                        <Input v-model="form.name" />
-                        <div v-if="form.errors.name" class="mt-1 text-sm text-destructive">{{ form.errors.name }}</div>
-                    </div>
+                    <FormField label="Name" for-id="workflow-name" :error="form.errors.name" required>
+                        <template #default="{ describedBy, invalid }">
+                            <Input
+                                id="workflow-name"
+                                v-model="form.name"
+                                :aria-describedby="describedBy"
+                                :aria-invalid="invalid"
+                                required
+                            />
+                        </template>
+                    </FormField>
 
-                    <div>
-                        <Label>Code</Label>
-                        <Input v-model="form.code" />
-                        <div v-if="form.errors.code" class="mt-1 text-sm text-destructive">{{ form.errors.code }}</div>
-                    </div>
+                    <FormField label="Code" for-id="workflow-code" :error="form.errors.code" required>
+                        <template #default="{ describedBy, invalid }">
+                            <Input
+                                id="workflow-code"
+                                v-model="form.code"
+                                :aria-describedby="describedBy"
+                                :aria-invalid="invalid"
+                                required
+                            />
+                        </template>
+                    </FormField>
 
-                    <div class="md:col-span-2 xl:col-span-3">
-                        <Label>Description</Label>
-                        <textarea
-                            v-model="form.description"
-                            rows="4"
-                            class="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-                        ></textarea>
-                        <div v-if="form.errors.description" class="mt-1 text-sm text-destructive">{{ form.errors.description }}</div>
-                    </div>
+                    <FormField
+                        label="Description"
+                        for-id="workflow-description"
+                        :error="form.errors.description"
+                        class="md:col-span-2 xl:col-span-3"
+                    >
+                        <template #default="{ describedBy, invalid }">
+                            <textarea
+                                id="workflow-description"
+                                v-model="form.description"
+                                rows="4"
+                                class="w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                                :aria-describedby="describedBy"
+                                :aria-invalid="invalid"
+                            ></textarea>
+                        </template>
+                    </FormField>
                 </div>
 
                 <div class="grid grid-cols-1 gap-3 md:grid-cols-2">
                     <label class="flex items-center gap-2 text-sm">
-                        <input v-model="form.is_active" type="checkbox" />
+                        <input id="workflow-is-active" v-model="form.is_active" type="checkbox" />
                         Active Workflow
                     </label>
 
                     <label class="flex items-center gap-2 text-sm">
-                        <input v-model="form.is_primary" type="checkbox" />
+                        <input id="workflow-is-primary" v-model="form.is_primary" type="checkbox" />
                         Primary Workflow
                     </label>
                 </div>
@@ -69,7 +89,7 @@
                 </div>
 
                 <WorkflowStepsEditor v-model="form.steps" />
-                <div v-if="form.errors.steps" class="text-sm text-destructive">{{ form.errors.steps }}</div>
+                <div v-if="form.errors.steps" class="text-sm text-destructive" role="alert">{{ form.errors.steps }}</div>
             </div>
 
             <div class="flex gap-2">
@@ -77,9 +97,7 @@
                     Update Workflow
                 </Button>
 
-                <Link href="/workflows">
-                    <Button type="button" variant="outline">Cancel</Button>
-                </Link>
+                <Button as-child variant="outline"><Link href="/workflows">Cancel</Link></Button>
             </div>
         </form>
     </div>
@@ -89,8 +107,8 @@
 import { Link, useForm } from '@inertiajs/vue3'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
 import WorkflowStepsEditor from '@/components/forms/WorkflowStepsEditor.vue'
+import FormField from '@/components/forms/FormField.vue'
 
 // Existing workflow record passed from the backend.
 const props = defineProps({

@@ -182,9 +182,9 @@ function confirmDelete() {
                     <InputError :message="form.errors.requirement_type" />
                 </div>
 
-                <label class="flex cursor-pointer items-center justify-between rounded-lg border p-3">
+                <label :for="`${itemKey}-active`" class="flex cursor-pointer items-center justify-between rounded-lg border p-3">
                     <span class="text-sm font-medium">Active</span>
-                    <input v-model="form.is_active" type="checkbox" class="h-5 w-5" />
+                    <input :id="`${itemKey}-active`" v-model="form.is_active" type="checkbox" class="h-5 w-5" />
                 </label>
             </div>
 

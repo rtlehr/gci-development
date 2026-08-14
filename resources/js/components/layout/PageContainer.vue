@@ -13,7 +13,7 @@ const sizes = {
 </script>
 
 <template>
-    <main :class="['mx-auto w-full space-y-6 p-4 sm:p-6 lg:p-8', sizes[size]]">
+    <div :class="['mx-auto w-full space-y-6 p-4 sm:p-6 lg:p-8', sizes[size]]">
         <slot />
-    </main>
+    </div>
 </template>

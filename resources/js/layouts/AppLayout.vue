@@ -49,6 +49,13 @@ provide('currentHelpKey', currentHelpKey)
 
 <template>
     <div class="flex min-h-screen w-full">
+        <a
+            href="#main-content"
+            class="sr-only z-50 rounded-md bg-background px-4 py-2 text-foreground shadow focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+        >
+            Skip to main content
+        </a>
+
         <div class="min-w-0 flex-1">
             <ImpersonationBanner />
             <AppSidebarLayout :breadcrumbs="breadcrumbs ?? []">

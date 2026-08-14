@@ -68,9 +68,7 @@ function submit() {
                 </p>
             </div>
 
-            <Link href="/admin/roles">
-                <Button variant="outline">Back to List</Button>
-            </Link>
+            <Button as-child variant="outline"><Link href="/admin/roles">Back to List</Link></Button>
         </div>
 
         <div class="border rounded-xl p-6 bg-background">
@@ -173,9 +171,7 @@ function submit() {
                         {{ form.processing ? 'Saving...' : 'Create Role' }}
                     </Button>
 
-                    <Link href="/admin/roles">
-                        <Button type="button" variant="outline">Cancel</Button>
-                    </Link>
+                    <Button as-child variant="outline"><Link href="/admin/roles">Cancel</Link></Button>
                 </div>
             </form>
         </div>

@@ -92,12 +92,9 @@ function submit() {
                 </p>
             </div>
 
-            <Link
-                v-if="form.source_url"
+            <Button as-child v-if="form.source_url" variant="outline"><Link
                 :href="form.source_url"
-            >
-                <Button variant="outline">Back to Source Page</Button>
-            </Link>
+            >Back to Source Page</Link></Button>
         </div>
 
         <div class="border rounded-xl p-6 bg-background">
@@ -216,12 +213,9 @@ function submit() {
                         {{ form.processing ? 'Submitting...' : 'Submit Request' }}
                     </Button>
 
-                    <Link
-                        v-if="form.source_url"
+                    <Button as-child v-if="form.source_url" variant="outline"><Link
                         :href="form.source_url"
-                    >
-                        <Button variant="outline">Cancel</Button>
-                    </Link>
+                    >Cancel</Link></Button>
                 </div>
             </form>
         </div>

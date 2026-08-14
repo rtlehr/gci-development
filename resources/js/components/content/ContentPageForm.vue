@@ -61,13 +61,13 @@ function submit(): void {
     <form class="space-y-6" @submit.prevent="submit">
         <section class="rounded-xl border bg-card p-6">
             <div class="mb-5">
-                <h2 class="text-base font-semibold">Page template</h2>
+                <h2 id="content-page-template-heading" class="text-base font-semibold">Page template</h2>
                 <p class="mt-1 text-sm text-muted-foreground">
                     Choose the content structure that best matches this page.
                 </p>
             </div>
 
-            <div class="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+            <div class="grid gap-3 md:grid-cols-2 xl:grid-cols-3" role="radiogroup" aria-labelledby="content-page-template-heading" :aria-describedby="form.errors.page_type ? 'content-page-type-error' : undefined">
                 <label
                     v-for="(option, value) in pageTypes"
                     :key="value"
@@ -90,42 +90,42 @@ function submit(): void {
                 </label>
             </div>
 
-            <p v-if="form.errors.page_type" class="mt-2 text-sm text-destructive">
+            <p v-if="form.errors.page_type" id="content-page-type-error" class="mt-2 text-sm text-destructive" role="alert">
                 {{ form.errors.page_type }}
             </p>
         </section>
 
         <div class="grid gap-5 rounded-xl border bg-card p-6 md:grid-cols-2">
             <div class="space-y-2">
-                <Label>Title</Label>
-                <Input v-model="form.title" required />
-                <p v-if="form.errors.title" class="text-sm text-destructive">{{ form.errors.title }}</p>
+                <Label for="content-page-title">Title</Label>
+                <Input id="content-page-title" v-model="form.title" required :aria-invalid="Boolean(form.errors.title)" :aria-describedby="form.errors.title ? 'content-page-title-error' : undefined" />
+                <p v-if="form.errors.title" id="content-page-title-error" class="text-sm text-destructive">{{ form.errors.title }}</p>
             </div>
 
             <div class="space-y-2">
-                <Label>Slug</Label>
-                <Input v-model="form.slug" placeholder="Generated from title when blank" />
-                <p v-if="form.errors.slug" class="text-sm text-destructive">{{ form.errors.slug }}</p>
+                <Label for="content-page-slug">Slug</Label>
+                <Input id="content-page-slug" v-model="form.slug" placeholder="Generated from title when blank" :aria-invalid="Boolean(form.errors.slug)" :aria-describedby="form.errors.slug ? 'content-page-slug-error' : undefined" />
+                <p v-if="form.errors.slug" id="content-page-slug-error" class="text-sm text-destructive">{{ form.errors.slug }}</p>
             </div>
 
             <div class="space-y-2">
-                <Label>Navigation label</Label>
-                <Input v-model="form.navigation_label" />
+                <Label for="content-page-navigation-label">Navigation label</Label>
+                <Input id="content-page-navigation-label" v-model="form.navigation_label" />
             </div>
 
             <div class="space-y-2">
-                <Label>Help key</Label>
-                <Input v-model="form.help_key" placeholder="content.page-name" />
+                <Label for="content-page-help-key">Help key</Label>
+                <Input id="content-page-help-key" v-model="form.help_key" placeholder="content.page-name" />
             </div>
 
             <div class="space-y-2 md:col-span-2">
-                <Label>Summary</Label>
-                <Textarea v-model="form.summary" rows="3" />
+                <Label for="content-page-summary">Summary</Label>
+                <Textarea id="content-page-summary" v-model="form.summary" rows="3" />
             </div>
 
             <div class="space-y-2">
-                <Label>Visibility</Label>
-                <select v-model="form.visibility" class="h-10 w-full rounded-md border bg-background px-3">
+                <Label for="content-page-visibility">Visibility</Label>
+                <select id="content-page-visibility" v-model="form.visibility" class="h-10 w-full rounded-md border bg-background px-3">
                     <option value="public">Public</option>
                     <option value="portal">Authenticated Portal</option>
                     <option value="both">Both</option>
@@ -133,8 +133,8 @@ function submit(): void {
             </div>
 
             <div class="space-y-2">
-                <Label>Publication status</Label>
-                <select v-model="form.status" class="h-10 w-full rounded-md border bg-background px-3">
+                <Label for="content-page-status">Publication status</Label>
+                <select id="content-page-status" v-model="form.status" class="h-10 w-full rounded-md border bg-background px-3">
                     <option value="draft">Draft</option>
                     <option value="published">Published</option>
                     <option value="archived">Archived</option>
@@ -142,8 +142,8 @@ function submit(): void {
             </div>
 
             <div class="space-y-2">
-                <Label>Menu location</Label>
-                <select v-model="form.menu_location" class="h-10 w-full rounded-md border bg-background px-3">
+                <Label for="content-page-menu-location">Menu location</Label>
+                <select id="content-page-menu-location" v-model="form.menu_location" class="h-10 w-full rounded-md border bg-background px-3">
                     <option value="none">None</option>
                     <option value="header">Header</option>
                     <option value="footer">Footer</option>
@@ -152,20 +152,22 @@ function submit(): void {
             </div>
 
             <div class="space-y-2">
-                <Label>Sort order</Label>
-                <Input v-model.number="form.sort_order" type="number" min="0" />
+                <Label for="content-page-sort-order">Sort order</Label>
+                <Input id="content-page-sort-order" v-model.number="form.sort_order" type="number" min="0" />
             </div>
 
             <div class="space-y-2 md:col-span-2">
                 <label class="flex items-start gap-3 rounded-lg border bg-muted/20 p-4">
                     <input
+                        id="content-page-active"
                         v-model="form.is_active"
                         type="checkbox"
+                        aria-describedby="content-page-active-description"
                         class="mt-0.5 h-4 w-4 rounded border-input"
                     />
                     <span>
                         <span class="block font-medium">Active</span>
-                        <span class="mt-1 block text-sm text-muted-foreground">
+                        <span id="content-page-active-description" class="mt-1 block text-sm text-muted-foreground">
                             Show this page in its selected header or footer menu location.
                             Inactive pages remain available by direct URL when published.
                         </span>
@@ -174,19 +176,19 @@ function submit(): void {
             </div>
 
             <div class="space-y-2">
-                <Label>Effective date</Label>
-                <Input v-model="form.effective_at" type="datetime-local" />
+                <Label for="content-page-effective-at">Effective date</Label>
+                <Input id="content-page-effective-at" v-model="form.effective_at" type="datetime-local" />
             </div>
 
             <div class="space-y-2">
-                <Label>Expiration date</Label>
-                <Input v-model="form.expires_at" type="datetime-local" />
+                <Label for="content-page-expires-at">Expiration date</Label>
+                <Input id="content-page-expires-at" v-model="form.expires_at" type="datetime-local" />
             </div>
         </div>
 
         <section class="space-y-2">
             <div>
-                <Label>Page introduction and rich content</Label>
+                <Label id="content-page-rich-content-label">Page introduction and rich content</Label>
                 <p class="mt-1 text-sm text-muted-foreground">
                     {{ selectedType?.description }}
                     <span v-if="form.page_type === 'faq'">
@@ -194,7 +196,7 @@ function submit(): void {
                     </span>
                 </p>
             </div>
-            <RichContentEditor v-model="form.content_html" />
+            <RichContentEditor v-model="form.content_html" aria-labelledby="content-page-rich-content-label" />
         </section>
 
         <ContentPageFaqEditor

@@ -255,25 +255,19 @@ function confirmDelete(): void {
             </template>
 
             <template #actions>
-                <Link
-                    v-if="can('view_admin')"
+                <Button as-child v-if="can('view_admin')" variant="outline"><Link
                     :href="`/position-assignments/create?position_id=${position.id}`"
                 >
-                    <Button variant="outline">
                         <Plus class="mr-2 h-4 w-4" />
                         Add Assignment
-                    </Button>
-                </Link>
+                    </Link></Button>
 
-                <Link
-                    v-if="can('view_admin')"
+                <Button as-child v-if="can('view_admin')"><Link
                     :href="`/positions/${position.id}/edit?section=${activeSection}`"
                 >
-                    <Button>
                         <Pencil class="mr-2 h-4 w-4" />
                         Edit Position
-                    </Button>
-                </Link>
+                    </Link></Button>
             </template>
         </PageHeader>
 

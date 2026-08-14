@@ -32,23 +32,18 @@
             <Table>
                 <TableHeader>
                     <TableRow>
-                        <TableHead
+                        <SortableTableHead
                             v-for="col in activeColumns"
                             :key="col.key"
-                            @click="col.sortable ? sortBy(col.key) : null"
-                            :class="col.sortable ? 'cursor-pointer select-none' : ''"
-                        >
-                            <div class="flex items-center gap-2">
-                                <span>{{ col.label }}</span>
 
-                                <component
-                                    v-if="col.sortable"
-                                    :is="getSortIcon(col.key)"
-                                    class="h-4 w-4"
-                                    :class="sort === col.key ? 'text-foreground' : 'text-muted-foreground'"
-                                />
-                            </div>
-                        </TableHead>
+                            :sortable="col.sortable"
+                            :direction="sort === col.key ? direction : null"
+
+                            :aria-label="col.sortable ? `Sort by ${col.label}` : undefined"
+                            @sort="sortBy(col.key)"
+                        >
+                            {{ col.label }}
+                        </SortableTableHead>
 
                         <TableHead class="text-right">Actions</TableHead>
                     </TableRow>
@@ -76,8 +71,8 @@
                         <TableCell class="text-right">
                             <DropdownMenu>
                                 <DropdownMenuTrigger as-child>
-                                    <Button variant="ghost" size="icon">
-                                        <MoreHorizontal class="h-4 w-4" />
+                                    <Button variant="ghost" size="icon" aria-label="Open actions menu">
+                                        <MoreHorizontal class="h-4 w-4" aria-hidden="true" />
                                     </Button>
                                 </DropdownMenuTrigger>
 
@@ -177,6 +172,7 @@ import { computed, reactive, ref } from 'vue'
 import { Link, router } from '@inertiajs/vue3'
 import { useAuth } from '@/composables/useAuth'
 import ColumnSettings from '@/components/Lists/ColumnSettings.vue'
+import SortableTableHead from '@/components/Lists/SortableTableHead.vue'
 import ListToolbar from '@/components/Lists/ListToolbar.vue'
 import ListFilters from '@/components/Lists/ListFilters.vue'
 import ListTableShell from '@/components/Lists/ListTableShell.vue'

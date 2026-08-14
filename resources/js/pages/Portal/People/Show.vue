@@ -176,11 +176,9 @@ function confirmDelete() {
             </div>
 
             <div class="flex flex-wrap gap-2">
-                <Link href="/portal/people"><Button variant="outline">Back to List</Button></Link>
-                <Link v-if="can(Permissions.PEOPLE_UPDATE)" :href="`/portal/people/${person.id}/edit`"><Button>Edit Person</Button></Link>
-                <Link v-if="can(Permissions.POSITIONS_UPDATE)" :href="`/position-assignments/create?person_id=${person.id}`">
-                    <Button variant="outline">Add Assignment</Button>
-                </Link>
+                <Button as-child variant="outline"><Link href="/portal/people">Back to List</Link></Button>
+                <Button as-child v-if="can(Permissions.PEOPLE_UPDATE)"><Link :href="`/portal/people/${person.id}/edit`">Edit Person</Link></Button>
+                <Button as-child v-if="can(Permissions.POSITIONS_UPDATE)" variant="outline"><Link :href="`/position-assignments/create?person_id=${person.id}`">Add Assignment</Link></Button>
             </div>
         </div>
 
@@ -260,7 +258,7 @@ function confirmDelete() {
                                             <p class="text-sm text-muted-foreground">Start Date: {{ formatDate(assignment.start_date) }}</p>
                                         </div>
                                         <DropdownMenu v-if="can(Permissions.PEOPLE_UPDATE)">
-                                            <DropdownMenuTrigger as-child><Button variant="ghost" size="icon"><MoreHorizontal class="h-4 w-4" /></Button></DropdownMenuTrigger>
+                                            <DropdownMenuTrigger as-child><Button variant="ghost" size="icon" aria-label="Open actions menu"><MoreHorizontal class="h-4 w-4" aria-hidden="true" /></Button></DropdownMenuTrigger>
                                             <DropdownMenuContent align="end">
                                                 <DropdownMenuLabel>Actions</DropdownMenuLabel>
                                                 <DropdownMenuSeparator />

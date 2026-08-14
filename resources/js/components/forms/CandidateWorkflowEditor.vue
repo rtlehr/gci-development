@@ -33,11 +33,12 @@
 
                 <!-- Status selection -->
                 <div v-if="step.allows_status">
-                    <label class="mb-1 block text-sm font-medium text-gray-700">
+                    <label :for="`workflow-step-${step.id}-status`" class="mb-1 block text-sm font-medium text-gray-700">
                         Status
                     </label>
 
                     <select
+                        :id="`workflow-step-${step.id}-status`"
                         v-model="step.form.status_code"
                         class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
                     >
@@ -56,11 +57,12 @@
 
                 <!-- Person responsible for this workflow action -->
                 <div v-if="showPerformedBy(step)">
-                    <label class="mb-1 block text-sm font-medium text-gray-700">
+                    <label :for="`workflow-step-${step.id}-performed-by`" class="mb-1 block text-sm font-medium text-gray-700">
                         Performed By
                     </label>
 
                     <select
+                        :id="`workflow-step-${step.id}-performed-by`"
                         v-model="step.form.performed_by_person_id"
                         class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
                     >
@@ -79,11 +81,12 @@
 
                 <!-- Requested datetime -->
                 <div v-if="step.allows_requested_at">
-                    <label class="mb-1 block text-sm font-medium text-gray-700">
+                    <label :for="`workflow-step-${step.id}-requested-at`" class="mb-1 block text-sm font-medium text-gray-700">
                         Requested Date / Time
                     </label>
 
                     <input
+                        :id="`workflow-step-${step.id}-requested-at`"
                         v-model="step.form.requested_at"
                         type="datetime-local"
                         class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
@@ -92,11 +95,12 @@
 
                 <!-- Scheduled datetime -->
                 <div v-if="step.allows_scheduled_at">
-                    <label class="mb-1 block text-sm font-medium text-gray-700">
+                    <label :for="`workflow-step-${step.id}-scheduled-at`" class="mb-1 block text-sm font-medium text-gray-700">
                         Scheduled Date / Time
                     </label>
 
                     <input
+                        :id="`workflow-step-${step.id}-scheduled-at`"
                         v-model="step.form.scheduled_at"
                         type="datetime-local"
                         class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
@@ -105,11 +109,12 @@
 
                 <!-- Completed datetime -->
                 <div v-if="step.allows_completed_at">
-                    <label class="mb-1 block text-sm font-medium text-gray-700">
+                    <label :for="`workflow-step-${step.id}-completed-at`" class="mb-1 block text-sm font-medium text-gray-700">
                         Completed Date / Time
                     </label>
 
                     <input
+                        :id="`workflow-step-${step.id}-completed-at`"
                         v-model="step.form.completed_at"
                         type="datetime-local"
                         class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
@@ -125,39 +130,43 @@
 
                 <!-- Internal notes -->
                 <div v-if="step.allows_notes">
-                    <label class="mb-1 block text-sm font-medium text-gray-700">
+                    <label :for="`workflow-step-${step.id}-notes`" class="mb-1 block text-sm font-medium text-gray-700">
                         Notes
                     </label>
 
                     <textarea
+                        :id="`workflow-step-${step.id}-notes`"
                         v-model="step.form.notes"
+                        :aria-describedby="`workflow-step-${step.id}-notes-count`"
                         rows="4"
                         maxlength="2500"
                         class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
                     ></textarea>
 
                     <!-- Character counter -->
-                    <div class="mt-1 text-xs text-gray-500">
-                        {{ step.form.notes?.length || 0 }} / 2500
+                    <div :id="`workflow-step-${step.id}-notes-count`" class="mt-1 text-xs text-gray-500" aria-live="polite">
+                        {{ step.form.notes?.length || 0 }} / 2500 characters
                     </div>
                 </div>
 
                 <!-- User-facing comments -->
                 <div v-if="step.allows_comments">
-                    <label class="mb-1 block text-sm font-medium text-gray-700">
+                    <label :for="`workflow-step-${step.id}-comments`" class="mb-1 block text-sm font-medium text-gray-700">
                         Comments
                     </label>
 
                     <textarea
+                        :id="`workflow-step-${step.id}-comments`"
                         v-model="step.form.comments"
+                        :aria-describedby="`workflow-step-${step.id}-comments-count`"
                         rows="3"
                         maxlength="2500"
                         class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
                     ></textarea>
 
                     <!-- Character counter -->
-                    <div class="mt-1 text-xs text-gray-500">
-                        {{ step.form.comments?.length || 0 }} / 2500
+                    <div :id="`workflow-step-${step.id}-comments-count`" class="mt-1 text-xs text-gray-500" aria-live="polite">
+                        {{ step.form.comments?.length || 0 }} / 2500 characters
                     </div>
                 </div>
             </div>

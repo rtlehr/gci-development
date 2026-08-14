@@ -82,12 +82,10 @@ const emit = defineEmits<{
                 {{ isDownloading ? downloadingLabel : exportLabel }}
             </Button>
 
-            <Link v-if="canCreate && createHref" :href="createHref">
-                <Button :variant="createVariant">
+            <Button as-child v-if="canCreate && createHref" :variant="createVariant"><Link :href="createHref">
                     <Plus class="mr-2 h-4 w-4" aria-hidden="true" />
                     {{ createLabel }}
-                </Button>
-            </Link>
+                </Link></Button>
 
             <slot name="after-actions" />
         </template>

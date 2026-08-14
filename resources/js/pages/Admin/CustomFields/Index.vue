@@ -120,9 +120,7 @@ function typeLabel(type: string): string {
                     <Button type="button" variant="outline" :disabled="importForm.processing" @click="chooseImportFile">
                         <Upload class="mr-2 h-4 w-4" />{{ importForm.processing ? 'Importing...' : 'Import Definitions' }}
                     </Button>
-                    <Link href="/admin/custom-fields/create">
-                        <Button><Plus class="mr-2 h-4 w-4" />Add Custom Field</Button>
-                    </Link>
+                    <Button as-child><Link href="/admin/custom-fields/create"><Plus class="mr-2 h-4 w-4" />Add Custom Field</Link></Button>
                 </div>
             </template>
         </PageHeader>
@@ -176,7 +174,7 @@ function typeLabel(type: string): string {
                             <TableCell>{{ field.sort_order }}</TableCell>
                             <TableCell class="text-right">
                                 <DropdownMenu v-if="can('manage_custom_fields')">
-                                    <DropdownMenuTrigger as-child><Button variant="ghost" size="icon"><MoreHorizontal class="h-4 w-4" /></Button></DropdownMenuTrigger>
+                                    <DropdownMenuTrigger as-child><Button variant="ghost" size="icon" aria-label="Open actions menu"><MoreHorizontal class="h-4 w-4" aria-hidden="true" /></Button></DropdownMenuTrigger>
                                     <DropdownMenuContent align="end">
                                         <DropdownMenuLabel>Actions</DropdownMenuLabel>
                                         <DropdownMenuSeparator />
@@ -195,8 +193,8 @@ function typeLabel(type: string): string {
             <div v-if="fields.last_page > 1" class="flex items-center justify-between text-sm">
                 <span class="text-muted-foreground">Showing {{ fields.from ?? 0 }}–{{ fields.to ?? 0 }} of {{ fields.total ?? 0 }}</span>
                 <div class="flex gap-2">
-                    <Link v-if="fields.prev_page_url" :href="fields.prev_page_url"><Button size="sm" variant="outline">Previous</Button></Link>
-                    <Link v-if="fields.next_page_url" :href="fields.next_page_url"><Button size="sm" variant="outline">Next</Button></Link>
+                    <Button as-child v-if="fields.prev_page_url" size="sm" variant="outline"><Link :href="fields.prev_page_url">Previous</Link></Button>
+                    <Button as-child v-if="fields.next_page_url" size="sm" variant="outline"><Link :href="fields.next_page_url">Next</Link></Button>
                 </div>
             </div>
         </div>

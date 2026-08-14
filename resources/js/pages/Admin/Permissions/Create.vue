@@ -8,9 +8,7 @@
                 </p>
             </div>
 
-            <Link href="/admin/permissions">
-                <Button variant="outline">Back to List</Button>
-            </Link>
+            <Button as-child variant="outline"><Link href="/admin/permissions">Back to List</Link></Button>
         </div>
 
         <div class="border rounded-xl p-6 bg-background">
@@ -114,9 +112,7 @@
                         {{ form.processing ? 'Saving...' : 'Create Permission' }}
                     </Button>
 
-                    <Link href="/admin/permissions">
-                        <Button type="button" variant="outline">Cancel</Button>
-                    </Link>
+                    <Button as-child variant="outline"><Link href="/admin/permissions">Cancel</Link></Button>
                 </div>
             </form>
         </div>

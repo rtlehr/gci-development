@@ -48,17 +48,13 @@ defineProps<{
                 <h1 class="text-4xl font-bold tracking-tight text-[var(--portal-text)] sm:text-5xl">Welcome to the {{ program.name }}</h1>
                 <p class="mt-6 max-w-2xl text-lg leading-8 text-[color:var(--portal-text-muted)]">{{ program.summary }}</p>
                 <div class="mt-8 flex flex-wrap gap-3">
-                    <Link v-if="isAuthenticated" href="/portal/dashboard">
-                        <Button class="bg-[var(--portal-primary)] text-white hover:bg-[var(--portal-primary-hover)]">
+                    <Button as-child v-if="isAuthenticated" class="bg-[var(--portal-primary)] text-white hover:bg-[var(--portal-primary-hover)]"><Link href="/portal/dashboard">
                             {{ homeContent.primary_action_label }}
                             <ArrowRight class="ml-2 h-4 w-4" />
-                        </Button>
-                    </Link>
-                    <a href="#program">
-                        <Button variant="outline" class="border-[var(--portal-border)]">
+                        </Link></Button>
+                    <Button as-child variant="outline" class="border-[var(--portal-border)]"><a href="#program">
                             {{ homeContent.secondary_action_label }}
-                        </Button>
-                    </a>
+                        </a></Button>
                 </div>
             </div>
 

@@ -5,6 +5,7 @@ import {
     Plus,
     Trash2,
 } from 'lucide-vue-next';
+import { ref } from 'vue';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -19,6 +20,14 @@ export type FaqEditorItem = {
 };
 
 const model = defineModel<FaqEditorItem[]>({ required: true });
+const announcement = ref('');
+
+function announce(message: string): void {
+    announcement.value = '';
+    requestAnimationFrame(() => {
+        announcement.value = message;
+    });
+}
 
 function addItem(): void {
     model.value.push({
@@ -27,11 +36,14 @@ function addItem(): void {
         is_active: true,
         sort_order: (model.value.length + 1) * 10,
     });
+    announce(`Question ${model.value.length} added.`);
 }
 
 function removeItem(index: number): void {
+    const number = index + 1;
     model.value.splice(index, 1);
     normalizeSortOrder();
+    announce(`Question ${number} removed.`);
 }
 
 function moveItem(index: number, direction: -1 | 1): void {
@@ -44,6 +56,7 @@ function moveItem(index: number, direction: -1 | 1): void {
     const [item] = model.value.splice(index, 1);
     model.value.splice(target, 0, item);
     normalizeSortOrder();
+    announce(`Question moved to position ${target + 1}.`);
 }
 
 function normalizeSortOrder(): void {
@@ -54,10 +67,11 @@ function normalizeSortOrder(): void {
 </script>
 
 <template>
-    <section class="space-y-4 rounded-xl border bg-card p-5">
+    <section class="space-y-4 rounded-xl border bg-card p-5" aria-labelledby="faq-editor-heading">
+        <p class="sr-only" aria-live="polite" aria-atomic="true">{{ announcement }}</p>
         <div class="flex flex-wrap items-start justify-between gap-3">
             <div>
-                <h2 class="text-base font-semibold">FAQ questions</h2>
+                <h2 id="faq-editor-heading" class="text-base font-semibold">FAQ questions</h2>
                 <p class="mt-1 text-sm text-muted-foreground">
                     Add, remove, reorder, and temporarily hide questions without editing HTML.
                 </p>
@@ -90,7 +104,7 @@ function normalizeSortOrder(): void {
                         variant="ghost"
                         size="icon"
                         :disabled="index === 0"
-                        aria-label="Move question up"
+                        :aria-label="`Move question ${index + 1} up`"
                         @click="moveItem(index, -1)"
                     >
                         <ArrowUp class="h-4 w-4" />
@@ -101,7 +115,7 @@ function normalizeSortOrder(): void {
                         variant="ghost"
                         size="icon"
                         :disabled="index === model.length - 1"
-                        aria-label="Move question down"
+                        :aria-label="`Move question ${index + 1} down`"
                         @click="moveItem(index, 1)"
                     >
                         <ArrowDown class="h-4 w-4" />
@@ -112,7 +126,7 @@ function normalizeSortOrder(): void {
                         variant="ghost"
                         size="icon"
                         class="text-destructive hover:text-destructive"
-                        aria-label="Delete question"
+                        :aria-label="`Delete question ${index + 1}`"
                         @click="removeItem(index)"
                     >
                         <Trash2 class="h-4 w-4" />
@@ -140,8 +154,9 @@ function normalizeSortOrder(): void {
                     />
                 </div>
 
-                <label class="flex items-center gap-3 text-sm">
+                <label class="flex items-center gap-3 text-sm" :for="`faq-active-${index}`">
                     <input
+                        :id="`faq-active-${index}`"
                         v-model="item.is_active"
                         type="checkbox"
                         class="h-4 w-4 rounded border-input"

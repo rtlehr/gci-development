@@ -8,9 +8,7 @@
                 </p>
             </div>
 
-            <Link href="/people">
-                <Button variant="outline">Back</Button>
-            </Link>
+            <Button as-child variant="outline"><Link href="/people">Back</Link></Button>
         </div>
 
         <div class="border rounded-xl p-6 bg-background">
@@ -151,9 +149,7 @@
                         {{ form.processing ? 'Saving...' : 'Create Assignment' }}
                     </Button>
 
-                    <Link href="/people">
-                        <Button type="button" variant="outline">Cancel</Button>
-                    </Link>
+                    <Button as-child variant="outline"><Link href="/people">Cancel</Link></Button>
                 </div>
             </form>
         </div>

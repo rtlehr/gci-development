@@ -183,3 +183,15 @@
 .public-portal-theme :focus-visible {
     outline-color: var(--portal-primary);
 }
+
+/* Accessibility: respect the user's operating-system motion preference. */
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        scroll-behavior: auto !important;
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+    }
+}

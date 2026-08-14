@@ -159,11 +159,9 @@ function confirmDelete() {
             </div>
 
             <div class="flex flex-wrap gap-2">
-                <Link href="/people"><Button variant="outline">Back to List</Button></Link>
-                <Link v-if="can('view_admin')" :href="`/people/${person.id}/edit`"><Button>Edit Person</Button></Link>
-                <Link v-if="can('view_admin')" :href="`/position-assignments/create?person_id=${person.id}`">
-                    <Button variant="outline">Add Assignment</Button>
-                </Link>
+                <Button as-child variant="outline"><Link href="/people">Back to List</Link></Button>
+                <Button as-child v-if="can('view_admin')"><Link :href="`/people/${person.id}/edit`">Edit Person</Link></Button>
+                <Button as-child v-if="can('view_admin')" variant="outline"><Link :href="`/position-assignments/create?person_id=${person.id}`">Add Assignment</Link></Button>
             </div>
         </div>
 
@@ -241,7 +239,7 @@ function confirmDelete() {
                                             <p class="text-sm text-muted-foreground">Start Date: {{ formatDate(assignment.start_date) }}</p>
                                         </div>
                                         <DropdownMenu v-if="can('view_admin')">
-                                            <DropdownMenuTrigger as-child><Button variant="ghost" size="icon"><MoreHorizontal class="h-4 w-4" /></Button></DropdownMenuTrigger>
+                                            <DropdownMenuTrigger as-child><Button variant="ghost" size="icon" aria-label="Open actions menu"><MoreHorizontal class="h-4 w-4" aria-hidden="true" /></Button></DropdownMenuTrigger>
                                             <DropdownMenuContent align="end">
                                                 <DropdownMenuLabel>Actions</DropdownMenuLabel>
                                                 <DropdownMenuSeparator />

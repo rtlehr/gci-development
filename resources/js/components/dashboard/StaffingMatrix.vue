@@ -2,9 +2,6 @@
 import { computed, reactive, ref, watch } from 'vue'
 import { Link, router } from '@inertiajs/vue3'
 import {
-    ArrowDown,
-    ArrowUp,
-    ArrowUpDown,
     BriefcaseBusiness,
     Download,
     ExternalLink,
@@ -14,6 +11,7 @@ import {
     Workflow,
 } from 'lucide-vue-next'
 import ColumnSettings from '@/components/Lists/ColumnSettings.vue'
+import SortableTableHead from '@/components/Lists/SortableTableHead.vue'
 import DownloadErrorAlert from '@/components/Lists/DownloadErrorAlert.vue'
 import PositionStaffingSummary from '@/components/dashboard/PositionStaffingSummary.vue'
 import StaffingDetailsSheet from '@/components/dashboard/StaffingDetailsSheet.vue'
@@ -288,10 +286,6 @@ function sortBy(key: string) {
     sortDirection.value = 'asc'
 }
 
-function sortIcon(key: string) {
-    if (sortKey.value !== key) return ArrowUpDown
-    return sortDirection.value === 'asc' ? ArrowUp : ArrowDown
-}
 
 function sortableValue(position: StaffingPosition, key: string): string {
     if (key === 'staffing_state') return position.staffing_label ?? ''
@@ -480,26 +474,20 @@ function exportCsv() {
                     <Table :class="useCompactTableLayout ? 'table-fixed' : ''">
                         <TableHeader>
                             <TableRow>
-                                <TableHead
+                                <SortableTableHead
                                     v-for="column in activeColumns"
                                     :key="column.key"
+                                    :sortable="column.key !== 'workflow_link'"
+                                    :direction="sortKey === column.key ? sortDirection : null"
                                     :class="[
                                         columnLayoutClass(column.key),
                                         columnWrapClass(column.key),
-                                        column.key !== 'workflow_link' ? 'cursor-pointer select-none' : '',
-                                    ]"
-                                    @click="sortBy(column.key)"
+                                    ].join(' ')"
+                                    :aria-label="column.key !== 'workflow_link' ? `Sort by ${column.label}` : undefined"
+                                    @sort="sortBy(column.key)"
                                 >
-                                    <div class="flex items-center gap-2">
-                                        <span>{{ column.label }}</span>
-                                        <component
-                                            v-if="column.key !== 'workflow_link'"
-                                            :is="sortIcon(column.key)"
-                                            class="h-4 w-4"
-                                            :class="sortKey === column.key ? 'text-foreground' : 'text-muted-foreground'"
-                                        />
-                                    </div>
-                                </TableHead>
+                                    {{ column.label }}
+                                </SortableTableHead>
                             </TableRow>
                         </TableHeader>
 

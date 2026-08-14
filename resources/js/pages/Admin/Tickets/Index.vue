@@ -2,6 +2,7 @@
 import { computed, reactive, ref } from 'vue'
 import { Link, router } from '@inertiajs/vue3'
 import ColumnSettings from '@/components/Lists/ColumnSettings.vue'
+import SortableTableHead from '@/components/Lists/SortableTableHead.vue'
 import ListRowActions from '@/components/Lists/ListRowActions.vue'
 import ListTableShell from '@/components/Lists/ListTableShell.vue'
 import PageContainer from '@/components/layout/PageContainer.vue'
@@ -387,8 +388,9 @@ function exportCsv() {
         >
             <template #filters>
                 <div class="space-y-2">
-                    <Label>Request Type</Label>
+                    <Label for="ticket-filter-request-type">Request Type</Label>
                     <select
+                        id="ticket-filter-request-type"
                         v-model="filterForm.request_type"
                         class="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
                     >
@@ -399,8 +401,9 @@ function exportCsv() {
                 </div>
 
                 <div class="space-y-2">
-                    <Label>Importance</Label>
+                    <Label for="ticket-filter-importance">Importance</Label>
                     <select
+                        id="ticket-filter-importance"
                         v-model="filterForm.importance"
                         class="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
                     >
@@ -412,8 +415,9 @@ function exportCsv() {
                 </div>
 
                 <div class="space-y-2">
-                    <Label>Status</Label>
+                    <Label for="ticket-filter-status">Status</Label>
                     <select
+                        id="ticket-filter-status"
                         v-model="filterForm.status"
                         class="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
                     >
@@ -432,22 +436,18 @@ function exportCsv() {
             <Table>
                 <TableHeader>
                     <TableRow>
-                        <TableHead
+                        <SortableTableHead
                             v-for="col in activeColumns"
                             :key="col.key"
-                            @click="col.sortable ? sortBy(col.key) : null"
-                            :class="col.sortable ? 'cursor-pointer' : ''"
+
+                            :sortable="col.sortable"
+                            :direction="sort === col.key ? direction : null"
+
+                            :aria-label="col.sortable ? `Sort by ${col.label}` : undefined"
+                            @sort="sortBy(col.key)"
                         >
-                            <div class="flex items-center gap-2">
-                                {{ col.label }}
-                                <component
-                                    v-if="col.sortable"
-                                    :is="getSortIcon(col.key)"
-                                    class="h-4 w-4"
-                                    :class="sort === col.key ? 'text-foreground' : 'text-muted-foreground'"
-                                />
-                            </div>
-                        </TableHead>
+                            {{ col.label }}
+                        </SortableTableHead>
 
                         <TableHead class="text-right">Actions</TableHead>
                     </TableRow>

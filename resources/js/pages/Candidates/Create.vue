@@ -15,11 +15,17 @@
 
                 <div class="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
                     <div>
-                        <label class="mb-1 block text-sm font-medium text-gray-700">
+                        <label for="candidate-person-id" class="mb-1 block text-sm font-medium text-gray-700">
                             Person
+                            <span class="text-destructive" aria-hidden="true">*</span><span class="sr-only"> (required)</span>
                         </label>
                         <select
                             v-model="form.person_id"
+                            id="candidate-person-id"
+                            required
+                            aria-required="true"
+                            :aria-invalid="Boolean(form.errors.person_id)"
+                            :aria-describedby="form.errors.person_id ? 'candidate-person-id-error' : undefined"
                             class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
                         >
                             <option value="">Select person</option>
@@ -31,17 +37,23 @@
                                 {{ person.full_name ?? `${person.first_name} ${person.last_name}` }}
                             </option>
                         </select>
-                        <div v-if="form.errors.person_id" class="mt-1 text-sm text-destructive">
+                        <div v-if="form.errors.person_id" class="mt-1 text-sm text-destructive" id="candidate-person-id-error" role="alert">
                             {{ form.errors.person_id }}
                         </div>
                     </div>
 
                     <div>
-                        <label class="mb-1 block text-sm font-medium text-gray-700">
+                        <label for="candidate-position-id" class="mb-1 block text-sm font-medium text-gray-700">
                             Position
+                            <span class="text-destructive" aria-hidden="true">*</span><span class="sr-only"> (required)</span>
                         </label>
                         <select
                             v-model="form.position_id"
+                            id="candidate-position-id"
+                            required
+                            aria-required="true"
+                            :aria-invalid="Boolean(form.errors.position_id)"
+                            :aria-describedby="form.errors.position_id ? 'candidate-position-id-error' : undefined"
                             class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
                         >
                             <option value="">Select position</option>
@@ -53,17 +65,23 @@
                                 {{ position.job_title ?? position.title ?? `Position #${position.id}` }}
                             </option>
                         </select>
-                        <div v-if="form.errors.position_id" class="mt-1 text-sm text-destructive">
+                        <div v-if="form.errors.position_id" class="mt-1 text-sm text-destructive" id="candidate-position-id-error" role="alert">
                             {{ form.errors.position_id }}
                         </div>
                     </div>
 
                     <div>
-                        <label class="mb-1 block text-sm font-medium text-gray-700">
+                        <label for="candidate-status" class="mb-1 block text-sm font-medium text-gray-700">
                             Candidate Status
+                            <span class="text-destructive" aria-hidden="true">*</span><span class="sr-only"> (required)</span>
                         </label>
                         <select
                             v-model="form.status"
+                            id="candidate-status"
+                            required
+                            aria-required="true"
+                            :aria-invalid="Boolean(form.errors.status)"
+                            :aria-describedby="form.errors.status ? 'candidate-status-error' : undefined"
                             class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
                         >
                             <option value="submitted">Submitted</option>
@@ -71,46 +89,55 @@
                             <option value="approved">Approved</option>
                             <option value="assigned">Assigned</option>
                         </select>
-                        <div v-if="form.errors.status" class="mt-1 text-sm text-destructive">
+                        <div v-if="form.errors.status" class="mt-1 text-sm text-destructive" id="candidate-status-error" role="alert">
                             {{ form.errors.status }}
                         </div>
                     </div>
 
                     <div>
-                        <label class="mb-1 block text-sm font-medium text-gray-700">
+                        <label for="candidate-candidate-fbr" class="mb-1 block text-sm font-medium text-gray-700">
                             Candidate FBR
                         </label>
                         <input
                             v-model="form.candidate_fbr"
+                            id="candidate-candidate-fbr"
+                            :aria-invalid="Boolean(form.errors.candidate_fbr)"
+                            :aria-describedby="form.errors.candidate_fbr ? 'candidate-candidate-fbr-error' : undefined"
                             type="number"
                             step="0.01"
                             class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
                         />
-                        <div v-if="form.errors.candidate_fbr" class="mt-1 text-sm text-destructive">
+                        <div v-if="form.errors.candidate_fbr" class="mt-1 text-sm text-destructive" id="candidate-candidate-fbr-error" role="alert">
                             {{ form.errors.candidate_fbr }}
                         </div>
                     </div>
 
                     <div>
-                        <label class="mb-1 block text-sm font-medium text-gray-700">
+                        <label for="candidate-submitted-at" class="mb-1 block text-sm font-medium text-gray-700">
                             Submitted At
                         </label>
                         <input
                             v-model="form.submitted_at"
+                            id="candidate-submitted-at"
+                            :aria-invalid="Boolean(form.errors.submitted_at)"
+                            :aria-describedby="form.errors.submitted_at ? 'candidate-submitted-at-error' : undefined"
                             type="datetime-local"
                             class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
                         />
-                        <div v-if="form.errors.submitted_at" class="mt-1 text-sm text-destructive">
+                        <div v-if="form.errors.submitted_at" class="mt-1 text-sm text-destructive" id="candidate-submitted-at-error" role="alert">
                             {{ form.errors.submitted_at }}
                         </div>
                     </div>
 
                     <div>
-                        <label class="mb-1 block text-sm font-medium text-gray-700">
+                        <label for="candidate-submitted-by-person-id" class="mb-1 block text-sm font-medium text-gray-700">
                             Submitted By
                         </label>
                         <select
                             v-model="form.submitted_by_person_id"
+                            id="candidate-submitted-by-person-id"
+                            :aria-invalid="Boolean(form.errors.submitted_by_person_id)"
+                            :aria-describedby="form.errors.submitted_by_person_id ? 'candidate-submitted-by-person-id-error' : undefined"
                             class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
                         >
                             <option value="">Select person</option>
@@ -125,24 +152,27 @@
                         <div
                             v-if="form.errors.submitted_by_person_id"
                             class="mt-1 text-sm text-destructive"
-                        >
+                         id="candidate-submitted-by-person-id-error" role="alert">
                             {{ form.errors.submitted_by_person_id }}
                         </div>
                     </div>
 
                     <div>
-                        <label class="mb-1 block text-sm font-medium text-gray-700">
+                        <label for="candidate-scheduled-start-date" class="mb-1 block text-sm font-medium text-gray-700">
                             Scheduled Start Date
                         </label>
                         <input
                             v-model="form.scheduled_start_date"
+                            id="candidate-scheduled-start-date"
+                            :aria-invalid="Boolean(form.errors.scheduled_start_date)"
+                            :aria-describedby="form.errors.scheduled_start_date ? 'candidate-scheduled-start-date-error' : undefined"
                             type="date"
                             class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
                         />
                         <div
                             v-if="form.errors.scheduled_start_date"
                             class="mt-1 text-sm text-destructive"
-                        >
+                         id="candidate-scheduled-start-date-error" role="alert">
                             {{ form.errors.scheduled_start_date }}
                         </div>
                     </div>
@@ -156,11 +186,14 @@
 
                 <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
                     <div v-if="can('view_admin')">
-                        <label class="mb-1 block text-sm font-medium text-gray-700">
+                        <label for="candidate-workflow" class="mb-1 block text-sm font-medium text-gray-700">
                             Selected Workflow
                         </label>
                         <select
+                            id="candidate-workflow"
                             v-model="selectedWorkflowId"
+                            :aria-invalid="Boolean(form.errors.workflow_id)"
+                            :aria-describedby="form.errors.workflow_id ? 'candidate-workflow-error' : undefined"
                             @change="changeWorkflow"
                             class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
                         >
@@ -175,25 +208,25 @@
                     </div>
 
                     <div v-else>
-                        <label class="mb-1 block text-sm font-medium text-gray-700">
+                        <p class="mb-1 block text-sm font-medium text-gray-700">
                             Selected Workflow
-                        </label>
+                        </p>
                         <div class="rounded-lg border border-gray-300 bg-gray-50 px-3 py-2 text-sm">
                             {{ workflow?.name || '—' }}
                         </div>
                     </div>
 
                     <div>
-                        <label class="mb-1 block text-sm font-medium text-gray-700">
+                        <p class="mb-1 block text-sm font-medium text-gray-700">
                             Workflow Code
-                        </label>
+                        </p>
                         <div class="rounded-lg border border-gray-300 bg-gray-50 px-3 py-2 text-sm">
                             {{ workflow?.code || '—' }}
                         </div>
                     </div>
                 </div>
 
-                <div v-if="form.errors.workflow_id" class="mt-3 text-sm text-destructive">
+                <div v-if="form.errors.workflow_id" id="candidate-workflow-error" class="mt-3 text-sm text-destructive" role="alert">
                     {{ form.errors.workflow_id }}
                 </div>
             </div>

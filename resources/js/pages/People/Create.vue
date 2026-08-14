@@ -1,6 +1,6 @@
 <template>
 <div class="max-w-7xl space-y-6 p-6">
-<div class="flex items-center justify-between"><div><h1 class="text-2xl font-semibold">Create Person</h1><p class="mt-1 text-sm text-muted-foreground">Add a person, contact information, organizational assignments, roles, and files.</p></div><Link href="/people"><Button variant="outline">Back to List</Button></Link></div>
+<div class="flex items-center justify-between"><div><h1 class="text-2xl font-semibold">Create Person</h1><p class="mt-1 text-sm text-muted-foreground">Add a person, contact information, organizational assignments, roles, and files.</p></div><Button as-child variant="outline"><Link href="/people">Back to List</Link></Button></div>
 <form @submit.prevent="submit">
 <div class="grid gap-6 lg:grid-cols-[270px_minmax(0,1fr)]">
 <PersonSectionNav v-model:active-section="activeSection" :sections="sections" />
@@ -25,7 +25,7 @@
 <section v-show="activeSection === 'contact'" class="space-y-6"><PhoneNumbersEditor ref="phoneNumbersRef" v-model="form.phone_numbers" :errors="form.errors" /><AddressesEditor ref="addressesRef" v-model="form.addresses" :errors="form.errors" /></section>
 <section v-show="activeSection === 'access'"><UserRoleEditor v-model="form.role_ids" :roles="props.roles" :errors="form.errors" /></section>
 <section v-show="activeSection === 'attachments'"><AttachmentUploader ref="attachmentsRef" v-model="form.attachments" v-model:existingAttachments="form.existing_attachments" v-model:removeAttachmentIds="form.remove_attachment_ids" :errors="form.errors" :show-existing="isEdit" /></section>
-<div class="flex gap-3 border-t pt-5"><Button type="submit" :disabled="form.processing">{{ form.processing ? 'Saving...' : 'Create Person' }}</Button><Link href="/people"><Button type="button" variant="outline">Cancel</Button></Link></div>
+<div class="flex gap-3 border-t pt-5"><Button type="submit" :disabled="form.processing">{{ form.processing ? 'Saving...' : 'Create Person' }}</Button><Button as-child variant="outline"><Link href="/people">Cancel</Link></Button></div>
 </div></div></form></div>
 </template>
 <script setup>

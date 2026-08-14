@@ -164,12 +164,10 @@ function staffingTone(label: string): 'success' | 'warning' | 'danger' | 'info' 
                             <h3 class="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
                                 Position
                             </h3>
-                            <Link :href="`/portal/positions/${position.id}`">
-                                <Button variant="outline" size="sm">
+                            <Button as-child variant="outline" size="sm"><Link :href="`/portal/positions/${position.id}`">
                                     Open Position
                                     <ExternalLink class="h-3.5 w-3.5" />
-                                </Button>
-                            </Link>
+                                </Link></Button>
                         </div>
 
                         <dl class="grid gap-x-6 gap-y-4 rounded-xl border bg-muted/20 p-4 sm:grid-cols-2">
@@ -296,12 +294,10 @@ function staffingTone(label: string): 'success' | 'warning' | 'danger' | 'info' 
                                         </p>
                                     </div>
 
-                                    <Link :href="`/portal/candidates/${candidate.candidate_id}`">
-                                        <Button variant="outline" size="sm">
+                                    <Button as-child variant="outline" size="sm"><Link :href="`/portal/candidates/${candidate.candidate_id}`">
                                             Open Candidate
                                             <ExternalLink class="h-3.5 w-3.5" />
-                                        </Button>
-                                    </Link>
+                                        </Link></Button>
                                 </header>
 
                                 <div v-if="candidate.steps.length" class="p-4">

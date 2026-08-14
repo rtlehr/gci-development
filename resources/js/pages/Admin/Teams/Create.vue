@@ -30,11 +30,9 @@
                     Save Team
                 </Button>
 
-                <Link href="/admin/teams">
-                    <Button type="button" variant="outline">
+                <Button as-child variant="outline"><Link href="/admin/teams">
                         Cancel
-                    </Button>
-                </Link>
+                    </Link></Button>
             </div>
         </form>
     </div>

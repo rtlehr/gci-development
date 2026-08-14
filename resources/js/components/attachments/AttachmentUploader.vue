@@ -69,16 +69,13 @@
                             </Badge>
 
                             <!-- Open file button -->
-                            <a
-                                v-if="attachment.url && !attachment.marked_for_removal"
+                            <Button as-child v-if="attachment.url && !attachment.marked_for_removal" variant="outline" size="sm"><a
                                 :href="attachment.url"
                                 target="_blank"
                                 rel="noopener noreferrer"
                             >
-                                <Button type="button" variant="outline" size="sm">
                                     Open
-                                </Button>
-                            </a>
+                                </a></Button>
 
                             <!-- Mark attachment for removal -->
                             <Button

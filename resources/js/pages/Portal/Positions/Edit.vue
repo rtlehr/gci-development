@@ -210,9 +210,7 @@ onBeforeUnmount(() => window.removeEventListener('beforeunload', handleBeforeUnl
                     Manage position details, requirements, and connected candidates.
                 </p>
             </div>
-            <Link :href="`/portal/positions/${position.id}`">
-                <Button variant="outline">Back to Position</Button>
-            </Link>
+            <Button as-child variant="outline"><Link :href="`/portal/positions/${position.id}`">Back to Position</Link></Button>
         </div>
 
         <div class="grid gap-6 lg:grid-cols-[270px_minmax(0,1fr)]">
@@ -692,9 +690,7 @@ onBeforeUnmount(() => window.removeEventListener('beforeunload', handleBeforeUnl
                         <Button type="submit" :disabled="form.processing">
                             {{ form.processing ? 'Saving…' : 'Save Changes' }}
                         </Button>
-                        <Link :href="`/portal/positions/${position.id}`">
-                            <Button type="button" variant="outline">Cancel</Button>
-                        </Link>
+                        <Button as-child variant="outline"><Link :href="`/portal/positions/${position.id}`">Cancel</Link></Button>
                     </div>
             </form>
                 </div>

@@ -32,7 +32,7 @@ function submit(): void { form.post('/portal/job-titles') }
                 <h1 class="text-2xl font-semibold">Create Job Title</h1>
                 <p class="mt-1 text-sm text-muted-foreground">Add a master Job Title and optionally copy its default skills and tasks.</p>
             </div>
-            <Link href="/portal/job-titles"><Button variant="outline">Back to List</Button></Link>
+            <Button as-child variant="outline"><Link href="/portal/job-titles">Back to List</Link></Button>
         </div>
 
         <form @submit.prevent="submit">
@@ -54,7 +54,7 @@ function submit(): void { form.post('/portal/job-titles') }
                         </FormField>
                         <div v-if="selectedCloneSource" class="rounded-lg border bg-muted/30 p-4 text-sm"><div class="flex items-center gap-2 font-medium"><ListChecks class="h-4 w-4" /> Requirements will be copied from {{ selectedCloneSource.name }}.</div><p class="mt-1 text-muted-foreground">{{ selectedCloneSource.skills_count }} skills and {{ selectedCloneSource.tasks_count }} tasks will be created.</p></div>
                     </FormSection>
-                    <div class="flex gap-3 border-t pt-5"><Button type="submit" :disabled="form.processing">{{ form.processing ? 'Creating…' : 'Create Job Title' }}</Button><Link href="/portal/job-titles"><Button type="button" variant="outline">Cancel</Button></Link></div>
+                    <div class="flex gap-3 border-t pt-5"><Button type="submit" :disabled="form.processing">{{ form.processing ? 'Creating…' : 'Create Job Title' }}</Button><Button as-child variant="outline"><Link href="/portal/job-titles">Cancel</Link></Button></div>
                 </div>
             </div>
         </form>
