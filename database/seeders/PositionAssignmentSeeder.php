@@ -1,44 +1,55 @@
 <?php
 
-// database/seeders/PositionAssignmentSeeder.php
-
 namespace Database\Seeders;
 
-use Illuminate\Database\Seeder;
-use App\Models\PositionAssignment;
+use App\Models\Candidate;
 use App\Models\Position;
-use App\Models\Person;
+use App\Models\PositionAssignment;
+use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\DB;
 
 class PositionAssignmentSeeder extends Seeder
 {
     public function run(): void
     {
-        $positions = Position::all();
-        $people = Person::all();
+        DB::transaction(function (): void {
+            // These are the development scenarios that should appear as Filled
+            // in the Staffing Matrix. Each candidate has a completed workflow.
+            $filled = [
+                'IRAD-SWE-001' => 'CAND-001',
+                'IRAD-DBA-005' => 'CAND-011',
+            ];
 
-        // Assign Bob to ZN-002 (filled position)
-        PositionAssignment::create([
-            'position_id' => $positions->where('position_code', 'ZN-002')->first()->id,
-            'person_id' => $people->where('person_code', 'EMP-002')->first()->id,
-            'start_date' => now()->subDays(20),
-            'assignment_status' => 'active',
-        ]);
+            $positionIds = Position::query()
+                ->whereIn('position_code', array_keys($filled))
+                ->pluck('id');
 
-        // Assign Alice to ZN-001 (recent assignment)
-        PositionAssignment::create([
-            'position_id' => $positions->where('position_code', 'ZN-001')->first()->id,
-            'person_id' => $people->where('person_code', 'EMP-001')->first()->id,
-            'start_date' => now()->subDays(5),
-            'assignment_status' => 'active',
-        ]);
+            // Make rerunning the seeder deterministic without disturbing
+            // assignments for positions outside these development scenarios.
+            PositionAssignment::query()
+                ->whereIn('position_id', $positionIds)
+                ->delete();
 
-        // Past assignment example
-        PositionAssignment::create([
-            'position_id' => $positions->where('position_code', 'ZN-002')->first()->id,
-            'person_id' => $people->where('person_code', 'EMP-003')->first()->id,
-            'start_date' => now()->subDays(60),
-            'end_date' => now()->subDays(25),
-            'assignment_status' => 'ended',
-        ]);
+            foreach ($filled as $positionCode => $candidateCode) {
+                $position = Position::query()
+                    ->where('position_code', $positionCode)
+                    ->firstOrFail();
+
+                $candidate = Candidate::query()
+                    ->with('person')
+                    ->where('candidate_code', $candidateCode)
+                    ->where('position_id', $position->id)
+                    ->firstOrFail();
+
+                PositionAssignment::create([
+                    'position_id' => $position->id,
+                    'person_id' => $candidate->person_id,
+                    'start_date' => $candidate->scheduled_start_date ?? now()->subDays(14)->toDateString(),
+                    'assignment_status' => 'active',
+                    'assignment_type' => 'staffing',
+                    'notes' => 'Development seed assignment created from the completed selected-candidate workflow.',
+                ]);
+            }
+        });
     }
 }

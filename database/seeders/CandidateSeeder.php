@@ -28,10 +28,17 @@ class CandidateSeeder extends Seeder
             $interviewer = $performers->get('project.manager2@localhost') ?? $performers->first();
             $approver = $performers->get('cotr@localhost') ?? $performers->first();
 
+            // Keep development candidate scenarios deterministic when this
+            // seeder is rerun without migrate:fresh. Candidates removed from a
+            // filled position must not linger as historical rows in the matrix.
+            Candidate::query()
+                ->where('candidate_code', 'like', 'CAND-%')
+                ->delete();
+
             $scenarios = [
+                // Filled positions intentionally have one candidate only. Their
+                // workflow is complete through the final configured step.
                 ['CAND-001', 'Trapper John', 'McIntyre', 'IRAD-SWE-001', 'assigned', 'subcontract_signed', 58],
-                ['CAND-002', 'Charles', 'Winchester', 'IRAD-SWE-001', 'approved', 'offer_signed', 47],
-                ['CAND-003', 'Frank', 'Burns', 'IRAD-SWE-001', 'submitted', 'interview_cancelled', 32],
                 ['CAND-004', 'Walter', "O'Reilly", 'IRAD-BA-004', 'selected', 'interview_scheduled', 24, 'Radar'],
                 ['CAND-005', 'Maxwell', 'Klinger', 'IRAD-BA-004', 'submitted', 'resume_review', 11, 'Klinger'],
                 ['CAND-006', 'Francis', 'Mulcahy', 'IRAD-PM-007', 'selected', 'tech_screen_scheduled', 29, 'Father Mulcahy'],
@@ -40,7 +47,6 @@ class CandidateSeeder extends Seeder
                 ['CAND-009', 'Ginger', 'Bayliss', 'IRAD-QA-008', 'submitted', 'interview_requested', 15],
                 ['CAND-010', 'Luther', 'Rizzo', 'IRAD-NET-006', 'submitted', 'tech_screen_cancelled', 62],
                 ['CAND-011', 'Henry', 'Blake', 'IRAD-DBA-005', 'assigned', 'subcontract_signed', 120],
-                ['CAND-012', 'Igor', 'Straminsky', 'IRAD-DBA-005', 'selected', 'crossover_denied', 84],
                 ['CAND-013', 'Sam', 'Flagg', 'IRAD-CYB-002', 'selected', 'tech_screen_completed', 34],
                 ['CAND-014', 'Spearchucker', 'Jones', 'IRAD-CYB-002', 'submitted', 'resume_review', 9],
                 ['CAND-015', 'Donald', 'Penobscott', 'IRAD-DOP-003', 'approved', 'crossover_approved', 37],
@@ -81,7 +87,7 @@ class CandidateSeeder extends Seeder
                         'candidate_fbr' => 0.75 + (($index % 6) * 0.15),
                         'submitted_by_person_id' => $submittedBy?->id,
                         'submitted_at' => now()->subDays($daysAgo),
-                        'scheduled_start_date' => $candidateStatus === 'assigned' ? now()->addDays(14 + $index)->toDateString() : null,
+                        'scheduled_start_date' => $candidateStatus === 'assigned' ? now()->subDays(14 + $index)->toDateString() : null,
                     ]
                 );
 

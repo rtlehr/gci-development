@@ -213,12 +213,20 @@ class ProjectManagerDashboardService
 
         $staffingState = $this->staffingState($position, $candidateMetrics);
         $currentAssignment = $this->currentAssignment($position);
-        $workflowCandidates = $position->candidates
+        $currentPerson = $currentAssignment?->person;
+
+        // Once a position is filled, the staffing matrix should represent only
+        // the person who actually filled it. Historical/non-selected candidates
+        // remain in the candidate area, but are intentionally excluded here.
+        $workflowSourceCandidates = $staffingState === 'filled' && $currentAssignment
+            ? $position->candidates->where('person_id', $currentAssignment->person_id)
+            : $position->candidates;
+
+        $workflowCandidates = $workflowSourceCandidates
             ->map(fn (Candidate $candidate) => $this->workflowCandidate($candidate))
             ->values();
 
-        $selectedCandidate = $this->selectedCandidate($position->candidates);
-        $currentPerson = $currentAssignment?->person;
+        $selectedCandidate = $this->selectedCandidate($workflowSourceCandidates);
         $currentWorkflow = $this->currentWorkflow($workflowCandidates);
         $lastUpdated = $this->lastUpdated($position);
         $createdAt = $position->customer_created_at ?? $position->created_at;
@@ -258,7 +266,9 @@ class ProjectManagerDashboardService
             'current_workflow_name' => $currentWorkflow['workflow_name'],
             'current_workflow_candidate_id' => $currentWorkflow['candidate_id'],
             'workflow_candidates' => $workflowCandidates->all(),
-            'workflow_link' => 'View Workflow',
+            'workflow_link' => $staffingState === 'filled' && $currentPerson
+                ? $this->firstAndLastName($currentPerson)
+                : 'View Workflow',
             'last_updated' => $lastUpdated?->toIso8601String(),
             'search_text' => $this->searchText($position, $staffingState, $currentPerson, $workflowCandidates),
         ];
@@ -552,6 +562,11 @@ class ProjectManagerDashboardService
             .' '
             .$person->last_name
         );
+    }
+
+    private function firstAndLastName(Person $person): string
+    {
+        return trim($person->first_name.' '.$person->last_name);
     }
 
     private function candidateName(Candidate $candidate): ?string

@@ -25,6 +25,7 @@ class DatabaseSeeder extends Seeder
             PageHelpSeeder::class,
             TicketSeeder::class,
             CandidateSeeder::class,
+            PositionAssignmentSeeder::class,
         ]);
     }
 }

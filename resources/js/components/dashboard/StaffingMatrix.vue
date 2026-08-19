@@ -522,7 +522,7 @@ function exportCsv() {
                                         @click="openWorkflow(position)"
                                     >
                                         <Workflow class="h-4 w-4" />
-                                        View Workflow
+                                        {{ position.workflow_link || 'View Workflow' }}
                                     </Button>
 
                                     <span v-else>{{ formatCell(position, column.key) }}</span>

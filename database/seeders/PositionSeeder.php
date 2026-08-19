@@ -48,10 +48,12 @@ class PositionSeeder extends Seeder
                 ->delete();
 
             $positions = [
+                // Filled via PositionAssignmentSeeder (CAND-001 / Trapper John McIntyre).
                 $this->position('IRAD-SWE-001', 'Open', 'Software Engineer', 4, 'Washington, DC', 'Portal Engineering', 'Senior application engineer supporting secure portal modernization.', 'project.manager1@localhost', 54),
                 $this->position('IRAD-CYB-002', 'Open', 'Cybersecurity Analyst', 3, 'Arlington, VA', 'Cyber Operations', 'Security analyst supporting vulnerability management and authorization activities.', 'project.manager2@localhost', 41, highRisk: true),
                 $this->position('IRAD-DOP-003', 'In Process', 'DevOps Engineer', 4, 'Remote', 'Platform Engineering', 'DevOps engineer improving automated build, test, deployment, and monitoring workflows.', 'project.manager1@localhost', 38),
                 $this->position('IRAD-BA-004', 'Open', 'Business Analyst', 3, 'Washington, DC', 'Customer Delivery', 'Business analyst supporting requirements discovery and process improvement.', 'project.manager2@localhost', 25),
+                // Filled via PositionAssignmentSeeder (CAND-011 / Henry Blake).
                 $this->position('IRAD-DBA-005', 'Closed', 'Database Administrator', 4, 'Winchester, VA', 'Data Services', 'Senior database administrator responsible for availability, tuning, and data protection.', 'project.manager1@localhost', 132, closeReason: 'Position filled after successful candidate selection and onboarding.'),
                 $this->position('IRAD-NET-006', 'Closed', 'Network Engineer', 3, 'Arlington, VA', 'Infrastructure', 'Network engineer supporting secure enterprise connectivity and operations.', 'project.manager2@localhost', 96, closeReason: 'Customer cancelled the requirement after funding priorities changed.'),
                 $this->position('IRAD-PM-007', 'Open', 'Project Manager', 4, 'Washington, DC', 'Program Management Office', 'Project manager coordinating schedule, risks, dependencies, and customer communications.', 'project.manager1@localhost', 18, travel: true),
