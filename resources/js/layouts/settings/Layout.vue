@@ -51,7 +51,7 @@ const { isCurrentOrParentUrl } = useCurrentUrl();
                         ]"
                         as-child
                     >
-                        <Link :href="item.href">
+                        <Link :href="item.href" :aria-current="isCurrentOrParentUrl(item.href) ? 'page' : undefined">
                             <component :is="item.icon" class="h-4 w-4" />
                             {{ item.title }}
                         </Link>

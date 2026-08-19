@@ -218,11 +218,14 @@ watch(
                                         type="text"
                                         readonly
                                         :value="manualSetupKey"
+                                        aria-label="Two-factor authentication manual setup key"
                                         class="h-full w-full bg-background p-3 text-foreground"
                                     />
                                     <button
+                                        type="button"
+                                        :aria-label="copied ? 'Manual setup key copied' : 'Copy manual setup key'"
                                         @click="copy(manualSetupKey || '')"
-                                        class="relative block h-auto border-l border-border px-3 hover:bg-muted"
+                                        class="relative block h-auto border-l border-border px-3 hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset"
                                     >
                                         <Check
                                             v-if="copied"

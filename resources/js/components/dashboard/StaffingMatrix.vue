@@ -249,7 +249,8 @@ function resetPreferencesOnServer() {
 }
 
 function selectStaffingState(state: StaffingState) {
-    activeState.value = state
+    // Clicking the active staffing card again returns the table to all statuses.
+    activeState.value = activeState.value === state ? null : state
 }
 
 function applySearch() {
@@ -343,9 +344,9 @@ function summaryLabel(state: StaffingState): string {
         : state.charAt(0).toUpperCase() + state.slice(1)
 }
 
-function staffingTone(state: StaffingState): 'success' | 'warning' | 'danger' | 'info' | 'neutral' {
-    if (state === 'filled') return 'success'
-    if (state === 'selected') return 'info'
+function staffingTone(state: StaffingState): 'success' | 'warning' | 'danger' | 'info' | 'neutral' | 'dark' {
+    if (state === 'filled') return 'dark'
+    if (state === 'selected') return 'success'
     if (state === 'departing' || state === 'on_hold') return 'warning'
     if (state === 'vacant') return 'danger'
     return 'neutral'
@@ -432,7 +433,7 @@ function exportCsv() {
                             <Download class="h-4 w-4" />
                             {{ isDownloading ? 'Exporting...' : 'Export CSV' }}
                         </Button>
-                        <Button v-if="hasFilters" type="button" variant="outline" @click="resetTable">
+                        <Button type="button" variant="outline" :disabled="!hasFilters" @click="resetTable">
                             <RotateCcw class="h-4 w-4" />
                             Reset Table
                         </Button>

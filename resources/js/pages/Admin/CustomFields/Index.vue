@@ -128,15 +128,21 @@ function typeLabel(type: string): string {
         <div class="space-y-6">
             <p v-if="importForm.errors.custom_fields_file" class="rounded-lg border border-destructive/30 bg-destructive/5 p-3 text-sm text-destructive">{{ importForm.errors.custom_fields_file }}</p>
             <form class="grid gap-3 rounded-xl border bg-background p-4 md:grid-cols-[minmax(0,1fr)_220px_auto_auto]" @submit.prevent="applyFilters">
-                <Input v-model="filterForm.search" placeholder="Search fields..." />
-                <Select v-model="filterForm.entity_type">
-                    <SelectTrigger><SelectValue /></SelectTrigger>
+                <div>
+                    <label for="custom-field-search" class="sr-only">Search custom fields</label>
+                    <Input id="custom-field-search" v-model="filterForm.search" placeholder="Search fields..." />
+                </div>
+                <div>
+                    <label for="custom-field-entity-filter" class="sr-only">Filter custom fields by record type</label>
+                    <Select v-model="filterForm.entity_type">
+                    <SelectTrigger id="custom-field-entity-filter"><SelectValue /></SelectTrigger>
                     <SelectContent>
                         <SelectItem value="all">People and Positions</SelectItem>
                         <SelectItem value="person">Person</SelectItem>
                         <SelectItem value="position">Position</SelectItem>
                     </SelectContent>
-                </Select>
+                    </Select>
+                </div>
                 <Button type="submit">Search</Button>
                 <Button type="button" variant="outline" @click="resetFilters">Reset</Button>
             </form>

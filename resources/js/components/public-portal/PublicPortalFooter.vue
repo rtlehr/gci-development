@@ -20,8 +20,8 @@ const supportEnabled = computed(() => settings.value.features?.support_tickets ?
         <div class="mx-auto flex max-w-7xl flex-col gap-3 px-4 py-8 text-sm text-[color:var(--portal-text-muted)] sm:px-6 md:flex-row md:items-center md:justify-between lg:px-8">
             <p>© {{ new Date().getFullYear() }} {{ footer.copyright_name }}</p>
             <div class="flex gap-5">
-                <a v-if="supportEnabled" href="/#support" class="hover:text-[var(--portal-primary)] hover:underline">{{ footer.support_label }}</a>
-                <a href="/#faqs" class="hover:text-[var(--portal-primary)] hover:underline">{{ footer.faqs_label }}</a>
+                <a v-if="supportEnabled" href="/home#support" class="hover:text-[var(--portal-primary)] hover:underline">{{ footer.support_label }}</a>
+                <a href="/home#faqs" class="hover:text-[var(--portal-primary)] hover:underline">{{ footer.faqs_label }}</a>
             </div>
         </div>
     </footer>

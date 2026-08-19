@@ -5,6 +5,7 @@
         </div>
 
         <select
+            aria-label="Switch development user"
             class="w-full rounded-md border bg-background px-3 py-2 text-sm"
             :value="''"
             @change="switchUser"

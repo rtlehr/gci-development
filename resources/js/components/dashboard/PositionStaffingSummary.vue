@@ -22,8 +22,8 @@ const emit = defineEmits<{
 
 const cards = [
     { key: 'vacant', state: 'vacant', label: 'Vacant', numberClass: 'text-red-700' },
-    { key: 'selected', state: 'selected', label: 'Selected', numberClass: 'text-sky-700' },
-    { key: 'filled', state: 'filled', label: 'Filled', numberClass: 'text-green-600' },
+    { key: 'selected', state: 'selected', label: 'Selected', numberClass: 'text-emerald-700' },
+    { key: 'filled', state: 'filled', label: 'Filled', numberClass: 'text-black dark:text-white' },
     { key: 'departing', state: 'departing', label: 'Departing', numberClass: 'text-amber-500' },
     { key: 'onHold', state: 'on_hold', label: 'On-Hold', numberClass: 'text-muted-foreground' },
 ] as const

@@ -31,6 +31,7 @@ const sections = [
                 :class="modelValue === section.value
                     ? 'bg-primary text-primary-foreground'
                     : 'text-muted-foreground hover:bg-muted hover:text-foreground'"
+                :aria-pressed="modelValue === section.value"
                 @click="emit('update:modelValue', section.value)"
             >
                 <component :is="section.icon" class="h-4 w-4" />

@@ -46,6 +46,9 @@ class SiteSettingSeeder extends Seeder
             ['key' => 'home.pmo_title', 'group' => 'Homepage', 'label' => 'PMO title', 'description' => 'Title of the PMO feature card.', 'type' => 'text', 'value' => 'PMO', 'sort_order' => 130],
             ['key' => 'home.pmo_description', 'group' => 'Homepage', 'label' => 'PMO description', 'description' => 'Description of the PMO feature card.', 'type' => 'textarea', 'value' => 'Connect with the program management office and operational support team.', 'sort_order' => 140],
 
+            // Navigation
+            ['key' => 'navigation.default_home_page', 'group' => 'Navigation', 'label' => 'Default home page', 'description' => 'Choose the first screen users see when they open the site. All screens remain available from navigation.', 'type' => 'select', 'value' => 'public_home', 'sort_order' => 10],
+
             // Portal Features
             ['key' => 'features.support_tickets', 'group' => 'Portal Features', 'label' => 'Support Tickets', 'description' => 'Allow portal users to submit and review support tickets. Administrative ticket management remains available when disabled.', 'type' => 'boolean', 'value' => '1', 'sort_order' => 10],
             ['key' => 'features.alerts', 'group' => 'Portal Features', 'label' => 'Alerts', 'description' => 'Show alerts, notification counts, and alert history in the Public and Portal experience. Administrative alert access remains available when disabled.', 'type' => 'boolean', 'value' => '1', 'sort_order' => 20],

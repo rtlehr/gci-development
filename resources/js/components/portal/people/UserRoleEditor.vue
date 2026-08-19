@@ -1,6 +1,5 @@
 <script setup>
-import { ShieldCheck } from 'lucide-vue-next'
-import { Checkbox } from '@/components/ui/checkbox'
+import { Check, ShieldCheck } from 'lucide-vue-next'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 
 const props = defineProps({
@@ -57,13 +56,16 @@ function roleLabel(role) {
                     type="button"
                     class="flex w-full items-start gap-3 rounded-lg border p-4 text-left transition hover:bg-muted/40"
                     :class="isSelected(role.id) ? 'border-primary bg-primary/5 ring-1 ring-primary/20' : ''"
+                    :aria-pressed="isSelected(role.id)"
                     @click="toggleRole(role.id)"
                 >
-                    <Checkbox
-                        :checked="isSelected(role.id)"
-                        class="pointer-events-none mt-0.5"
+                    <span
                         aria-hidden="true"
-                    />
+                        class="mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded border border-input"
+                        :class="isSelected(role.id) ? 'border-primary bg-primary text-primary-foreground' : 'bg-background'"
+                    >
+                        <Check v-if="isSelected(role.id)" class="h-3 w-3" />
+                    </span>
                     <span class="min-w-0 flex-1">
                         <span class="block text-sm font-medium">{{ roleLabel(role) }}</span>
                         <span

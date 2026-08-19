@@ -136,6 +136,7 @@ function save() {
                         <Checkbox
                             :checked="column.visible !== false"
                             :disabled="visibleCount <= 1 && column.visible !== false"
+                            :aria-label="`${column.visible === false ? 'Show' : 'Hide'} ${column.label} column`"
                             @update:checked="toggleColumn(column.key, Boolean($event))"
                         />
 
@@ -145,6 +146,7 @@ function save() {
                                 variant="ghost"
                                 size="icon"
                                 :disabled="index === 0"
+                                :aria-label="`Move ${column.label} column up`"
                                 @click="moveColumn(index, 'up')"
                             >
                                 <ChevronUp class="h-4 w-4" />
@@ -155,6 +157,7 @@ function save() {
                                 variant="ghost"
                                 size="icon"
                                 :disabled="index === localColumns.length - 1"
+                                :aria-label="`Move ${column.label} column down`"
                                 @click="moveColumn(index, 'down')"
                             >
                                 <ChevronDown class="h-4 w-4" />

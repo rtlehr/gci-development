@@ -74,18 +74,22 @@ function formatDate(value: string): string {
     <div class="mx-auto max-w-7xl space-y-6 px-4 py-8 sm:px-6 lg:px-8">
         <form class="grid gap-3 rounded-xl border border-[#e3e3e3] bg-white p-4 shadow-sm md:grid-cols-[1fr_220px_auto_auto]" @submit.prevent="applyFilters">
             <div class="relative">
-                <Search class="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#3a3a3a]/50" />
-                <Input v-model="filters.search" class="pl-9" placeholder="Search ticket number, title, or description" />
+                <label for="ticket-search" class="sr-only">Search support tickets</label>
+                <Search class="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#3a3a3a]/50" aria-hidden="true" />
+                <Input id="ticket-search" v-model="filters.search" class="pl-9" placeholder="Search ticket number, title, or description" />
             </div>
 
-            <select v-model="filters.status" class="h-10 rounded-md border border-input bg-background px-3 text-sm">
+            <div>
+                <label for="ticket-status-filter" class="sr-only">Filter by status</label>
+                <select id="ticket-status-filter" v-model="filters.status" class="h-10 w-full rounded-md border border-input bg-background px-3 text-sm">
                 <option value="">All statuses</option>
                 <option value="new">New</option>
                 <option value="in_progress">In progress</option>
                 <option value="on_hold">On hold</option>
                 <option value="complete">Complete</option>
                 <option value="canceled">Canceled</option>
-            </select>
+                </select>
+            </div>
 
             <Button type="submit" class="bg-[#005c43] text-white hover:bg-[#004735]">Search</Button>
             <Button type="button" variant="outline" @click="resetFilters">Reset</Button>

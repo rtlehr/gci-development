@@ -86,6 +86,9 @@ class SiteSettingsService
                 'pmo_title' => 'PMO',
                 'pmo_description' => 'Connect with the program management office and operational support team.',
             ],
+            'navigation' => [
+                'default_home_page' => 'public_home',
+            ],
             'features' => [
                 'support_tickets' => true,
                 'alerts' => true,

@@ -152,6 +152,7 @@ function submit() {
                                     type="checkbox"
                                     class="mt-1"
                                     :checked="form.permissions.includes(permission.id)"
+                                    :aria-label="`Grant permission ${permission.label || permission.name}`"
                                     @change="togglePermission(permission.id)"
                                 />
 

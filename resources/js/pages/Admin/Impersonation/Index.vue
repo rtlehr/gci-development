@@ -78,7 +78,8 @@ function begin(): void {
 
             <div class="mt-5 grid gap-5 lg:grid-cols-[1fr_1fr]">
                 <div class="space-y-3">
-                    <Input v-model="search" placeholder="Search users, person code, email, or role..." />
+                    <label for="impersonation-user-search" class="sr-only">Search users to impersonate</label>
+                    <Input id="impersonation-user-search" v-model="search" placeholder="Search users, person code, email, or role..." />
 
                     <div class="max-h-96 overflow-y-auto rounded-lg border">
                         <button

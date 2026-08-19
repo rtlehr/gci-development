@@ -198,6 +198,7 @@ const submit = () => {
                                 type="checkbox"
                                 class="mt-1"
                                 :checked="form.roles.includes(role.id)"
+                                :aria-label="`Assign role ${role.label || role.name}`"
                                 @change="toggleRole(role.id)"
                             />
 
@@ -271,6 +272,7 @@ const submit = () => {
                                     type="checkbox"
                                     class="mt-1"
                                     :checked="form.permissions.includes(permission.id)"
+                                    :aria-label="`Grant permission ${permission.label || permission.name}`"
                                     @change="togglePermission(permission.id)"
                                 />
 

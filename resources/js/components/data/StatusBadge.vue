@@ -2,7 +2,7 @@
 import { computed } from 'vue'
 import { Badge } from '@/components/ui/badge'
 
-type Tone = 'success' | 'warning' | 'danger' | 'info' | 'neutral'
+type Tone = 'success' | 'warning' | 'danger' | 'info' | 'neutral' | 'dark'
 
 const props = withDefaults(defineProps<{
     label: string
@@ -19,10 +19,11 @@ const toneClasses = computed(() => ({
     danger: 'border-red-200 bg-red-50 text-red-700 dark:border-red-900 dark:bg-red-950 dark:text-red-300',
     info: 'border-blue-200 bg-blue-50 text-blue-700 dark:border-blue-900 dark:bg-blue-950 dark:text-blue-300',
     neutral: 'border-border bg-muted text-muted-foreground',
+    dark: 'border-black bg-black text-white dark:border-white dark:bg-white dark:text-black',
 }[props.tone]))
 
 const dotClasses = computed(() => ({
-    success: 'bg-emerald-500', warning: 'bg-amber-500', danger: 'bg-red-500', info: 'bg-blue-500', neutral: 'bg-muted-foreground',
+    success: 'bg-emerald-500', warning: 'bg-amber-500', danger: 'bg-red-500', info: 'bg-blue-500', neutral: 'bg-muted-foreground', dark: 'bg-white dark:bg-black',
 }[props.tone]))
 </script>
 

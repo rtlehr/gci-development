@@ -6,6 +6,7 @@ import {
     Home,
     PanelBottom,
     Palette,
+    Route,
     RotateCcw,
     Save,
     Settings2,
@@ -19,6 +20,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 
 type Setting = {
@@ -27,9 +29,10 @@ type Setting = {
     group: string;
     label: string;
     description: string | null;
-    type: 'text' | 'textarea' | 'color' | 'boolean';
+    type: 'text' | 'textarea' | 'color' | 'boolean' | 'select';
     value: string | null;
     sort_order: number;
+    options?: Array<{ value: string; label: string }>;
 };
 
 type SettingGroup = {
@@ -74,6 +77,7 @@ function groupDescription(name: string): string {
     if (name === 'Branding') return 'Site name, logos, and shared colors.';
     if (name === 'Program') return 'Program identity and contract details.';
     if (name === 'Homepage') return 'Public landing page content.';
+    if (name === 'Navigation') return 'Default landing page and navigation behavior.';
     if (name === 'Portal Features') return 'Optional Public and Portal capabilities.';
     if (name === 'Footer') return 'Shared footer content.';
     return 'Site configuration options.';
@@ -83,6 +87,7 @@ function groupLongDescription(name: string): string {
     if (name === 'Branding') return 'Names and colors shared by the header, page shell, buttons, links, cards, and footer.';
     if (name === 'Program') return 'Program identity and contract details shown on the homepage.';
     if (name === 'Homepage') return 'Labels and descriptions used by the public landing page.';
+    if (name === 'Navigation') return 'Choose which screen users see first when they open the site. This does not remove or disable any pages.';
     if (name === 'Portal Features') return 'Choose which optional capabilities are available in the Public and Portal experience. Administrative management remains available.';
     if (name === 'Footer') return 'Text displayed in the shared public and portal footer.';
     return 'Manage settings for this section.';
@@ -92,6 +97,7 @@ function groupIcon(name: string) {
     if (name === 'Branding') return Palette;
     if (name === 'Program') return Building2;
     if (name === 'Homepage') return Home;
+    if (name === 'Navigation') return Route;
     if (name === 'Portal Features') return SlidersHorizontal;
     if (name === 'Footer') return PanelBottom;
     return Settings2;
@@ -143,6 +149,7 @@ function resetUnsaved(): void {
                             type="button"
                             class="flex w-full items-start gap-3 rounded-lg px-3 py-3 text-left transition"
                             :class="activeSection === group.name ? 'bg-foreground text-background' : 'hover:bg-muted'"
+                            :aria-pressed="activeSection === group.name"
                             @click="activeSection = group.name"
                         >
                             <component :is="groupIcon(group.name)" class="mt-0.5 h-4 w-4 shrink-0" />
@@ -225,6 +232,24 @@ function resetUnsaved(): void {
                                         class="font-mono"
                                     />
                                 </div>
+
+                                <Select
+                                    v-else-if="setting.type === 'select'"
+                                    v-model="form.settings[setting.id]"
+                                >
+                                    <SelectTrigger :id="`setting-${setting.id}`">
+                                        <SelectValue placeholder="Choose a page" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem
+                                            v-for="option in setting.options ?? []"
+                                            :key="option.value"
+                                            :value="option.value"
+                                        >
+                                            {{ option.label }}
+                                        </SelectItem>
+                                    </SelectContent>
+                                </Select>
 
                                 <Textarea
                                     v-else-if="setting.type === 'textarea'"

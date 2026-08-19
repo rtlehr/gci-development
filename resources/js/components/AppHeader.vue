@@ -102,6 +102,7 @@ const rightNavItems: NavItem[] = [
                                 variant="ghost"
                                 size="icon"
                                 class="mr-2 h-9 w-9"
+                                aria-label="Open navigation menu"
                             >
                                 <Menu class="h-5 w-5" />
                             </Button>
@@ -209,6 +210,7 @@ const rightNavItems: NavItem[] = [
                             variant="ghost"
                             size="icon"
                             class="group h-9 w-9 cursor-pointer"
+                            aria-label="Search"
                         >
                             <Search
                                 class="size-5 opacity-80 group-hover:opacity-100"

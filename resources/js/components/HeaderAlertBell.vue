@@ -159,6 +159,7 @@ function viewItem(alert: HeaderAlert) {
                             type="button"
                             class="shrink-0 text-muted-foreground hover:text-foreground"
                             title="Mark as read"
+                            :aria-label="`Mark ${alert.title} as read`"
                             @click.stop="markRead(alert)"
                         >
                             <CheckCircle2 class="h-4 w-4" />

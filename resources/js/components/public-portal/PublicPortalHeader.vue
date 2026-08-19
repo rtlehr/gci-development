@@ -84,7 +84,7 @@ const supportHref = computed(() => {
 });
 
 function isActive(href: string): boolean {
-    if (href === '/') return page.url === '/';
+    if (href === '/home') return page.url === '/home' || page.url === '/';
     return !href.includes('#') && page.url.startsWith(href);
 }
 
@@ -158,9 +158,10 @@ function closeMobile(): void {
                     </div>
                     <div class="grid gap-1">
                         <Link
-                            href="/"
+                            href="/home"
+                            :aria-current="isActive('/home') ? 'page' : undefined"
                             class="rounded-md px-3 py-2 font-medium hover:bg-[var(--portal-primary-soft)]"
-                            :class="isActive('/') ? 'bg-[var(--portal-primary-soft)] text-[var(--portal-primary)]' : ''"
+                            :class="isActive('/home') ? 'bg-[var(--portal-primary-soft)] text-[var(--portal-primary)]' : ''"
                             @click="closeMobile"
                         >
                             Home
@@ -168,15 +169,16 @@ function closeMobile(): void {
                         <Link
                             v-if="user && canViewPortalDashboard"
                             href="/portal/dashboard"
+                            :aria-current="isActive('/portal/dashboard') ? 'page' : undefined"
                             class="rounded-md px-3 py-2 font-medium hover:bg-[var(--portal-primary-soft)]"
                             :class="isActive('/portal/dashboard') ? 'bg-[var(--portal-primary-soft)] text-[var(--portal-primary)]' : ''"
                             @click="closeMobile"
                         >
                             My Portal
                         </Link>
-                        <Link v-for="item in contentNavigation" :key="item.href" :href="item.href" class="rounded-md px-3 py-2 font-medium hover:bg-[var(--portal-primary-soft)]" :class="isActive(item.href) ? 'bg-[var(--portal-primary-soft)] text-[var(--portal-primary)]' : ''" @click="closeMobile">{{ item.label }}</Link>
-                        <Link v-if="user && supportHref" :href="supportHref" class="rounded-md px-3 py-2 font-medium hover:bg-[var(--portal-primary-soft)]" :class="isActive('/portal/tickets') ? 'bg-[var(--portal-primary-soft)] text-[var(--portal-primary)]' : ''" @click="closeMobile">Support</Link>
-                        <a v-else-if="supportEnabled" href="/#support" class="rounded-md px-3 py-2 font-medium hover:bg-[var(--portal-primary-soft)]" @click="closeMobile">Support</a>
+                        <Link v-for="item in contentNavigation" :key="item.href" :href="item.href" :aria-current="isActive(item.href) ? 'page' : undefined" class="rounded-md px-3 py-2 font-medium hover:bg-[var(--portal-primary-soft)]" :class="isActive(item.href) ? 'bg-[var(--portal-primary-soft)] text-[var(--portal-primary)]' : ''" @click="closeMobile">{{ item.label }}</Link>
+                        <Link v-if="user && supportHref" :href="supportHref" :aria-current="isActive('/portal/tickets') ? 'page' : undefined" class="rounded-md px-3 py-2 font-medium hover:bg-[var(--portal-primary-soft)]" :class="isActive('/portal/tickets') ? 'bg-[var(--portal-primary-soft)] text-[var(--portal-primary)]' : ''" @click="closeMobile">Support</Link>
+                        <a v-else-if="supportEnabled" href="/home#support" class="rounded-md px-3 py-2 font-medium hover:bg-[var(--portal-primary-soft)]" @click="closeMobile">Support</a>
                     </div>
                 </section>
 

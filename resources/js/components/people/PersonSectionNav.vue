@@ -43,6 +43,7 @@ function sectionIcon(section) {
                 type="button"
                 class="flex w-full items-start gap-3 rounded-lg px-3 py-3 text-left transition"
                 :class="activeSection === section.id ? 'bg-foreground text-background' : 'hover:bg-muted'"
+                :aria-pressed="activeSection === section.id"
                 @click="emit('update:activeSection', section.id)"
             >
                 <component :is="sectionIcon(section)" class="mt-0.5 h-4 w-4 shrink-0" />
