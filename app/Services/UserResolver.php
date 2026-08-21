@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Contracts\Identity\PersonCodeProvider;
 use App\Models\Person;
 use App\Models\User;
 use Illuminate\Support\Facades\Auth;
@@ -9,40 +10,26 @@ use RuntimeException;
 
 class UserResolver
 {
+    public function __construct(
+        private readonly PersonCodeProvider $personCodeProvider,
+    ) {
+    }
+
     /**
-     * Get the active person code for a non-Laravel-authenticated request.
+     * Get the active person_code from the configured identity provider.
      *
-     * Resolution order:
-     * 1. Session-based development override.
-     * 2. Default development person code.
-     * 3. ADFS/server-provided identity value.
+     * The source may differ between development and production, but the value
+     * returned to the rest of IRAD is always the same enterprise identifier:
+     * people.person_code.
      */
     public function getPersonCode(): string|int
     {
-        if (
-            config('devuser.enabled') === true
-            && session()->has('dev_person_code')
-        ) {
-            return session('dev_person_code');
-        }
-
-        if (config('devuser.enabled') === true) {
-            $personCode = config('devuser.person_code');
-
-            if (blank($personCode)) {
-                throw new RuntimeException(
-                    'DEV_USER_ENABLED is true, but no DEV_PERSON_CODE is configured.'
-                );
-            }
-
-            return $personCode;
-        }
-
-        $personCode = $this->getPersonCodeFromAdfs();
+        $personCode = $this->personCodeProvider->resolve();
 
         if (blank($personCode)) {
             throw new RuntimeException(
-                'No person_code was found from ADFS/server authentication.'
+                'No person_code was resolved by the configured identity provider ['
+                .config('identity.driver').'].'
             );
         }
 
@@ -164,18 +151,4 @@ class UserResolver
         ];
     }
 
-    /**
-     * Read the person code supplied by ADFS, IIS, Apache, or a reverse proxy.
-     */
-    protected function getPersonCodeFromAdfs(): ?string
-    {
-        return request()->server('HTTP_PERSON_CODE')
-            ?? request()->server('HTTP_EMPLOYEEID')
-            ?? request()->server('HTTP_EMPLOYEE_ID')
-            ?? request()->server('HTTP_ADFS_PERSON_CODE')
-            ?? request()->server('AUTH_USER')
-            ?? request()->server('LOGON_USER')
-            ?? request()->server('REMOTE_USER')
-            ?? null;
-    }
 }

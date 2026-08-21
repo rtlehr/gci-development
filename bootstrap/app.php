@@ -27,6 +27,17 @@ return Application::configure(basePath: dirname(__DIR__))
             LogUserPageView::class,
         ]);
 
+        /*
+         * The external identity must be established before Laravel's route-level
+         * authentication middleware runs. Keep ResolveUserFromPhpSource in the web group so
+         * the session is available, then explicitly place it immediately before
+         * Authenticate in Laravel's middleware priority ordering.
+         */
+        $middleware->prependToPriorityList(
+            \Illuminate\Contracts\Auth\Middleware\AuthenticatesRequests::class,
+            ResolveUserFromPhpSource::class,
+        );
+
         $middleware->alias([
             'security' => \App\Http\Middleware\CheckSecurityLevel::class,
             'permission' => \App\Http\Middleware\CheckPermission::class,

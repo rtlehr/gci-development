@@ -2,7 +2,9 @@
 
 namespace App\Providers;
 
+use App\Contracts\Identity\PersonCodeProvider;
 use App\Services\CurrentUserContext;
+use InvalidArgumentException;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\Date;
 use Illuminate\Support\Facades\DB;
@@ -13,6 +15,27 @@ class AppServiceProvider extends ServiceProvider
 {
     public function register(): void
     {
+        $this->app->bind(PersonCodeProvider::class, function ($app): PersonCodeProvider {
+            $driver = (string) config('identity.driver');
+            $provider = config("identity.drivers.{$driver}.provider");
+
+            if (! is_string($provider) || ! class_exists($provider)) {
+                throw new InvalidArgumentException(
+                    "Unsupported IRAD identity driver [{$driver}]."
+                );
+            }
+
+            $instance = $app->make($provider);
+
+            if (! $instance instanceof PersonCodeProvider) {
+                throw new InvalidArgumentException(
+                    "Identity provider [{$provider}] must implement ".PersonCodeProvider::class.'.'
+                );
+            }
+
+            return $instance;
+        });
+
         /*
          * One context instance per request/job lifecycle. Its memoized User,
          * Person, permissions, and payload must never leak across requests.
