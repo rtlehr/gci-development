@@ -26,50 +26,14 @@ class PeopleController extends Controller
     private function peopleListQuery()
     {
         return Person::query()
+            ->with('primaryAddress')
             ->leftJoin('person_phone_numbers as primary_phone', function ($join) {
                 $join->on('primary_phone.person_id', '=', 'people.id')
                     ->where('primary_phone.is_primary', true);
             })
-            ->leftJoin('addresses as primary_address', function ($join) {
-                $join->on('primary_address.person_id', '=', 'people.id')
-                    ->where('primary_address.is_primary', true);
-            })
             ->select('people.*')
             ->selectRaw('primary_phone.phone_number as primary_phone_number')
-            ->selectRaw("
-                TRIM(
-                    CONCAT(
-                        COALESCE(primary_address.line_1, ''),
-                        CASE
-                            WHEN primary_address.line_1 IS NOT NULL
-                                AND primary_address.line_1 <> ''
-                                AND primary_address.city IS NOT NULL
-                                AND primary_address.city <> ''
-                            THEN ', '
-                            ELSE ''
-                        END,
-                        COALESCE(primary_address.city, ''),
-                        CASE
-                            WHEN primary_address.city IS NOT NULL
-                                AND primary_address.city <> ''
-                                AND primary_address.state IS NOT NULL
-                                AND primary_address.state <> ''
-                            THEN ', '
-                            ELSE ''
-                        END,
-                        COALESCE(primary_address.state, ''),
-                        CASE
-                            WHEN primary_address.state IS NOT NULL
-                                AND primary_address.state <> ''
-                                AND primary_address.postal_code IS NOT NULL
-                                AND primary_address.postal_code <> ''
-                            THEN ' '
-                            ELSE ''
-                        END,
-                        COALESCE(primary_address.postal_code, '')
-                    )
-                ) as primary_address_display
-            ");
+            ->selectRaw("'' as primary_address_display");
     }
 
     public function index(

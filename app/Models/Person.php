@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Casts\EncryptedValue;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use App\Models\PositionAssignment;
@@ -34,6 +35,11 @@ class Person extends Model
         'resume_path',
     ];
 
+
+    protected $casts = [
+        'notes' => EncryptedValue::class,
+    ];
+
     public function assignments()
     {
         return $this->hasMany(PositionAssignment::class);
@@ -44,6 +50,29 @@ class Person extends Model
         return $this->belongsToMany(Position::class, 'position_assignments')
             ->withPivot(['start_date', 'end_date', 'assignment_status', 'assignment_type', 'notes'])
             ->withTimestamps();
+    }
+
+
+    public function getPrimaryAddressDisplayAttribute(): string
+    {
+        $address = $this->relationLoaded('primaryAddress')
+            ? $this->getRelation('primaryAddress')
+            : $this->primaryAddress()->first();
+
+        if (! $address) {
+            return '';
+        }
+
+        $cityStatePostal = trim(implode(' ', array_filter([
+            trim((string) $address->state),
+            trim((string) $address->postal_code),
+        ], fn ($value) => $value !== '')));
+
+        return implode(', ', array_filter([
+            trim((string) $address->line_1),
+            trim((string) $address->city),
+            $cityStatePostal,
+        ], fn ($value) => $value !== ''));
     }
 
     public function user()

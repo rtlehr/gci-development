@@ -296,13 +296,20 @@ class TicketAdminController extends Controller
             subject: $ticket,
             subjectLabel: trim($ticket->ticket_number.' — '.$ticket->title),
             description: 'Updated support ticket '.$ticket->ticket_number.'.',
+            // Keep audit metadata structured without duplicating the sensitive
+            // resolution text into the User Event Log.
             before: [
                 'status' => $originalStatus,
                 'importance' => $originalImportance,
                 'assigned_to_user_id' => $originalAssignedTo,
-                'resolution_notes' => $originalResolutionNotes,
+                'has_resolution_notes' => filled($originalResolutionNotes),
             ],
-            after: $ticket->only(['status', 'importance', 'assigned_to_user_id', 'resolution_notes']),
+            after: [
+                'status' => $ticket->status,
+                'importance' => $ticket->importance,
+                'assigned_to_user_id' => $ticket->assigned_to_user_id,
+                'has_resolution_notes' => filled($ticket->resolution_notes),
+            ],
         );
 
         return redirect()

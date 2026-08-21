@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Casts\EncryptedValue;
 use Illuminate\Database\Eloquent\Model;
 
 class PersonPhoneNumber extends Model
@@ -16,6 +17,8 @@ class PersonPhoneNumber extends Model
     ];
 
     protected $casts = [
+        'extension' => EncryptedValue::class,
+        'notes' => EncryptedValue::class,
         'is_primary' => 'boolean',
     ];
 

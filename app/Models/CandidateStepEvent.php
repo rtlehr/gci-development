@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Casts\EncryptedValue;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
@@ -24,6 +25,8 @@ class CandidateStepEvent extends Model
         'requested_at' => 'datetime',
         'scheduled_at' => 'datetime',
         'completed_at' => 'datetime',
+        'notes' => EncryptedValue::class,
+        'comments' => EncryptedValue::class,
         'metadata' => 'array',
     ];
 

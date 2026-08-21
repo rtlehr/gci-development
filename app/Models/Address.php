@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Casts\EncryptedValue;
 use Illuminate\Database\Eloquent\Model;
 
 class Address extends Model
@@ -20,6 +21,13 @@ class Address extends Model
     ];
 
     protected $casts = [
+        'line_1' => EncryptedValue::class,
+        'line_2' => EncryptedValue::class,
+        'city' => EncryptedValue::class,
+        'state' => EncryptedValue::class,
+        'postal_code' => EncryptedValue::class,
+        'country' => EncryptedValue::class,
+        'notes' => EncryptedValue::class,
         'is_primary' => 'boolean',
     ];
 

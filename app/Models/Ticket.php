@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Casts\EncryptedValue;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -21,6 +22,11 @@ class Ticket extends Model
         'assigned_to_user_id',
         'status',
         'resolution_notes',
+    ];
+
+    protected $casts = [
+        'source_url' => EncryptedValue::class,
+        'resolution_notes' => EncryptedValue::class,
     ];
 
     public function submittedBy(): BelongsTo

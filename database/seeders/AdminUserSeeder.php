@@ -3,8 +3,10 @@
 namespace Database\Seeders;
 
 use App\Models\Alert;
+use App\Models\Address;
 use App\Models\Group;
 use App\Models\Person;
+use App\Models\PersonPhoneNumber;
 use App\Models\Role;
 use App\Models\Team;
 use App\Models\User;
@@ -71,19 +73,17 @@ class AdminUserSeeder extends Seeder
                     Team::query()->whereIn('team_name', $seedUser['teams'])->pluck('id')
                 );
 
-                DB::table('person_phone_numbers')->updateOrInsert(
+                PersonPhoneNumber::updateOrCreate(
                     ['person_id' => $person->id, 'phone_type' => 'work'],
                     [
                         'phone_number' => $seedUser['phone_number'],
                         'is_primary' => true,
                         'extension' => null,
                         'notes' => 'Default seeded phone number.',
-                        'created_at' => now(),
-                        'updated_at' => now(),
                     ]
                 );
 
-                DB::table('addresses')->updateOrInsert(
+                Address::updateOrCreate(
                     ['person_id' => $person->id, 'address_type' => 'work'],
                     [
                         'line_1' => $seedUser['address_line_1'],
@@ -94,8 +94,6 @@ class AdminUserSeeder extends Seeder
                         'country' => 'USA',
                         'is_primary' => true,
                         'notes' => 'Default seeded address.',
-                        'created_at' => now(),
-                        'updated_at' => now(),
                     ]
                 );
 

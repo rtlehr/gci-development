@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Casts\EncryptedValue;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
@@ -15,6 +16,12 @@ class TicketActivity extends Model
         'old_value',
         'new_value',
         'comment',
+    ];
+
+    protected $casts = [
+        'old_value' => EncryptedValue::class,
+        'new_value' => EncryptedValue::class,
+        'comment' => EncryptedValue::class,
     ];
 
     public function ticket(): BelongsTo

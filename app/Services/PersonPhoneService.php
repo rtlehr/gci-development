@@ -48,15 +48,19 @@ class PersonPhoneService
 
         foreach ($phoneNumbers as $phone) {
             if (!empty($phone['id'])) {
-                PersonPhoneNumber::where('person_id', $person->id)
-                    ->where('id', $phone['id'])
-                    ->update([
-                        'phone_number' => $phone['phone_number'],
-                        'phone_type' => $phone['phone_type'],
-                        'is_primary' => $phone['is_primary'],
-                        'extension' => $phone['extension'],
-                        'notes' => $phone['notes'],
-                    ]);
+                $existingPhone = PersonPhoneNumber::query()
+                    ->where('person_id', $person->id)
+                    ->findOrFail($phone['id']);
+
+                // Update through an Eloquent model instance so encrypted casts
+                // are applied. Builder-level update() bypasses model casts.
+                $existingPhone->update([
+                    'phone_number' => $phone['phone_number'],
+                    'phone_type' => $phone['phone_type'],
+                    'is_primary' => $phone['is_primary'],
+                    'extension' => $phone['extension'],
+                    'notes' => $phone['notes'],
+                ]);
             } else {
                 PersonPhoneNumber::create([
                     'person_id' => $person->id,

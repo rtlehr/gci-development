@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Casts\EncryptedValue;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
@@ -23,6 +24,10 @@ class PersonNote extends Model
         'entered_by_name',
         'category',
         'note',
+    ];
+
+    protected $casts = [
+        'note' => EncryptedValue::class,
     ];
 
     public function person(): BelongsTo

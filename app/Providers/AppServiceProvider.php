@@ -2,8 +2,10 @@
 
 namespace App\Providers;
 
+use App\Contracts\Encryption\DataEncryptionProvider;
 use App\Contracts\Identity\PersonCodeProvider;
 use App\Services\CurrentUserContext;
+use App\Services\Encryption\EncryptionManager;
 use InvalidArgumentException;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\Date;
@@ -15,6 +17,12 @@ class AppServiceProvider extends ServiceProvider
 {
     public function register(): void
     {
+        $this->app->singleton(EncryptionManager::class);
+
+        $this->app->bind(DataEncryptionProvider::class, function ($app): DataEncryptionProvider {
+            return $app->make(EncryptionManager::class)->provider();
+        });
+
         $this->app->bind(PersonCodeProvider::class, function ($app): PersonCodeProvider {
             $driver = (string) config('identity.driver');
             $provider = config("identity.drivers.{$driver}.provider");

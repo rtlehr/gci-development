@@ -52,19 +52,23 @@ class AddressService
 
         foreach ($addresses as $address) {
             if (!empty($address['id'])) {
-                Address::where('person_id', $person->id)
-                    ->where('id', $address['id'])
-                    ->update([
-                        'address_type' => $address['address_type'],
-                        'line_1' => $address['line_1'],
-                        'line_2' => $address['line_2'] ?: null,
-                        'city' => $address['city'] ?: null,
-                        'state' => $address['state'] ?: null,
-                        'postal_code' => $address['postal_code'] ?: null,
-                        'country' => $address['country'] ?: null,
-                        'is_primary' => $address['is_primary'],
-                        'notes' => $address['notes'],
-                    ]);
+                $existingAddress = Address::query()
+                    ->where('person_id', $person->id)
+                    ->findOrFail($address['id']);
+
+                // Update through an Eloquent model instance so encrypted casts
+                // are applied. Builder-level update() bypasses model casts.
+                $existingAddress->update([
+                    'address_type' => $address['address_type'],
+                    'line_1' => $address['line_1'],
+                    'line_2' => $address['line_2'] ?: null,
+                    'city' => $address['city'] ?: null,
+                    'state' => $address['state'] ?: null,
+                    'postal_code' => $address['postal_code'] ?: null,
+                    'country' => $address['country'] ?: null,
+                    'is_primary' => $address['is_primary'],
+                    'notes' => $address['notes'],
+                ]);
             } else {
                 Address::create([
                     'person_id' => $person->id,
