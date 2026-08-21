@@ -4,6 +4,9 @@ export const Permissions = {
 
     ADMIN: 'view_admin',
 
+    USER_EVENT_LOG_ACCESS: 'access_user_event_log',
+    USER_EVENT_LOG_EXPORT: 'export_user_event_log',
+
     PEOPLE_ACCESS: 'access_people',
     PEOPLE_CREATE: 'create_people',
     PEOPLE_READ: 'read_people',

@@ -94,3 +94,4 @@ require __DIR__.'/custom-fields.php';
 require __DIR__.'/content-pages.php';
 
 require __DIR__.'/impersonation.php';
+require __DIR__.'/user-event-log.php';

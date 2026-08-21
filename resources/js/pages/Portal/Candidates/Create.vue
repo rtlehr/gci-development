@@ -9,7 +9,13 @@
         </div>
 
         <form @submit.prevent="submit" class="grid gap-6 lg:grid-cols-[270px_minmax(0,1fr)]">
-            <PortalSectionNav title="Candidate sections" :items="sections" v-model="activeSection" />
+            <PortalSectionNav
+                title="Candidate sections"
+                aria-label="Candidate sections"
+                :sections="sections"
+                :active-section="activeSection"
+                @update:active-section="activeSection = $event"
+            />
 
             <div class="min-w-0 space-y-6">
                 <section v-show="activeSection === 'details'" class="rounded-xl border bg-white p-6 shadow-sm">
@@ -79,9 +85,9 @@ const props = defineProps({ people:{type:Array,default:()=>[]}, positions:{type:
 const activeSection=ref('details')
 const selectedWorkflowId=ref(props.workflow?.id ?? '')
 const sections=computed(()=>[
- {id:'details',label:'Candidate Details',description:'Person, position, and status.',icon:UserRound},
- {id:'workflow',label:'Workflow',description:'Workflow selection.',icon:ClipboardList},
- {id:'steps',label:'Workflow Steps',description:'Status, dates, and notes.',icon:ListChecks,badge:props.workflowSteps.length||undefined},
+ {id:'details',title:'Candidate Details',description:'Person, position, and status.',icon:UserRound},
+ {id:'workflow',title:'Workflow',description:'Workflow selection.',icon:ClipboardList},
+ {id:'steps',title:'Workflow Steps',description:'Status, dates, and notes.',icon:ListChecks,badge:props.workflowSteps.length||undefined},
 ])
 const form=useForm({person_id:'',position_id:'',workflow_id:props.workflow?.id??'',status:'submitted',candidate_fbr:'',submitted_at:'',submitted_by_person_id:'',scheduled_start_date:'',step_events:[]})
 function changeWorkflow(){router.get('/portal/candidates/create',{workflow_id:selectedWorkflowId.value},{preserveState:false,replace:true})}

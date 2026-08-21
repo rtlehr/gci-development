@@ -5,7 +5,13 @@
             <Button as-child variant="outline"><Link href="/portal/candidates">Back to List</Link></Button>
         </div>
         <form @submit.prevent="submit" class="grid gap-6 lg:grid-cols-[270px_minmax(0,1fr)]">
-            <PortalSectionNav title="Candidate sections" :items="sections" v-model="activeSection" />
+            <PortalSectionNav
+                title="Candidate sections"
+                aria-label="Candidate sections"
+                :sections="sections"
+                :active-section="activeSection"
+                @update:active-section="activeSection = $event"
+            />
             <div class="min-w-0 space-y-6">
                 <section v-show="activeSection === 'details'" class="rounded-xl border bg-white p-6 shadow-sm">
                     <h2 class="text-lg font-semibold">Candidate Details</h2><p class="mb-6 text-sm text-muted-foreground">Person, position, status, submission, and start information.</p>
@@ -93,7 +99,7 @@ const props=defineProps({candidate:Object,people:Array,positions:Array,workflow:
 const page = usePage()
 const requestedSection = new URLSearchParams(page.url.split('?')[1] ?? '').get('section')
 const activeSection=ref(requestedSection === 'steps' ? 'steps' : 'details')
-const sections=computed(()=>[{id:'details',label:'Candidate Details',description:'Person, position, and status.',icon:UserRound},{id:'steps',label:'Workflow Steps',description:'Status, dates, and notes.',icon:ListChecks,badge:props.workflowSteps?.length||undefined}])
+const sections=computed(()=>[{id:'details',title:'Candidate Details',description:'Person, position, and status.',icon:UserRound},{id:'steps',title:'Workflow Steps',description:'Status, dates, and notes.',icon:ListChecks,badge:props.workflowSteps?.length||undefined}])
 const norm=v=>v?(v.length>=16?v.slice(0,16):v):''
 const form=useForm({person_id:props.candidate.person_id??'',position_id:props.candidate.position_id??'',status:props.candidate.status??'submitted',candidate_fbr:props.candidate.candidate_fbr??'',submitted_at:norm(props.candidate.submitted_at),submitted_by_person_id:props.candidate.submitted_by_person_id??'',scheduled_start_date:props.candidate.scheduled_start_date??'',step_events:[]})
 function submit(){form.put(`/portal/candidates/${props.candidate.id}`)}

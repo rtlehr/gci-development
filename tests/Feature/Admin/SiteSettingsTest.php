@@ -45,7 +45,7 @@ test('authorized administrators can view site settings', function () {
         ->assertOk()
         ->assertInertia(fn (Assert $page) => $page
             ->component('Admin/SiteSettings/Index')
-            ->has('groups', 4));
+            ->has('groups', 6));
 });
 
 test('authorized administrators can update site settings', function () {

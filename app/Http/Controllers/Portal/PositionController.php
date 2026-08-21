@@ -18,6 +18,7 @@ use App\Services\ListExportService;
 use App\Services\PositionService;
 use App\Services\PortalWorkforceAccessService;
 use App\Services\UserResolver;
+use App\Services\UserEventLogger;
 use App\Support\ListDefinitions\PositionsDefinition;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -112,6 +113,15 @@ class PositionController extends Controller
 
             return $position;
         });
+
+        app(UserEventLogger::class)->recordModelEvent(
+            eventType: 'create',
+            module: 'positions',
+            action: 'create',
+            subject: $position,
+            description: 'Created position '.$position->position_code.'.',
+            metadata: ['status' => $position->status],
+        );
 
         return redirect()
             ->route('portal.positions.edit', $position->id)
@@ -352,6 +362,11 @@ class PositionController extends Controller
         $id
     ) {
         $position = Position::findOrFail($id);
+        $before = $position->only([
+            'position_code', 'status', 'job_title_id', 'level', 'team_name',
+            'project_manager_user_id', 'location', 'building', 'component',
+            'request_to_close', 'scheduled_to_close', 'close_date', 'close_reason',
+        ]);
 
         $validated = $this->validatePosition($request, $position);
         $customFieldValues = $validated['custom_fields'] ?? [];
@@ -366,6 +381,17 @@ class PositionController extends Controller
 
             app(CustomFieldService::class)->syncValues($position, 'position', $customFieldValues);
         });
+
+        $position->refresh();
+        app(UserEventLogger::class)->recordModelEvent(
+            eventType: 'update',
+            module: 'positions',
+            action: 'update',
+            subject: $position,
+            description: 'Updated position '.$position->position_code.'.',
+            before: $before,
+            after: $position->only(array_keys($before)),
+        );
 
         return redirect()
             ->route('portal.positions.edit', $position->id)
@@ -394,6 +420,15 @@ class PositionController extends Controller
             'action' => 'deleted',
             'description' => 'Position deleted.',
         ]);
+
+        app(UserEventLogger::class)->recordModelEvent(
+            eventType: 'delete',
+            module: 'positions',
+            action: 'delete',
+            subject: $position,
+            description: 'Deleted position '.$position->position_code.'.',
+            metadata: ['deleted' => true],
+        );
 
         $position->delete();
 
@@ -472,6 +507,14 @@ class PositionController extends Controller
         Request $request,
         ListExportService $listExportService
     ): StreamedResponse {
+        app(UserEventLogger::class)->record(
+            eventType: 'export',
+            module: 'positions',
+            action: 'export',
+            description: 'Exported positions to CSV.',
+            metadata: ['format' => 'csv', 'filters' => $request->only(['search', 'status', 'sort', 'direction'])],
+        );
+
         return $listExportService->exportCsv(
             request: $request,
             definition: app(CustomFieldListService::class)->augmentDefinition(PositionsDefinition::get(), 'position'),

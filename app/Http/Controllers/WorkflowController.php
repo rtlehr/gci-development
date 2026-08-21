@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Workflow;
+use App\Services\UserEventLogger;
 use Illuminate\Http\Request;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\DB;
@@ -120,7 +121,7 @@ class WorkflowController extends Controller
     {
         $data = $this->validateWorkflow($request);
 
-        DB::transaction(function () use ($data) {
+        $workflow = DB::transaction(function () use ($data) {
             if (!empty($data['is_primary'])) {
                 Workflow::query()->update(['is_primary' => false]);
                 $data['is_active'] = true;
@@ -135,7 +136,16 @@ class WorkflowController extends Controller
             ]);
 
             $this->syncWorkflowSteps($workflow, $data['steps'] ?? []);
+
+            return $workflow;
         });
+
+        app(UserEventLogger::class)->recordModelEvent(
+            eventType: 'create', module: 'workflows', action: 'create',
+            subject: $workflow,
+            description: 'Created workflow '.$workflow->name.'.',
+            metadata: ['step_count' => $workflow->steps()->count()],
+        );
 
         return redirect()
             ->route('workflows.index')
@@ -199,6 +209,8 @@ class WorkflowController extends Controller
      */
     public function update(Request $request, Workflow $workflow): RedirectResponse
     {
+        $before = $workflow->only(['name', 'code', 'description', 'is_active', 'is_primary']);
+        $beforeStepCount = $workflow->steps()->count();
         $data = $this->validateWorkflow($request, $workflow->id);
 
         DB::transaction(function () use ($workflow, $data) {
@@ -221,6 +233,16 @@ class WorkflowController extends Controller
             $this->syncWorkflowSteps($workflow, $data['steps'] ?? []);
         });
 
+        $workflow->refresh();
+        app(UserEventLogger::class)->recordModelEvent(
+            eventType: 'update', module: 'workflows', action: 'update',
+            subject: $workflow,
+            description: 'Updated workflow '.$workflow->name.'.',
+            before: $before,
+            after: $workflow->only(array_keys($before)),
+            metadata: ['step_count_before' => $beforeStepCount, 'step_count_after' => $workflow->steps()->count()],
+        );
+
         return redirect()
             ->route('workflows.index')
             ->with('success', 'Workflow updated successfully.');
@@ -234,6 +256,12 @@ class WorkflowController extends Controller
         if ($workflow->is_primary) {
             return back()->with('error', 'Primary workflow cannot be deleted until another workflow is made primary.');
         }
+
+        app(UserEventLogger::class)->recordModelEvent(
+            eventType: 'delete', module: 'workflows', action: 'delete',
+            subject: $workflow, description: 'Deleted workflow '.$workflow->name.'.',
+            metadata: ['deleted' => true],
+        );
 
         $workflow->delete();
 
@@ -296,6 +324,12 @@ class WorkflowController extends Controller
      */
     public function exportCsv(Request $request)
     {
+        app(UserEventLogger::class)->record(
+            eventType: 'export', module: 'workflows', action: 'export',
+            description: 'Exported workflows to CSV.',
+            metadata: ['format' => 'csv', 'filters' => $request->only(['search'])],
+        );
+
         $search = trim((string) $request->input('search', ''));
 
         $columns = $this->getColumnDefinitions();

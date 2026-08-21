@@ -39,5 +39,6 @@
 
         <env name="DEV_USER_ENABLED" value="false"/>
         <env name="DEV_AUTO_LOGIN" value="false"/>
+        <env name="USER_EVENT_LOG_ENABLED" value="false"/>
     </php>
 </phpunit>

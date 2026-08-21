@@ -630,6 +630,22 @@ class PermissionSeeder extends Seeder
                 'is_locked' => false,
             ],
             [
+                'name' => 'access_user_event_log',
+                'group_name' => 'User Event Log',
+                'label' => 'Access User Event Log',
+                'description' => 'Can view user activity and audit events in Admin.',
+                'is_system' => false,
+                'is_locked' => false,
+            ],
+            [
+                'name' => 'export_user_event_log',
+                'group_name' => 'User Event Log',
+                'label' => 'Export User Event Log',
+                'description' => 'Can export user activity and audit events.',
+                'is_system' => false,
+                'is_locked' => false,
+            ],
+            [
                 'name' => 'access_custom_fields',
                 'group_name' => 'Custom Fields',
                 'label' => 'Access Custom Fields',

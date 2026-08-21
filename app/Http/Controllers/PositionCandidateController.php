@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Services\UserEventLogger;
 use App\Models\Candidate;
 use App\Models\Position;
 use App\Models\Workflow;
@@ -44,13 +45,23 @@ class PositionCandidateController extends Controller
 
         $workflow = $this->resolveWorkflow($validated['workflow_id'] ?? null);
 
-        Candidate::query()->create([
+        $candidate = Candidate::query()->create([
             'person_id' => $validated['person_id'],
             'position_id' => $position->id,
             'workflow_id' => $workflow->id,
             'status' => 'submitted',
             'submitted_at' => now(),
         ]);
+
+        $candidate->loadMissing(['person:id,first_name,preferred_name,last_name', 'position:id,position_code,job_title']);
+        $personName = $candidate->person ? trim(($candidate->person->preferred_name ?: $candidate->person->first_name).' '.$candidate->person->last_name) : 'Candidate';
+        $positionLabel = $candidate->position?->position_code ?: 'Position '.$candidate->position_id;
+        app(UserEventLogger::class)->recordModelEvent(
+            eventType: 'create', module: 'candidates', action: 'add_to_position', subject: $candidate,
+            subjectLabel: $personName.' — '.$positionLabel.' Workflow',
+            description: 'Added '.$personName.' as a candidate for '.$positionLabel.'.',
+            metadata: ['position_id' => $candidate->position_id, 'workflow_id' => $candidate->workflow_id],
+        );
 
         $routeName = $request->routeIs('portal.*')
             ? 'portal.positions.edit'

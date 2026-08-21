@@ -10,6 +10,7 @@ use App\Services\AlertService;
 use App\Services\ListEngine;
 use App\Services\ListExportService;
 use App\Services\UserResolver;
+use App\Services\UserEventLogger;
 use App\Support\ListDefinitions\TicketsDefinition;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Artisan;
@@ -290,6 +291,20 @@ class TicketAdminController extends Controller
             );
         }
 
+        app(UserEventLogger::class)->recordModelEvent(
+            eventType: 'update', module: 'tickets', action: 'update',
+            subject: $ticket,
+            subjectLabel: trim($ticket->ticket_number.' — '.$ticket->title),
+            description: 'Updated support ticket '.$ticket->ticket_number.'.',
+            before: [
+                'status' => $originalStatus,
+                'importance' => $originalImportance,
+                'assigned_to_user_id' => $originalAssignedTo,
+                'resolution_notes' => $originalResolutionNotes,
+            ],
+            after: $ticket->only(['status', 'importance', 'assigned_to_user_id', 'resolution_notes']),
+        );
+
         return redirect()
             ->route('admin.tickets.show', $ticket->id)
             ->with('success', 'Ticket updated successfully.');
@@ -314,6 +329,14 @@ class TicketAdminController extends Controller
         ]);
 
         $changedByUserId = $userResolver->resolveUserId();
+
+        app(UserEventLogger::class)->recordModelEvent(
+            eventType: 'update', module: 'tickets', action: 'comment',
+            subject: $ticket,
+            subjectLabel: trim($ticket->ticket_number.' — '.$ticket->title),
+            description: 'Added a comment to '.$ticket->ticket_number.'.',
+            metadata: ['comment_added' => true],
+        );
 
         $alertService->ticketChangedForWatchers(
             ticket: $ticket,
@@ -385,6 +408,12 @@ class TicketAdminController extends Controller
         Request $request,
         ListExportService $listExportService
     ): StreamedResponse {
+        app(UserEventLogger::class)->record(
+            eventType: 'export', module: 'tickets', action: 'export',
+            description: 'Exported support tickets to CSV.',
+            metadata: ['format' => 'csv', 'filters' => $request->only(['search','status','importance','request_type','assigned_to_user_id'])],
+        );
+
         return $listExportService->exportCsv(
             request: $request,
             definition: TicketsDefinition::get(),
@@ -463,6 +492,11 @@ class TicketAdminController extends Controller
         $userId = $userResolver->resolveUserId();
 
         $ticket->watchers()->syncWithoutDetaching([$userId]);
+        app(UserEventLogger::class)->recordModelEvent(
+            eventType: 'update', module: 'tickets', action: 'watch', subject: $ticket,
+            subjectLabel: trim($ticket->ticket_number.' — '.$ticket->title),
+            description: 'Started watching '.$ticket->ticket_number.'.'
+        );
 
         return redirect()
             ->route('admin.tickets.show', $ticket->id)
@@ -474,6 +508,11 @@ class TicketAdminController extends Controller
         $userId = $userResolver->resolveUserId();
 
         $ticket->watchers()->detach($userId);
+        app(UserEventLogger::class)->recordModelEvent(
+            eventType: 'update', module: 'tickets', action: 'unwatch', subject: $ticket,
+            subjectLabel: trim($ticket->ticket_number.' — '.$ticket->title),
+            description: 'Stopped watching '.$ticket->ticket_number.'.'
+        );
 
         return redirect()
             ->route('admin.tickets.show', $ticket->id)

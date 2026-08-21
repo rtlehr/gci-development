@@ -7,6 +7,7 @@ use App\Models\TicketActivity;
 use App\Models\User;
 use App\Services\AlertService;
 use App\Services\UserResolver;
+use App\Services\UserEventLogger;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Illuminate\Support\Facades\Artisan;
@@ -87,6 +88,14 @@ class TicketController extends Controller
 
         Artisan::call('alerts:send-emails');
 
+        app(UserEventLogger::class)->recordModelEvent(
+            eventType: 'create', module: 'tickets', action: 'create',
+            subject: $ticket,
+            subjectLabel: trim($ticket->ticket_number.' — '.$ticket->title),
+            description: 'Created support ticket '.$ticket->ticket_number.'.',
+            metadata: ['request_type' => $ticket->request_type, 'importance' => $ticket->importance],
+        );
+
         return redirect()
             ->route('tickets.create')
             ->with('success', "Request submitted successfully. Ticket {$ticket->ticket_number} created.");
@@ -118,6 +127,16 @@ class TicketController extends Controller
         $ticket->update([
             'assigned_to_user_id' => $assignedUser->id,
         ]);
+
+        app(UserEventLogger::class)->recordModelEvent(
+            eventType: 'update', module: 'tickets', action: 'assign',
+            subject: $ticket,
+            subjectLabel: trim($ticket->ticket_number.' — '.$ticket->title),
+            description: 'Assigned '.$ticket->ticket_number.' to '.$assignedUser->name.'.',
+            before: ['assigned_to_user_id' => $oldAssignedUserId],
+            after: ['assigned_to_user_id' => $assignedUser->id],
+            metadata: ['assigned_to' => $assignedUser->name],
+        );
 
         // Remove team assignments and assign only this user
         $ticket->assignedUsers()->sync([$assignedUser->id]);

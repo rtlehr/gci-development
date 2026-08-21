@@ -18,6 +18,7 @@ use App\Services\ListExportService;
 use App\Services\PersonPhoneService;
 use App\Services\PersonUserAccountService;
 use App\Services\UserResolver;
+use App\Services\UserEventLogger;
 use App\Support\ListDefinitions\PeopleDefinition;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -239,6 +240,15 @@ class PeopleController extends Controller
                 uploadedByUserId: $user->id
             );
 
+            app(UserEventLogger::class)->recordModelEvent(
+                eventType: 'create',
+                module: 'people',
+                action: 'create',
+                subject: $person,
+                subjectLabel: trim(($person->preferred_name ?: $person->first_name).' '.$person->last_name),
+                description: 'Created person '.trim(($person->preferred_name ?: $person->first_name).' '.$person->last_name).'.',
+            );
+
             return redirect()
                 ->route('portal.people.show', $person->id)
                 ->with('success', 'Person and user account created successfully.');
@@ -331,6 +341,10 @@ class PeopleController extends Controller
         AttachmentService $attachmentService
     ) {
         $person = Person::findOrFail($id);
+        $before = $person->only([
+            'person_code', 'first_name', 'preferred_name', 'last_name',
+            'company_name', 'email', 'employment_status',
+        ]);
 
         $validated = $request->validate([
             'person_code' => ['required', 'string', 'max:255', 'unique:people,person_code,' . $person->id],
@@ -441,6 +455,19 @@ class PeopleController extends Controller
                 uploadedByUserId: $person->user_id
             );
 
+            $person->refresh();
+
+            app(UserEventLogger::class)->recordModelEvent(
+            eventType: 'update',
+            module: 'people',
+            action: 'update',
+            subject: $person,
+            subjectLabel: trim(($person->preferred_name ?: $person->first_name).' '.$person->last_name),
+            description: 'Updated person '.trim(($person->preferred_name ?: $person->first_name).' '.$person->last_name).'.',
+            before: $before,
+            after: $person->only(array_keys($before)),
+        );
+
             return redirect()
                 ->route('portal.people.index')
                 ->with('success', 'Person updated successfully.');
@@ -456,6 +483,16 @@ class PeopleController extends Controller
                 ->route('portal.people.index')
                 ->with('error', 'This person cannot be deleted because they have assignments.');
         }
+
+        app(UserEventLogger::class)->recordModelEvent(
+            eventType: 'delete',
+            module: 'people',
+            action: 'delete',
+            subject: $person,
+            subjectLabel: trim(($person->preferred_name ?: $person->first_name).' '.$person->last_name),
+            description: 'Deleted person '.trim(($person->preferred_name ?: $person->first_name).' '.$person->last_name).'.',
+            metadata: ['deleted' => true],
+        );
 
         $person->delete();
 
@@ -522,6 +559,12 @@ class PeopleController extends Controller
         Request $request,
         ListExportService $listExportService
     ): StreamedResponse {
+        app(UserEventLogger::class)->record(
+            eventType: 'export', module: 'people', action: 'export',
+            description: 'Exported people to CSV.',
+            metadata: ['format' => 'csv', 'filters' => $request->only(['search', 'sort', 'direction'])],
+        );
+
         return $listExportService->exportCsv(
             request: $request,
             definition: app(CustomFieldListService::class)->augmentDefinition(PeopleDefinition::get(), 'person'),

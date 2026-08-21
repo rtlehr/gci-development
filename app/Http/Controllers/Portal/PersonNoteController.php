@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Portal;
 
+use App\Services\UserEventLogger;
 use App\Http\Controllers\Controller;
 use App\Models\Person;
 use App\Models\PersonNote;
@@ -20,12 +21,19 @@ class PersonNoteController extends Controller
 
         $user = $request->user();
 
-        $person->personNotes()->create([
+        $note = $person->personNotes()->create([
             'entered_by_user_id' => $user?->id,
             'entered_by_name' => $user?->name ?: 'Unknown user',
             'category' => $validated['category'],
             'note' => $validated['note'],
         ]);
+
+        app(UserEventLogger::class)->recordModelEvent(
+            eventType: 'update', module: 'people', action: 'add_note', subject: $person,
+            subjectLabel: trim(($person->preferred_name ?: $person->first_name).' '.$person->last_name),
+            description: 'Added a '.$note->category.' note for '.trim(($person->preferred_name ?: $person->first_name).' '.$person->last_name).'.',
+            metadata: ['note_category' => $note->category],
+        );
 
         return back()->with('success', 'Person note added successfully.');
     }

@@ -88,4 +88,9 @@ class User extends Authenticatable
         return $this->hasMany(ImpersonationLog::class, 'impersonated_user_id');
     }
 
+    public function eventLogs(): HasMany
+    {
+        return $this->hasMany(UserEventLog::class);
+    }
+
 }

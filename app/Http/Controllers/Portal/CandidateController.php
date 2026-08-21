@@ -8,6 +8,7 @@ use App\Models\Person;
 use App\Models\Position;
 use App\Models\Workflow;
 use App\Services\PortalWorkforceAccessService;
+use App\Services\UserEventLogger;
 use Illuminate\Http\Request;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Response as ResponseFacade;
@@ -318,6 +319,17 @@ class CandidateController extends Controller
             ]);
         }
 
+        $candidate->loadMissing(['person:id,first_name,preferred_name,last_name', 'position:id,position_code,job_title']);
+        app(UserEventLogger::class)->recordModelEvent(
+            eventType: 'create',
+            module: 'candidates',
+            action: 'create',
+            subject: $candidate,
+            subjectLabel: $this->auditCandidateLabel($candidate),
+            description: 'Created candidate workflow '.$this->auditCandidateLabel($candidate).'.',
+            metadata: ['status' => $candidate->status, 'workflow_id' => $candidate->workflow_id],
+        );
+
         return redirect()
             ->route('portal.candidates.index')
             ->with('success', 'Candidate created successfully.');
@@ -514,6 +526,11 @@ class CandidateController extends Controller
     public function update(Request $request, Candidate $candidate): RedirectResponse
     {
         $candidate->load('workflow.steps');
+        $before = $candidate->only([
+            'person_id', 'position_id', 'workflow_id', 'status',
+            'candidate_fbr', 'submitted_at', 'scheduled_start_date',
+        ]);
+        $beforeStepCount = $candidate->stepEvents()->count();
 
         if (!$candidate->workflow) {
             return back()->withErrors([
@@ -574,6 +591,22 @@ class CandidateController extends Controller
             ]);
         }
 
+        $candidate->refresh()->loadMissing(['person:id,first_name,preferred_name,last_name', 'position:id,position_code,job_title']);
+        app(UserEventLogger::class)->recordModelEvent(
+            eventType: 'update',
+            module: 'candidates',
+            action: 'update_workflow',
+            subject: $candidate,
+            subjectLabel: $this->auditCandidateLabel($candidate),
+            description: 'Updated candidate workflow '.$this->auditCandidateLabel($candidate).'.',
+            before: $before,
+            after: $candidate->only(array_keys($before)),
+            metadata: [
+                'workflow_step_events_before' => $beforeStepCount,
+                'workflow_step_events_after' => $candidate->stepEvents()->count(),
+            ],
+        );
+
         return redirect()
             ->route('portal.candidates.index')
             ->with('success', 'Candidate updated successfully.');
@@ -584,6 +617,17 @@ class CandidateController extends Controller
      */
     public function destroy(Candidate $candidate): RedirectResponse
     {
+        $candidate->loadMissing(['person:id,first_name,preferred_name,last_name', 'position:id,position_code,job_title']);
+        app(UserEventLogger::class)->recordModelEvent(
+            eventType: 'delete',
+            module: 'candidates',
+            action: 'delete',
+            subject: $candidate,
+            subjectLabel: $this->auditCandidateLabel($candidate),
+            description: 'Deleted candidate workflow '.$this->auditCandidateLabel($candidate).'.',
+            metadata: ['deleted' => true],
+        );
+
         $candidate->delete();
 
         return redirect()
@@ -645,6 +689,12 @@ class CandidateController extends Controller
      */
     public function exportCsv(Request $request)
     {
+        app(UserEventLogger::class)->record(
+            eventType: 'export', module: 'candidates', action: 'export',
+            description: 'Exported candidates to CSV.',
+            metadata: ['format' => 'csv', 'filters' => $request->only(['search', 'status', 'sort', 'direction'])],
+        );
+
         $search = trim((string) $request->input('search', ''));
         $status = trim((string) $request->input('status', ''));
 
@@ -958,4 +1008,17 @@ class CandidateController extends Controller
             throw ValidationException::withMessages($errors);
         }
     }
+    private function auditCandidateLabel(Candidate $candidate): string
+    {
+        $name = $candidate->person
+            ? trim(($candidate->person->preferred_name ?: $candidate->person->first_name ?: '').' '.($candidate->person->last_name ?: ''))
+            : '';
+        $position = $candidate->position?->position_code ?: $candidate->position?->job_title;
+        $parts = array_values(array_filter([$name, $position]));
+
+        return $parts !== []
+            ? implode(' — ', $parts).' Workflow'
+            : ($candidate->candidate_code ?: 'Candidate '.$candidate->id);
+    }
+
 }
