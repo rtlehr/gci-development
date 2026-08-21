@@ -16,7 +16,7 @@ class AttachmentService
         array $files = [],
         array $metadata = [],
         ?int $uploadedByUserId = null,
-        string $disk = 'public'
+        string $disk = 'local'
     ): array {
         $created = [];
 
@@ -88,7 +88,7 @@ class AttachmentService
         array $metadata = [],
         array $removeIds = [],
         ?int $uploadedByUserId = null,
-        string $disk = 'public'
+        string $disk = 'local'
     ): void {
         $this->deleteForModel($model, $removeIds);
         $this->uploadForModel($model, $newFiles, $metadata, $uploadedByUserId, $disk);
@@ -101,15 +101,11 @@ class AttachmentService
                 return [
                     'id' => $attachment['id'] ?? null,
                     'original_name' => $attachment['original_name'] ?? '',
-                    'stored_name' => $attachment['stored_name'] ?? '',
-                    'disk' => $attachment['disk'] ?? 'public',
-                    'path' => $attachment['path'] ?? '',
                     'mime_type' => $attachment['mime_type'] ?? '',
                     'extension' => $attachment['extension'] ?? '',
                     'size' => $attachment['size'] ?? 0,
                     'category' => $attachment['category'] ?? '',
                     'description' => $attachment['description'] ?? '',
-                    'uploaded_by_user_id' => $attachment['uploaded_by_user_id'] ?? null,
                     'is_primary' => (bool) ($attachment['is_primary'] ?? false),
                     'sort_order' => (int) ($attachment['sort_order'] ?? 0),
                     'url' => $attachment['url'] ?? null,

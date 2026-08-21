@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { ArrowDown, ArrowUp, Plus, Trash2 } from 'lucide-vue-next'
 import FormField from '@/components/forms/FormField.vue'
 import FormSection from '@/components/forms/FormSection.vue'
@@ -19,10 +19,24 @@ type GenericRecord = Record<string, any>
 const props = defineProps<{
     form: GenericRecord
     typeLocked?: boolean
+    sensitivityLocked?: boolean
 }>()
 
 const usesOptions = computed(() => ['radio', 'checkbox'].includes(props.form.field_type))
 const announcement = ref('')
+
+watch(() => props.form.is_sensitive, (sensitive) => {
+    if (!sensitive) return
+    props.form.is_list_column = false
+    props.form.is_searchable = false
+    props.form.is_filterable = false
+})
+
+watch(() => props.form.field_type, (fieldType) => {
+    if (!['text', 'textarea'].includes(fieldType)) {
+        props.form.is_sensitive = false
+    }
+})
 
 function announce(message: string): void {
     announcement.value = ''
@@ -120,16 +134,33 @@ function moveOption(index: number, direction: -1 | 1): void {
                     </span>
                 </label>
 
+                <label
+                    class="flex cursor-pointer items-start gap-3 rounded-lg border p-4"
+                    :class="(!['text', 'textarea'].includes(form.field_type) || sensitivityLocked) ? 'opacity-60' : ''"
+                >
+                    <input
+                        id="custom-field-sensitive"
+                        v-model="form.is_sensitive"
+                        type="checkbox"
+                        class="mt-1"
+                        :disabled="!['text', 'textarea'].includes(form.field_type) || sensitivityLocked"
+                    >
+                    <span>
+                        <span class="block text-sm font-medium">Sensitive / Encrypt Value</span>
+                        <span class="block text-xs text-muted-foreground">Encrypts saved text at rest. Sensitive fields cannot be list columns, searched, or filtered.</span>
+                    </span>
+                </label>
+
                 <label class="flex cursor-pointer items-start gap-3 rounded-lg border p-4">
-                    <input id="custom-field-list-column" v-model="form.is_list_column" type="checkbox" class="mt-1">
+                    <input id="custom-field-list-column" v-model="form.is_list_column" type="checkbox" class="mt-1" :disabled="form.is_sensitive">
                     <span>
                         <span class="block text-sm font-medium">Available as List Column</span>
                         <span class="block text-xs text-muted-foreground">Makes this field available in Person or Position column settings and CSV exports.</span>
                     </span>
                 </label>
 
-                <label class="flex cursor-pointer items-start gap-3 rounded-lg border p-4" :class="!form.is_list_column ? 'opacity-60' : ''">
-                    <input id="custom-field-searchable" v-model="form.is_searchable" type="checkbox" class="mt-1" :disabled="!form.is_list_column">
+                <label class="flex cursor-pointer items-start gap-3 rounded-lg border p-4" :class="(!form.is_list_column || form.is_sensitive) ? 'opacity-60' : ''">
+                    <input id="custom-field-searchable" v-model="form.is_searchable" type="checkbox" class="mt-1" :disabled="!form.is_list_column || form.is_sensitive">
                     <span>
                         <span class="block text-sm font-medium">Searchable</span>
                         <span class="block text-xs text-muted-foreground">Includes this field in the list search when the column is visible.</span>
@@ -137,7 +168,7 @@ function moveOption(index: number, direction: -1 | 1): void {
                 </label>
 
                 <label class="flex cursor-pointer items-start gap-3 rounded-lg border p-4">
-                    <input id="custom-field-filterable" v-model="form.is_filterable" type="checkbox" class="mt-1">
+                    <input id="custom-field-filterable" v-model="form.is_filterable" type="checkbox" class="mt-1" :disabled="form.is_sensitive">
                     <span>
                         <span class="block text-sm font-medium">Filterable</span>
                         <span class="block text-xs text-muted-foreground">Adds a dedicated filter for this field on the Person or Position list.</span>

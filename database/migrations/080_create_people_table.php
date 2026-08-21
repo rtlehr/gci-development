@@ -23,8 +23,10 @@ return new class extends Migration
             $table->string('person_code')->nullable()->unique();
 
             $table->string('first_name');
+            $table->string('alternate_first_name')->nullable();
             $table->string('preferred_name')->nullable();
             $table->string('last_name');
+            $table->string('alternate_last_name')->nullable();
 
             $table->string('company_name')->nullable();
             $table->string('email')->nullable();

@@ -19,12 +19,13 @@ class CustomField extends Model
 
     protected $fillable = [
         'entity_type', 'name', 'key', 'field_type', 'description', 'placeholder',
-        'is_required', 'is_active', 'is_list_column', 'is_searchable', 'is_filterable', 'sort_order', 'created_by', 'updated_by',
+        'is_required', 'is_active', 'is_sensitive', 'is_list_column', 'is_searchable', 'is_filterable', 'sort_order', 'created_by', 'updated_by',
     ];
 
     protected $casts = [
         'is_required' => 'boolean',
         'is_active' => 'boolean',
+        'is_sensitive' => 'boolean',
         'is_list_column' => 'boolean',
         'is_searchable' => 'boolean',
         'is_filterable' => 'boolean',

@@ -8,16 +8,16 @@ class UserPermissionsDefinition
     {
         return [
             'list_key' => 'user_permissions',
-            'default_sort' => 'person_code',
+            'default_sort' => 'full_name',
             'default_direction' => 'asc',
 
             'columns' => [
                 [
                     'key' => 'person_code',
                     'label' => 'AIN Number',
-                    'db_field' => 'person_code',
-                    'sortable' => true,
-                    'searchable' => true,
+                    'db_field' => null,
+                    'sortable' => false,
+                    'searchable' => false,
                     'hideable' => true,
                     'exportable' => true,
                     'default_visible' => true,

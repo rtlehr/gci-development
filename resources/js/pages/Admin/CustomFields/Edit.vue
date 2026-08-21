@@ -16,6 +16,7 @@ const form = useForm({
     placeholder: props.customField.placeholder ?? '',
     is_required: Boolean(props.customField.is_required),
     is_active: Boolean(props.customField.is_active),
+    is_sensitive: Boolean(props.customField.is_sensitive),
     is_list_column: Boolean(props.customField.is_list_column),
     is_searchable: Boolean(props.customField.is_searchable),
     is_filterable: Boolean(props.customField.is_filterable),
@@ -44,7 +45,7 @@ function submit(): void {
 
         <form class="space-y-6" @submit.prevent="submit">
             <ValidationSummary :errors="form.errors" />
-            <CustomFieldAdminForm :form="form" :type-locked="customField.values_count > 0" />
+            <CustomFieldAdminForm :form="form" :type-locked="customField.values_count > 0" :sensitivity-locked="customField.values_count > 0" />
             <FormActions cancel-href="/admin/custom-fields" submit-label="Save Changes" :processing="form.processing" :dirty="form.isDirty" />
         </form>
     </PageContainer>

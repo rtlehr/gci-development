@@ -19,8 +19,9 @@ class PeopleDefinition
                 [
                     'key' => 'person_code',
                     'label' => 'Code',
-                    'db_field' => 'people.person_code',
-                    'sortable' => true,
+                    'db_field' => null,
+                    'lookup_hash_field' => 'people.person_code_lookup',
+                    'sortable' => false,
                     'searchable' => true,
                     'hideable' => true,
                     'exportable' => true,

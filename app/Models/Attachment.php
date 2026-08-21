@@ -4,7 +4,6 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Support\Facades\Storage;
 
 class Attachment extends Model
 {
@@ -25,6 +24,12 @@ class Attachment extends Model
         'uploaded_by_user_id',
         'is_primary',
         'sort_order',
+    ];
+
+    protected $hidden = [
+        'stored_name',
+        'disk',
+        'path',
     ];
 
     protected $casts = [
@@ -49,10 +54,10 @@ class Attachment extends Model
 
     public function getUrlAttribute(): ?string
     {
-        if (!$this->path) {
+        if (! $this->exists || ! $this->path) {
             return null;
         }
 
-        return Storage::disk($this->disk)->url($this->path);
+        return route('attachments.show', $this);
     }
 }

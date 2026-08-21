@@ -8,6 +8,7 @@ use App\Models\Role;
 use App\Models\Team;
 use App\Models\User;
 use App\Models\UserListPreference;
+use App\Rules\UniquePersonCode;
 use App\Services\AddressService;
 use App\Services\AttachmentService;
 use App\Services\CustomFieldListService;
@@ -96,7 +97,7 @@ class PeopleController extends Controller
         AttachmentService $attachmentService
     ) {
         $validated = $request->validate([
-            'person_code' => ['required', 'string', 'max:255', 'unique:people,person_code'],
+            'person_code' => ['required', 'string', 'max:255', new UniquePersonCode()],
             'first_name' => ['required', 'string', 'max:255'],
             'alternate_first_name' => ['nullable', 'string', 'max:255'],
             'preferred_name' => ['nullable', 'string', 'max:255'],
@@ -281,7 +282,7 @@ class PeopleController extends Controller
         $person = Person::findOrFail($id);
 
         $validated = $request->validate([
-            'person_code' => ['required', 'string', 'max:255', 'unique:people,person_code,' . $person->id],
+            'person_code' => ['required', 'string', 'max:255', new UniquePersonCode($person->id)],
             'first_name' => ['required', 'string', 'max:255'],
             'alternate_first_name' => ['nullable', 'string', 'max:255'],
             'preferred_name' => ['nullable', 'string', 'max:255'],

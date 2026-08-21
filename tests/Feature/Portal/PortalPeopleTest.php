@@ -83,7 +83,7 @@ it('allows an authorized user to create a person in the portal', function () {
             'role_ids' => [],
         ]);
 
-    $person = Person::query()->where('person_code', 'PORTAL-NEW-PERSON')->firstOrFail();
+    $person = Person::query()->wherePersonCode('PORTAL-NEW-PERSON')->firstOrFail();
 
     $response->assertRedirect(route('portal.people.show', $person->id));
     $this->assertNotNull($person->user_id);

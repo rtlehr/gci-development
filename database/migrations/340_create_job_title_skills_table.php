@@ -47,6 +47,8 @@ return new class extends Migration
             $table->text('description')
                 ->nullable();
 
+            $table->string('requirement_type', 20)->default('required');
+
             /*
             |--------------------------------------------------------------------------
             | Status
@@ -66,6 +68,8 @@ return new class extends Migration
                 ->default(0);
 
             $table->timestamps();
+
+            $table->index(['job_title_id', 'requirement_type']);
 
             /*
             |--------------------------------------------------------------------------

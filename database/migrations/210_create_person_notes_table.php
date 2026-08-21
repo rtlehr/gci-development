@@ -2,7 +2,6 @@
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
@@ -25,24 +24,6 @@ return new class extends Migration
 
             $table->index(['person_id', 'category', 'created_at']);
         });
-
-        DB::table('people')
-            ->whereNotNull('notes')
-            ->where('notes', '<>', '')
-            ->orderBy('id')
-            ->chunkById(100, function ($people): void {
-                foreach ($people as $person) {
-                    DB::table('person_notes')->insert([
-                        'person_id' => $person->id,
-                        'entered_by_user_id' => null,
-                        'entered_by_name' => 'Legacy record',
-                        'category' => 'general',
-                        'note' => $person->notes,
-                        'created_at' => $person->updated_at ?? $person->created_at ?? now(),
-                        'updated_at' => $person->updated_at ?? $person->created_at ?? now(),
-                    ]);
-                }
-            });
     }
 
     public function down(): void

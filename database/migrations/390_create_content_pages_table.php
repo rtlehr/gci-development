@@ -15,9 +15,11 @@ return new class extends Migration
             $table->string('navigation_label')->nullable();
             $table->text('summary')->nullable();
             $table->longText('content_html')->nullable();
+            $table->string('page_type', 40)->default('standard')->index();
             $table->string('visibility', 32)->default('both');
             $table->string('status', 32)->default('draft');
             $table->string('menu_location', 32)->default('header');
+            $table->boolean('is_active')->default(true)->index();
             $table->unsignedInteger('sort_order')->default(0);
             $table->timestamp('effective_at')->nullable();
             $table->timestamp('expires_at')->nullable();

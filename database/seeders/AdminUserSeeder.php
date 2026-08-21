@@ -51,8 +51,8 @@ class AdminUserSeeder extends Seeder
                     ]
                 );
 
-                $person = Person::updateOrCreate(
-                    ['person_code' => $seedUser['person_code']],
+                $person = Person::updateOrCreateByPersonCode(
+                    $seedUser['person_code'],
                     [
                         'user_id' => $user->id,
                         'first_name' => $seedUser['first_name'],

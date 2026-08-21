@@ -130,9 +130,7 @@ class ResolveUserFromPhpSource
             return $next($request);
         }
 
-        $person = Person::query()
-            ->where('person_code', $personCode)
-            ->first();
+        $person = Person::findByPersonCode($personCode);
 
         if (! $person) {
             $this->clearAuthenticatedSession($request);
@@ -205,9 +203,7 @@ class ResolveUserFromPhpSource
 
     private function loginPersonCode(Request $request, string|int $personCode): void
     {
-        $person = Person::query()
-            ->where('person_code', $personCode)
-            ->first();
+        $person = Person::findByPersonCode($personCode);
 
         if (! $person?->user_id) {
             return;

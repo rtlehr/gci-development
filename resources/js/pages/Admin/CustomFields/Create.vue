@@ -14,6 +14,7 @@ const form = useForm({
     placeholder: '',
     is_required: false,
     is_active: true,
+    is_sensitive: false,
     is_list_column: false,
     is_searchable: false,
     is_filterable: false,

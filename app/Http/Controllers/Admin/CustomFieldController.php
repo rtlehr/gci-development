@@ -90,6 +90,10 @@ class CustomFieldController extends Controller
                 $errors['entity_type'] = 'The record type cannot be changed after values have been saved.';
             }
 
+            if ($validated['is_sensitive'] !== $customField->is_sensitive) {
+                $errors['is_sensitive'] = 'Encryption cannot be enabled or disabled after values have been saved.';
+            }
+
             if ($errors !== []) {
                 return back()->withErrors($errors);
             }
@@ -144,6 +148,7 @@ class CustomFieldController extends Controller
                     'placeholder' => $field->placeholder,
                     'is_required' => $field->is_required,
                     'is_active' => $field->is_active,
+                    'is_sensitive' => $field->is_sensitive,
                     'is_list_column' => $field->is_list_column,
                     'is_searchable' => $field->is_searchable,
                     'is_filterable' => $field->is_filterable,
@@ -196,6 +201,7 @@ class CustomFieldController extends Controller
             'custom_fields.*.placeholder' => ['nullable', 'string', 'max:255'],
             'custom_fields.*.is_required' => ['required', 'boolean'],
             'custom_fields.*.is_active' => ['required', 'boolean'],
+            'custom_fields.*.is_sensitive' => ['nullable', 'boolean'],
             'custom_fields.*.is_list_column' => ['nullable', 'boolean'],
             'custom_fields.*.is_searchable' => ['nullable', 'boolean'],
             'custom_fields.*.is_filterable' => ['nullable', 'boolean'],
@@ -218,9 +224,13 @@ class CustomFieldController extends Controller
             foreach ($items as $item) {
                 $field = CustomField::where('entity_type', $item['entity_type'])->where('key', $item['key'])->first();
 
-                if ($field?->hasValues() && ($field->field_type !== $item['field_type'] || $field->entity_type !== $item['entity_type'])) {
+                if ($field?->hasValues() && (
+                    $field->field_type !== $item['field_type']
+                    || $field->entity_type !== $item['entity_type']
+                    || $field->is_sensitive !== (bool) ($item['is_sensitive'] ?? false)
+                )) {
                     throw ValidationException::withMessages([
-                        'custom_fields_file' => "{$item['name']} already has saved values and its field type/record type cannot be changed by import.",
+                        'custom_fields_file' => "{$item['name']} already has saved values and its field type, record type, or encryption setting cannot be changed by import.",
                     ]);
                 }
 
@@ -231,12 +241,25 @@ class CustomFieldController extends Controller
                     'placeholder' => $item['placeholder'] ?? null,
                     'is_required' => (bool) $item['is_required'],
                     'is_active' => (bool) $item['is_active'],
+                    'is_sensitive' => (bool) ($item['is_sensitive'] ?? false),
                     'is_list_column' => (bool) ($item['is_list_column'] ?? false),
                     'is_searchable' => (bool) ($item['is_searchable'] ?? false),
                     'is_filterable' => (bool) ($item['is_filterable'] ?? false),
                     'sort_order' => (int) $item['sort_order'],
                     'updated_by' => $userId,
                 ];
+
+                if ($attributes['is_sensitive']) {
+                    if (! in_array($attributes['field_type'], [CustomField::TYPE_TEXT, CustomField::TYPE_TEXTAREA], true)) {
+                        throw ValidationException::withMessages([
+                            'custom_fields_file' => "{$item['name']} can only be encrypted when its type is text or multiline text.",
+                        ]);
+                    }
+
+                    $attributes['is_list_column'] = false;
+                    $attributes['is_searchable'] = false;
+                    $attributes['is_filterable'] = false;
+                }
 
                 if ($field) {
                     $field->update($attributes);
@@ -283,6 +306,7 @@ class CustomFieldController extends Controller
             'placeholder' => ['nullable', 'string', 'max:255'],
             'is_required' => ['boolean'],
             'is_active' => ['boolean'],
+            'is_sensitive' => ['boolean'],
             'is_list_column' => ['boolean'],
             'is_searchable' => ['boolean'],
             'is_filterable' => ['boolean'],
@@ -294,12 +318,22 @@ class CustomFieldController extends Controller
         ];
 
         $validated = $request->validate($rules);
-        foreach (['is_required', 'is_active', 'is_list_column', 'is_searchable', 'is_filterable'] as $flag) {
+        foreach (['is_required', 'is_active', 'is_sensitive', 'is_list_column', 'is_searchable', 'is_filterable'] as $flag) {
             $validated[$flag] = (bool) ($validated[$flag] ?? false);
         }
         $validated['sort_order'] = (int) ($validated['sort_order'] ?? 0);
 
-        if (! $validated['is_list_column']) {
+        if ($validated['is_sensitive']) {
+            if (! in_array($validated['field_type'], [CustomField::TYPE_TEXT, CustomField::TYPE_TEXTAREA], true)) {
+                throw ValidationException::withMessages([
+                    'is_sensitive' => 'Only text and multiline text custom fields can be marked sensitive.',
+                ]);
+            }
+
+            $validated['is_list_column'] = false;
+            $validated['is_searchable'] = false;
+            $validated['is_filterable'] = false;
+        } elseif (! $validated['is_list_column']) {
             $validated['is_searchable'] = false;
         }
 

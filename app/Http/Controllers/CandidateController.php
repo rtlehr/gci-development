@@ -64,7 +64,7 @@ class CandidateController extends Controller
                         ->orWhereHas('person', function ($personQuery) use ($search) {
                             $personQuery->where('first_name', 'like', "%{$search}%")
                                 ->orWhere('last_name', 'like', "%{$search}%")
-                                ->orWhere('person_code', 'like', "%{$search}%");
+                                ->orWhere('person_code_lookup', app(\App\Services\Encryption\LookupHashService::class)->hash($search));
                         })
                         ->orWhereHas('position', function ($positionQuery) use ($search) {
                             $positionQuery->where('job_title', 'like', "%{$search}%")
@@ -675,7 +675,7 @@ class CandidateController extends Controller
                         ->orWhereHas('person', function ($personQuery) use ($search) {
                             $personQuery->where('first_name', 'like', "%{$search}%")
                                 ->orWhere('last_name', 'like', "%{$search}%")
-                                ->orWhere('person_code', 'like', "%{$search}%");
+                                ->orWhere('person_code_lookup', app(\App\Services\Encryption\LookupHashService::class)->hash($search));
                         })
                         ->orWhereHas('position', function ($positionQuery) use ($search) {
                             $positionQuery->where('job_title', 'like', "%{$search}%")

@@ -59,8 +59,8 @@ class CandidateSeeder extends Seeder
                 [$code, $first, $last, $positionCode, $candidateStatus, $stage, $daysAgo] = $scenario;
                 $preferred = $scenario[7] ?? null;
 
-                $person = Person::updateOrCreate(
-                    ['person_code' => $code],
+                $person = Person::updateOrCreateByPersonCode(
+                    $code,
                     [
                         'first_name' => $first,
                         'preferred_name' => $preferred,

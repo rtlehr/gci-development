@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\CustomField;
 use App\Models\CustomFieldValue;
+use App\Services\Encryption\LookupHashService;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 use Illuminate\Pagination\LengthAwarePaginator;
@@ -20,6 +21,7 @@ class CustomFieldListService
             ->where('entity_type', $entityType)
             ->where('is_active', true)
             ->where('is_list_column', true)
+            ->where('is_sensitive', false)
             ->orderBy('sort_order')
             ->orderBy('name')
             ->get()
@@ -55,6 +57,7 @@ class CustomFieldListService
             ->where('entity_type', $entityType)
             ->where('is_active', true)
             ->where('is_filterable', true)
+            ->where('is_sensitive', false)
             ->orderBy('sort_order')
             ->orderBy('name')
             ->get()
@@ -91,6 +94,11 @@ class CustomFieldListService
                                     ->orWhereRaw('CAST(cfv.value_json AS CHAR) LIKE ?', ["%{$search}%"]);
                             });
                     });
+                } elseif (! empty($column['lookup_hash_field'])) {
+                    $outer->orWhere(
+                        $column['lookup_hash_field'],
+                        app(LookupHashService::class)->hash($search),
+                    );
                 } elseif (! empty($column['db_field'])) {
                     $outer->orWhere($column['db_field'], 'like', "%{$search}%");
                 }
@@ -107,6 +115,7 @@ class CustomFieldListService
             ->where('entity_type', $entityType)
             ->where('is_active', true)
             ->where('is_filterable', true)
+            ->where('is_sensitive', false)
             ->whereIn('id', array_map('intval', array_keys($input)))
             ->get()
             ->keyBy('id');

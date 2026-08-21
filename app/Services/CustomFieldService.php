@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\CustomField;
+use App\Services\Encryption\EncryptionManager;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Collection;
 use Illuminate\Validation\Rule;
@@ -65,7 +66,7 @@ class CustomFieldService
             $result[(string) $field->id] = match ($field->field_type) {
                 CustomField::TYPE_DATE => $value?->value_date?->format('Y-m-d'),
                 CustomField::TYPE_CHECKBOX => $value?->value_json ?? [],
-                default => $value?->value_text ?? '',
+                default => $this->textValue($field, $value?->value_text),
             };
         }
 
@@ -94,7 +95,7 @@ class CustomFieldService
                 } elseif ($field->field_type === CustomField::TYPE_RADIO) {
                     $display = $field->options->firstWhere('value', $value->value_text)?->label ?? $value->value_text;
                 } else {
-                    $display = $value->value_text;
+                    $display = $this->textValue($field, $value->value_text);
                 }
             }
 
@@ -132,7 +133,9 @@ class CustomFieldService
             } elseif ($field->field_type === CustomField::TYPE_CHECKBOX) {
                 $attributes['value_json'] = array_values((array) $raw);
             } else {
-                $attributes['value_text'] = (string) $raw;
+                $attributes['value_text'] = $field->is_sensitive
+                    ? app(EncryptionManager::class)->encrypt((string) $raw)
+                    : (string) $raw;
             }
 
             $model->customFieldValues()->updateOrCreate(
@@ -141,4 +144,17 @@ class CustomFieldService
             );
         }
     }
+    private function textValue(CustomField $field, ?string $value): string
+    {
+        if ($value === null) {
+            return '';
+        }
+
+        if (! $field->is_sensitive) {
+            return $value;
+        }
+
+        return (string) app(EncryptionManager::class)->decrypt($value);
+    }
+
 }

@@ -28,6 +28,13 @@ return [
      */
     'allow_plaintext_fallback' => env('IRAD_ENCRYPTION_ALLOW_PLAINTEXT_FALLBACK', false),
 
+    /*
+     * Dedicated HMAC key for deterministic lookup hashes used by encrypted
+     * searchable identifiers such as people.person_code. Keep this stable
+     * across APP_KEY rotations unless lookup hashes are explicitly rebuilt.
+     */
+    'lookup_key' => env('IRAD_ENCRYPTION_LOOKUP_KEY') ?: env('APP_KEY'),
+
     'drivers' => [
         'laravel' => [
             'provider' => App\Services\Encryption\LaravelDataEncryptionProvider::class,

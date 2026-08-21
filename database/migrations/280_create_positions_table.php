@@ -43,6 +43,8 @@ return new class extends Migration
                 'Senior',
             ])->nullable();
 
+            $table->unsignedTinyInteger('level')->nullable();
+
             /*
             |--------------------------------------------------------------------------
             | Labor Category
@@ -160,6 +162,13 @@ return new class extends Migration
 
             $table->string('project_team_name')
                 ->nullable();
+
+            $table->string('team_name')->nullable();
+
+            $table->foreignId('project_manager_user_id')
+                ->nullable()
+                ->constrained('users')
+                ->nullOnDelete();
 
             $table->string('customer_lead_name')
                 ->nullable();

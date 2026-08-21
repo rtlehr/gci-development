@@ -8,6 +8,7 @@ use App\Models\User;
 use App\Models\UserListPreference;
 use App\Services\ListEngine;
 use App\Services\ListExportService;
+use App\Services\Encryption\LookupHashService;
 use App\Services\PermissionService;
 use App\Services\UserResolver;
 use App\Support\ListDefinitions\UserPermissionsDefinition;
@@ -33,7 +34,6 @@ class UserPermissionController extends Controller
                 ->leftJoin('people', 'people.user_id', '=', 'users.id')
                 ->with(['person', 'permissions', 'roles'])
                 ->select('users.*')
-                ->selectRaw("COALESCE(people.person_code, '') as person_code")
                 ->selectRaw("
                     TRIM(
                         CONCAT(
@@ -51,7 +51,7 @@ class UserPermissionController extends Controller
                         $q->where('users.email', 'like', "%{$search}%")
                             ->orWhere('people.first_name', 'like', "%{$search}%")
                             ->orWhere('people.last_name', 'like', "%{$search}%")
-                            ->orWhere('people.person_code', 'like', "%{$search}%");
+                            ->orWhere('people.person_code_lookup', app(LookupHashService::class)->hash($search));
                     });
                 }
             }
@@ -209,7 +209,7 @@ class UserPermissionController extends Controller
                         $q->where('users.email', 'like', "%{$search}%")
                             ->orWhere('people.first_name', 'like', "%{$search}%")
                             ->orWhere('people.last_name', 'like', "%{$search}%")
-                            ->orWhere('people.person_code', 'like', "%{$search}%");
+                            ->orWhere('people.person_code_lookup', app(LookupHashService::class)->hash($search));
                     });
                 }
             }

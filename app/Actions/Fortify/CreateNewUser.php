@@ -78,9 +78,7 @@ class CreateNewUser implements CreatesNewUsers
         do {
             $personCode = 'REG-'.Str::upper(Str::random(12));
         } while (
-            Person::query()
-                ->where('person_code', $personCode)
-                ->exists()
+            Person::personCodeExists($personCode)
         );
 
         return $personCode;

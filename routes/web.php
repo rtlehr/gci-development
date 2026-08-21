@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\AttachmentController;
 use App\Models\Person;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -26,13 +27,15 @@ Route::post('/dev/switch-user', function (Request $request) {
     abort_unless(config('devuser.enabled') === true, 404);
 
     $validated = $request->validate([
-        'person_code' => ['required', 'exists:people,person_code'],
+        'person_code' => ['required', 'string'],
     ]);
 
     $person = Person::query()
-        ->where('person_code', $validated['person_code'])
+        ->wherePersonCode($validated['person_code'])
         ->whereNotNull('user_id')
-        ->firstOrFail();
+        ->first();
+
+    abort_unless($person, 404);
 
     session([
         'dev_person_code' => $person->person_code,
@@ -53,10 +56,12 @@ Route::post('/dev/clear-user', function (Request $request) {
 
     $defaultPersonCode = config('devuser.person_code');
 
-    $person = Person::query()
-        ->where('person_code', $defaultPersonCode)
-        ->whereNotNull('user_id')
-        ->first();
+    $person = filled($defaultPersonCode)
+        ? Person::query()
+            ->wherePersonCode($defaultPersonCode)
+            ->whereNotNull('user_id')
+            ->first()
+        : null;
 
     if ($person) {
         Auth::loginUsingId($person->user_id);
@@ -70,6 +75,11 @@ Route::post('/dev/clear-user', function (Request $request) {
     return redirect('/')
         ->with('success', 'Development user reset.');
 })->name('dev.clear-user');
+
+
+Route::get('/attachments/{attachment}', [AttachmentController::class, 'show'])
+    ->middleware('auth')
+    ->name('attachments.show');
 
 require __DIR__.'/people.php';
 require __DIR__.'/position.php';

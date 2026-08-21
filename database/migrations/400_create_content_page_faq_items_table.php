@@ -8,13 +8,6 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::table('content_pages', function (Blueprint $table): void {
-            $table->string('page_type', 40)
-                ->default('standard')
-                ->after('content_html')
-                ->index();
-        });
-
         Schema::create('content_page_faq_items', function (Blueprint $table): void {
             $table->id();
             $table->foreignId('content_page_id')
@@ -36,10 +29,5 @@ return new class extends Migration
     public function down(): void
     {
         Schema::dropIfExists('content_page_faq_items');
-
-        Schema::table('content_pages', function (Blueprint $table): void {
-            $table->dropIndex(['page_type']);
-            $table->dropColumn('page_type');
-        });
     }
 };

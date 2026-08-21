@@ -58,9 +58,7 @@ class UserResolver
             return null;
         }
 
-        return Person::query()
-            ->where('person_code', $personCode)
-            ->first();
+        return Person::findByPersonCode($personCode);
     }
 
     /**

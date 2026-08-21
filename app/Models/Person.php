@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Casts\EncryptedValue;
+use App\Casts\EncryptedSearchableValue;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use App\Models\PositionAssignment;
@@ -15,6 +16,8 @@ use App\Models\Group;
 use App\Models\Team;
 use App\Models\PersonNote;
 use App\Models\CustomFieldValue;
+use App\Services\Encryption\LookupHashService;
+use Illuminate\Database\Eloquent\Builder;
 
 class Person extends Model
 {
@@ -37,8 +40,39 @@ class Person extends Model
 
 
     protected $casts = [
+        'person_code' => EncryptedSearchableValue::class.':person_code_lookup',
         'notes' => EncryptedValue::class,
     ];
+
+    public function scopeWherePersonCode(Builder $query, string|int $personCode): Builder
+    {
+        return $query->where(
+            'person_code_lookup',
+            app(LookupHashService::class)->hash($personCode),
+        );
+    }
+
+    public static function findByPersonCode(string|int $personCode): ?self
+    {
+        return static::query()->wherePersonCode($personCode)->first();
+    }
+
+    public static function personCodeExists(string|int $personCode, ?int $ignoreId = null): bool
+    {
+        return static::query()
+            ->wherePersonCode($personCode)
+            ->when($ignoreId !== null, fn (Builder $query) => $query->where('id', '<>', $ignoreId))
+            ->exists();
+    }
+
+    public static function updateOrCreateByPersonCode(string|int $personCode, array $values = []): self
+    {
+        $person = static::query()->wherePersonCode($personCode)->first() ?? new static();
+        $person->fill(['person_code' => (string) $personCode, ...$values]);
+        $person->save();
+
+        return $person;
+    }
 
     public function assignments()
     {
