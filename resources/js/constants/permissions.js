@@ -7,6 +7,10 @@ export const Permissions = {
     USER_EVENT_LOG_ACCESS: 'access_user_event_log',
     USER_EVENT_LOG_EXPORT: 'export_user_event_log',
 
+    DATA_IMPORT_ACCESS: 'access_data_import',
+    DATA_IMPORT_MANAGE: 'manage_data_import',
+    DATA_IMPORT_ROLLBACK: 'rollback_data_import',
+
     PEOPLE_ACCESS: 'access_people',
     PEOPLE_CREATE: 'create_people',
     PEOPLE_READ: 'read_people',

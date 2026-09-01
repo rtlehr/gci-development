@@ -106,6 +106,9 @@ class RoleSeeder extends Seeder
             'manage_custom_fields',
             'access_user_event_log',
             'export_user_event_log',
+            'access_data_import',
+            'manage_data_import',
+            'rollback_data_import',
 
             'access_position_titles',
             'create_position_titles',

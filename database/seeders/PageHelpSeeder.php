@@ -1140,6 +1140,56 @@ HTML,
 HTML,
             ],
 
+            'admin.data-imports.index' => [
+                'title' => 'Data Import',
+                'content_html' => <<<'HTML'
+<p>Data Import lets authorized administrators load staffing information from Excel while reviewing mappings, validation results, and existing-record conflicts before any staffing data changes.</p>
+<h3>Start With a Template</h3>
+<p>Select a Candidate Workflow and download the Insight Excel template when you need a clean workbook to populate. The template reflects the current importable fields, active custom fields, workflow steps, and reference values.</p>
+<h3>Import History</h3>
+<p>Import History shows prior uploads and their current status. Open an import to continue mapping or validation, review execution results, or roll back an eligible completed import.</p>
+<h3>Permissions</h3>
+<ul>
+<li><strong>Access Data Import</strong> allows a user to view import history and import details.</li>
+<li><strong>Manage Data Import</strong> allows uploads, mappings, validation, review decisions, value translations, and execution.</li>
+<li><strong>Rollback Data Import</strong> allows eligible completed imports to be reversed.</li>
+</ul>
+HTML,
+            ],
+
+            'admin.data-imports.create' => [
+                'title' => 'Upload Excel Workbook',
+                'content_html' => <<<'HTML'
+<p>Upload an <strong>.xlsx</strong> workbook for inspection. Uploading a workbook does not create or update staffing records.</p>
+<h3>Workbook Requirements</h3>
+<ul>
+<li>Maximum upload size is 20 MB.</li>
+<li>Row 1 of the selected worksheet must contain the column headers.</li>
+<li>Workbooks are stored in Insight's protected private storage.</li>
+<li>Insight rejects malformed or unsafe workbook XML and applies worksheet, row, and column processing limits.</li>
+</ul>
+<h3>Next Step</h3>
+<p>After the workbook is inspected, select the worksheet you want to use and continue to Column Mapping.</p>
+HTML,
+            ],
+
+            'admin.data-imports.show' => [
+                'title' => 'Data Import Details',
+                'content_html' => <<<'HTML'
+<p>This page guides an Excel workbook through worksheet selection, field mapping, validation, review, execution, and rollback.</p>
+<h3>Column Mapping</h3>
+<p>Map every Excel header to an Insight field or choose <strong>Do Not Import</strong>. Candidate Workflow destinations are generated from the selected workflow, including only the properties enabled for each active step. Active Position and Person custom fields are also available.</p>
+<h3>Validation and Review</h3>
+<p>Run validation before importing. Insight matches People by Person Code first and email second; names alone are not used for automatic matching. Existing People, Positions, and Candidates require an explicit review decision. Unknown lookup values and invalid data are flagged rather than created automatically.</p>
+<h3>Value Mappings</h3>
+<p>When a spreadsheet uses a different value for a controlled Insight field, use the available value-mapping control to translate it to a current valid value, then revalidate.</p>
+<h3>Run Import</h3>
+<p>The Run Import action is enabled only when validation has no unresolved errors or review items. Each ready spreadsheet row runs in its own database transaction, and successful changes are written to the encrypted rollback journal.</p>
+<h3>Rollback</h3>
+<p>Eligible completed imports can be rolled back by a user with Rollback Data Import permission. Insight reverses journaled changes in reverse order. If a record was changed after the import, Insight preserves the newer edit and reports a rollback conflict instead of overwriting it.</p>
+HTML,
+            ],
+
             'portal.jobtitlerequirements.index' => [
                 'title' => 'Job Title Requirements',
                 'content_html' => <<<'HTML'
