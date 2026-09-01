@@ -485,7 +485,7 @@ class CandidateController extends Controller
 
         return Inertia::render('Portal/Candidates/Edit', [
             'candidate' => $candidateData,
-            'people' => $this->getPeopleOptions(),
+            'people' => $this->getPeopleOptions($candidate->person_id),
             'positions' => $this->getPositionOptions(),
             'workflow' => [
                 'id' => $candidate->workflow->id,
@@ -539,7 +539,7 @@ class CandidateController extends Controller
         }
 
         $data = $request->validate([
-            'person_id' => ['required', $this->candidatePersonRule()],
+            'person_id' => ['required', $this->candidatePersonRule($candidate->person_id)],
             'position_id' => ['required', 'exists:positions,id'],
             'status' => ['required', 'in:submitted,selected,approved,assigned'],
             'candidate_fbr' => ['nullable', 'numeric'],
@@ -608,7 +608,7 @@ class CandidateController extends Controller
         );
 
         return redirect()
-            ->route('portal.candidates.index')
+            ->route('portal.candidates.show', $candidate)
             ->with('success', 'Candidate updated successfully.');
     }
 
@@ -800,11 +800,21 @@ class CandidateController extends Controller
     /**
      * Build the people select options.
      */
-    private function getPeopleOptions()
+    private function getPeopleOptions(?int $currentPersonId = null)
     {
         return Person::query()
-            ->whereHas('user.roles', function ($query) {
-                $query->where('roles.name', 'candidate');
+            ->where(function ($query) use ($currentPersonId) {
+                $query->whereHas('user.roles', function ($roleQuery) {
+                    $roleQuery->where('roles.name', 'candidate');
+                });
+
+                // Existing seeded/legacy candidates may reference a Person who
+                // is not linked to an application user with the candidate role.
+                // Keep that currently assigned person selectable while editing
+                // so unrelated workflow changes are not blocked.
+                if ($currentPersonId) {
+                    $query->orWhere('people.id', $currentPersonId);
+                }
             })
             ->orderBy('last_name')
             ->orderBy('first_name')
@@ -831,16 +841,25 @@ class CandidateController extends Controller
     /**
      * Require the selected person to be linked to a user with the candidate role.
      */
-    private function candidatePersonRule()
+    private function candidatePersonRule(?int $currentPersonId = null)
     {
-        return Rule::exists('people', 'id')->where(function ($query) {
-            $query->whereIn('user_id', function ($userQuery) {
-                $userQuery
-                    ->select('users.id')
-                    ->from('users')
-                    ->join('role_user', 'role_user.user_id', '=', 'users.id')
-                    ->join('roles', 'roles.id', '=', 'role_user.role_id')
-                    ->where('roles.name', 'candidate');
+        return Rule::exists('people', 'id')->where(function ($query) use ($currentPersonId) {
+            $query->where(function ($personQuery) use ($currentPersonId) {
+                $personQuery->whereIn('user_id', function ($userQuery) {
+                    $userQuery
+                        ->select('users.id')
+                        ->from('users')
+                        ->join('role_user', 'role_user.user_id', '=', 'users.id')
+                        ->join('roles', 'roles.id', '=', 'role_user.role_id')
+                        ->where('roles.name', 'candidate');
+                });
+
+                // Allow the candidate's existing person to remain assigned even
+                // when that legacy/seeded Person is not linked to a candidate-role
+                // user. Changing to a different person still requires that role.
+                if ($currentPersonId) {
+                    $personQuery->orWhere('people.id', $currentPersonId);
+                }
             });
         });
     }

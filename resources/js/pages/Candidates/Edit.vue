@@ -185,6 +185,7 @@
                 </h2>
 
                 <CandidateWorkflowEditor
+                    ref="workflowEditor"
                     v-model="form.step_events"
                     :workflow-steps="workflowSteps"
                     :existing-events="candidate.step_events ?? []"
@@ -242,6 +243,8 @@ function normalizeDateTime(value) {
 
 // Reactive Inertia form state initialized
 // with the existing candidate values.
+const workflowEditor = ref(null)
+
 const form = useForm({
     person_id: props.candidate.person_id ?? '',
     position_id: props.candidate.position_id ?? '',
@@ -250,7 +253,7 @@ const form = useForm({
     submitted_at: normalizeDateTime(props.candidate.submitted_at),
     submitted_by_person_id: props.candidate.submitted_by_person_id ?? '',
     scheduled_start_date: props.candidate.scheduled_start_date ?? '',
-    step_events: [],
+    step_events: props.candidate.step_events ?? [],
 })
 
 /**
@@ -258,6 +261,7 @@ const form = useForm({
  * to the backend update endpoint.
  */
 function submit() {
+    form.step_events = workflowEditor.value?.getValue?.() ?? form.step_events
     form.put(`/candidates/${props.candidate.id}`)
 }
 </script>

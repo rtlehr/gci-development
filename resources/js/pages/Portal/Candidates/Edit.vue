@@ -4,7 +4,7 @@
             <div><h1 class="text-2xl font-semibold text-[#3a3a3a]">Edit Candidate</h1><p class="mt-1 text-sm text-muted-foreground">Update candidate details and workflow progress.</p></div>
             <Button as-child variant="outline"><Link href="/portal/candidates">Back to List</Link></Button>
         </div>
-        <form @submit.prevent="submit" class="grid gap-6 lg:grid-cols-[270px_minmax(0,1fr)]">
+        <form novalidate @submit.prevent="submit" class="grid gap-6 lg:grid-cols-[270px_minmax(0,1fr)]">
             <PortalSectionNav
                 title="Candidate sections"
                 aria-label="Candidate sections"
@@ -80,7 +80,7 @@
                 </section>
                 <section v-show="activeSection === 'steps'" class="rounded-xl border bg-white p-6 shadow-sm">
                     <h2 class="text-lg font-semibold">Workflow Steps</h2><p class="mb-6 text-sm text-muted-foreground">Update status, dates, owners, notes, and comments.</p>
-                    <CandidateWorkflowEditor v-model="form.step_events" :workflow-steps="workflowSteps" :existing-events="candidate.step_events ?? []" :people="people" />
+                    <CandidateWorkflowEditor ref="workflowEditor" v-model="form.step_events" :workflow-steps="workflowSteps" :existing-events="candidate.step_events ?? []" :people="people" />
                 </section>
                 <div class="flex items-center gap-3 border-t pt-5"><Button type="submit" :disabled="form.processing">Update Candidate</Button><Button as-child variant="outline"><Link href="/portal/candidates">Cancel</Link></Button></div>
             </div>
@@ -99,8 +99,12 @@ const props=defineProps({candidate:Object,people:Array,positions:Array,workflow:
 const page = usePage()
 const requestedSection = new URLSearchParams(page.url.split('?')[1] ?? '').get('section')
 const activeSection=ref(requestedSection === 'steps' ? 'steps' : 'details')
+const workflowEditor=ref(null)
 const sections=computed(()=>[{id:'details',title:'Candidate Details',description:'Person, position, and status.',icon:UserRound},{id:'steps',title:'Workflow Steps',description:'Status, dates, and notes.',icon:ListChecks,badge:props.workflowSteps?.length||undefined}])
 const norm=v=>v?(v.length>=16?v.slice(0,16):v):''
-const form=useForm({person_id:props.candidate.person_id??'',position_id:props.candidate.position_id??'',status:props.candidate.status??'submitted',candidate_fbr:props.candidate.candidate_fbr??'',submitted_at:norm(props.candidate.submitted_at),submitted_by_person_id:props.candidate.submitted_by_person_id??'',scheduled_start_date:props.candidate.scheduled_start_date??'',step_events:[]})
-function submit(){form.put(`/portal/candidates/${props.candidate.id}`)}
+const form=useForm({person_id:props.candidate.person_id??'',position_id:props.candidate.position_id??'',status:props.candidate.status??'submitted',candidate_fbr:props.candidate.candidate_fbr??'',submitted_at:norm(props.candidate.submitted_at),submitted_by_person_id:props.candidate.submitted_by_person_id??'',scheduled_start_date:props.candidate.scheduled_start_date??'',step_events:props.candidate.step_events??[]})
+function submit(){
+    form.step_events = workflowEditor.value?.getValue?.() ?? form.step_events
+    form.put(`/portal/candidates/${props.candidate.id}`)
+}
 </script>

@@ -175,56 +175,39 @@
 </template>
 
 <script setup>
-// Vue utilities used for reactive data handling
-import { computed, watch, ref } from 'vue'
+import { ref, watch } from 'vue'
 
-// Component props
 const props = defineProps({
-
-    // Workflow step definitions from the backend
     workflowSteps: {
         type: Array,
         required: true,
     },
-
-    // Existing saved workflow events/history
     existingEvents: {
         type: Array,
         default: () => [],
     },
-
-    // Available people list for assignment
     people: {
         type: Array,
         default: () => [],
     },
-
-    // Parent v-model value
     modelValue: {
         type: Array,
         default: () => [],
     },
 })
 
-// Emit used for v-model updates
 const emit = defineEmits(['update:modelValue'])
 
-// Converts datetime values into a format compatible
-// with HTML datetime-local inputs
+// Expose the editor's current state so the parent can read the exact
+// workflow payload immediately before submitting the Inertia form.
+// This avoids relying on watcher timing for persistence.
+
 function normalizeDateTime(value) {
-    if (!value) return ''
+    if (!value || typeof value !== 'string') return ''
 
-    if (typeof value === 'string') {
-
-        // datetime-local only needs YYYY-MM-DDTHH:MM
-        return value.length >= 16 ? value.slice(0, 16) : value
-    }
-
-    return ''
+    return value.length >= 16 ? value.slice(0, 16) : value
 }
 
-// Builds a lookup map of existing workflow events
-// keyed by workflow_step_id for easier access
 function buildEventMap(events) {
     const map = {}
 
@@ -244,31 +227,17 @@ function buildEventMap(events) {
     return map
 }
 
-// Local reactive copy of workflow steps and form data
-const localSteps = ref([])
+function normalizeSteps(workflowSteps, events) {
+    const eventMap = buildEventMap(events)
 
-// Builds the local editable workflow step structure
-function buildLocalSteps() {
-
-    // Convert existing events into an indexed map
-    const existingMap = buildEventMap(props.existingEvents)
-
-    // Merge workflow step definitions with existing event data
-    localSteps.value = (props.workflowSteps || []).map((step) => {
-
-        // Existing saved event for this step
-        const existing = existingMap[step.id] || null
+    return (workflowSteps || []).map((step) => {
+        const existing = eventMap[step.id] || null
 
         return {
             ...step,
-
-            // Form data bound to the UI
             form: {
                 workflow_step_id: step.id,
-
-                // Use existing value first, otherwise use default status
                 status_code: existing?.status_code ?? step.default_status ?? '',
-
                 requested_at: existing?.requested_at ?? '',
                 scheduled_at: existing?.scheduled_at ?? '',
                 completed_at: existing?.completed_at ?? '',
@@ -280,7 +249,26 @@ function buildLocalSteps() {
     })
 }
 
-// Determines if the "Performed By" dropdown should display
+function serializeSteps(steps) {
+    return (steps || []).map((step) => ({
+        workflow_step_id: step.form.workflow_step_id,
+        status_code: step.form.status_code || null,
+        requested_at: step.form.requested_at || null,
+        scheduled_at: step.form.scheduled_at || null,
+        completed_at: step.form.completed_at || null,
+        performed_by_person_id: step.form.performed_by_person_id || null,
+        notes: step.form.notes || null,
+        comments: step.form.comments || null,
+    }))
+}
+
+function sourceEvents() {
+    return props.modelValue?.length ? props.modelValue : props.existingEvents
+}
+
+const localSteps = ref(normalizeSteps(props.workflowSteps, sourceEvents()))
+let syncingFromParent = false
+
 function showPerformedBy(step) {
     return (
         step.allows_requested_at ||
@@ -291,38 +279,49 @@ function showPerformedBy(step) {
     )
 }
 
-// Creates the outgoing payload structure sent back to the parent component
-const outgoingValue = computed(() =>
-    localSteps.value.map((step) => ({
-        workflow_step_id: step.form.workflow_step_id,
-
-        // Empty values are converted to null before submission
-        status_code: step.form.status_code || null,
-        requested_at: step.form.requested_at || null,
-        scheduled_at: step.form.scheduled_at || null,
-        completed_at: step.form.completed_at || null,
-        performed_by_person_id: step.form.performed_by_person_id || null,
-        notes: step.form.notes || null,
-        comments: step.form.comments || null,
-    }))
-)
-
-// Rebuild local step data whenever workflow steps
-// or existing events change
 watch(
     () => [props.workflowSteps, props.existingEvents],
     () => {
-        buildLocalSteps()
+        const incoming = serializeSteps(normalizeSteps(props.workflowSteps, sourceEvents()))
+        const current = serializeSteps(localSteps.value)
+
+        if (JSON.stringify(incoming) === JSON.stringify(current)) return
+
+        syncingFromParent = true
+        localSteps.value = normalizeSteps(props.workflowSteps, sourceEvents())
+        syncingFromParent = false
     },
-    { immediate: true, deep: true }
+    { deep: true }
 )
 
-// Emit updated workflow event data back to the parent component
 watch(
-    outgoingValue,
-    (value) => {
-        emit('update:modelValue', value)
+    () => props.modelValue,
+    (newValue) => {
+        if (!newValue?.length) return
+
+        const incoming = serializeSteps(normalizeSteps(props.workflowSteps, newValue))
+        const current = serializeSteps(localSteps.value)
+
+        if (JSON.stringify(incoming) === JSON.stringify(current)) return
+
+        syncingFromParent = true
+        localSteps.value = normalizeSteps(props.workflowSteps, newValue)
+        syncingFromParent = false
     },
-    { immediate: true, deep: true }
+    { deep: true }
+)
+
+defineExpose({
+    getValue: () => serializeSteps(localSteps.value),
+})
+
+watch(
+    localSteps,
+    (newValue) => {
+        if (syncingFromParent) return
+
+        emit('update:modelValue', serializeSteps(newValue))
+    },
+    { deep: true, immediate: true, flush: 'sync' }
 )
 </script>
