@@ -103,6 +103,19 @@ const validationRows = computed(() => props.validationRows ?? []);
 const hasSavedMapping = computed(() => ['mapped', 'validated', 'validated_with_issues', 'completed', 'completed_with_errors', 'rolled_back', 'rolled_back_with_conflicts'].includes(props.import.status));
 const importCompleted = computed(() => ['completed', 'completed_with_errors', 'rolled_back', 'rolled_back_with_conflicts'].includes(props.import.status));
 const importRolledBack = computed(() => ['rolled_back', 'rolled_back_with_conflicts'].includes(props.import.status));
+const importLocked = computed(() => Boolean(
+    props.import.is_locked
+    || props.import.completed_at
+    || ['importing', 'completed', 'completed_with_errors', 'rolled_back', 'rolled_back_with_conflicts'].includes(props.import.status)
+));
+const pageDescription = computed(() => {
+    if (importRolledBack.value) return 'Review the import results and rollback outcome. This completed import record is read-only.';
+    if (importCompleted.value) return 'Review the completed import results. The original worksheet, mapping, validation, and review decisions are preserved as read-only history.';
+    if (props.import.status === 'importing') return 'This import is currently being processed. Configuration changes are temporarily locked.';
+    if (props.validationSummary) return 'Review validation results, resolve flagged records, and run the import when every row is ready.';
+    if (mappingReady.value) return 'Map each Excel column to an Insight field, save the mapping, and validate the workbook before importing.';
+    return 'Select the worksheet to inspect its Row 1 headers and continue to column mapping.';
+});
 const canRollbackImport = computed(() => Boolean(
     ['completed', 'completed_with_errors'].includes(props.import.status)
     && (props.import.change_count ?? 0) > 0
@@ -263,7 +276,7 @@ function sampleValues(index: number): string {
         <PageHeader
             eyebrow="Data Import"
             :title="props.import.original_filename"
-            description="Select the worksheet, then map each Excel column to an Insight field. Mapping does not modify staffing data."
+            :description="pageDescription"
         >
             <template #actions>
                 <div class="flex items-center gap-2">
@@ -275,16 +288,23 @@ function sampleValues(index: number): string {
             </template>
         </PageHeader>
 
+        <div v-if="importLocked" class="rounded-lg border bg-muted/30 px-4 py-3 text-sm" role="status">
+            <div class="font-medium">Import configuration locked</div>
+            <p class="mt-1 text-muted-foreground">
+                This import has already executed, so its worksheet, mapping, validation results, and review decisions are preserved as read-only history. Rollback remains available when permitted.
+            </p>
+        </div>
+
         <section class="max-w-4xl space-y-4 rounded-xl border bg-background p-5 shadow-sm">
             <div class="space-y-2">
                 <Label for="worksheet">Worksheet</Label>
-                <select id="worksheet" v-model="selectedWorksheet" class="h-10 w-full max-w-md rounded-md border bg-background px-3">
+                <select id="worksheet" v-model="selectedWorksheet" class="h-10 w-full max-w-md rounded-md border bg-background px-3 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" :disabled="importLocked">
                     <option v-for="sheet in props.import.workbook_metadata?.sheets ?? []" :key="sheet.index" :value="sheet.index">
                         {{ sheet.name }} — {{ sheet.row_count }} data rows, {{ sheet.column_count }} columns
                     </option>
                 </select>
             </div>
-            <Button v-if="can(Permissions.DATA_IMPORT_MANAGE)" type="button" @click="saveWorksheet">Continue to Column Mapping</Button>
+            <Button v-if="can(Permissions.DATA_IMPORT_MANAGE) && !importLocked" type="button" @click="saveWorksheet">Continue to Column Mapping</Button>
         </section>
 
         <section v-if="selectedSheet && !mappingReady" class="space-y-4">
@@ -327,7 +347,8 @@ function sampleValues(index: number): string {
                         <select
                             id="candidate-workflow"
                             v-model="selectedWorkflow"
-                            class="h-10 w-full rounded-md border bg-background px-3"
+                            class="h-10 w-full rounded-md border bg-background px-3 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                            :disabled="importLocked"
                             @change="changeWorkflow"
                         >
                             <option :value="null">No Candidate Workflow</option>
@@ -341,13 +362,13 @@ function sampleValues(index: number): string {
                     <div class="space-y-2">
                         <Label for="mapping-template">Saved Mapping Template</Label>
                         <div class="flex gap-2">
-                            <select id="mapping-template" v-model="selectedTemplate" class="h-10 min-w-0 flex-1 rounded-md border bg-background px-3">
+                            <select id="mapping-template" v-model="selectedTemplate" class="h-10 min-w-0 flex-1 rounded-md border bg-background px-3 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" :disabled="importLocked">
                                 <option :value="null">Select a template</option>
                                 <option v-for="template in props.templates" :key="template.id" :value="template.id">
                                     {{ template.name }}
                                 </option>
                             </select>
-                            <Button type="button" variant="outline" :disabled="!selectedTemplate" @click="loadTemplate">Load</Button>
+                            <Button v-if="!importLocked" type="button" variant="outline" :disabled="!selectedTemplate" @click="loadTemplate">Load</Button>
                         </div>
                         <p class="text-xs text-muted-foreground">Templates are matched to this worksheet by normalized header name, not column position.</p>
                     </div>
@@ -364,7 +385,7 @@ function sampleValues(index: number): string {
                     <div class="text-muted-foreground">
                         {{ mappedCount }} of {{ headers.length }} columns mapped · {{ ignoredCount }} ignored
                     </div>
-                    <Button v-if="can(Permissions.DATA_IMPORT_MANAGE)" type="button" variant="outline" @click="fillUnmappedWithIgnore">
+                    <Button v-if="can(Permissions.DATA_IMPORT_MANAGE) && !importLocked" type="button" variant="outline" @click="fillUnmappedWithIgnore">
                         Set Unmapped to Do Not Import
                     </Button>
                 </div>
@@ -387,9 +408,9 @@ function sampleValues(index: number): string {
                                 <TableCell>
                                     <select
                                         v-model="mappings[String(index)]"
-                                        class="h-10 w-full rounded-md border bg-background px-3"
+                                        class="h-10 w-full rounded-md border bg-background px-3 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                                         :class="duplicateDestinations.has(mappings[String(index)]) ? 'border-destructive' : ''"
-                                        :disabled="!can(Permissions.DATA_IMPORT_MANAGE)"
+                                        :disabled="!can(Permissions.DATA_IMPORT_MANAGE) || importLocked"
                                         :aria-label="`Map ${header || `column ${index + 1}`}`"
                                     >
                                         <option value="">Select destination</option>
@@ -408,7 +429,7 @@ function sampleValues(index: number): string {
                     </Table>
                 </div>
 
-                <div v-if="can(Permissions.DATA_IMPORT_MANAGE)" class="flex flex-wrap gap-3">
+                <div v-if="can(Permissions.DATA_IMPORT_MANAGE) && !importLocked" class="flex flex-wrap gap-3">
                     <Button type="button" :disabled="mappedCount !== headers.length || duplicateDestinations.size > 0" @click="saveMapping">
                         Save Mapping
                     </Button>
@@ -420,7 +441,7 @@ function sampleValues(index: number): string {
                     </Button>
                 </div>
 
-                <div v-if="showTemplateForm && can(Permissions.DATA_IMPORT_MANAGE)" class="max-w-2xl space-y-4 rounded-lg border bg-muted/20 p-4">
+                <div v-if="showTemplateForm && can(Permissions.DATA_IMPORT_MANAGE) && !importLocked" class="max-w-2xl space-y-4 rounded-lg border bg-muted/20 p-4">
                     <div class="space-y-2">
                         <Label for="template-name">Template Name</Label>
                         <Input id="template-name" v-model="templateName" placeholder="Staffing Matrix" maxlength="150" />
@@ -432,7 +453,7 @@ function sampleValues(index: number): string {
                             v-model="templateDescription"
                             rows="3"
                             maxlength="1000"
-                            class="w-full rounded-md border bg-background px-3 py-2 text-sm"
+                            class="w-full rounded-md border bg-background px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                             placeholder="Mapping used for the standard staffing matrix workbook."
                         />
                     </div>
@@ -453,7 +474,7 @@ function sampleValues(index: number): string {
                         <h2 class="text-lg font-semibold">Validation Results</h2>
                         <p class="text-sm text-muted-foreground">Existing records are flagged for review. Errors must be resolved before the import execution stage.</p>
                     </div>
-                    <Button v-if="can(Permissions.DATA_IMPORT_MANAGE)" type="button" variant="outline" @click="validateRows">Run Validation Again</Button>
+                    <Button v-if="can(Permissions.DATA_IMPORT_MANAGE) && !importLocked" type="button" variant="outline" @click="validateRows">Run Validation Again</Button>
                 </div>
 
                 <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
@@ -552,14 +573,14 @@ function sampleValues(index: number): string {
                                                         <select
                                                             :id="`translation-${row.id}-${issueIndex}`"
                                                             v-model="translationSelections[`${row.id}:${issueIndex}`]"
-                                                            class="h-9 w-full rounded-md border bg-background px-3"
+                                                            class="h-9 w-full rounded-md border bg-background px-3 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" :disabled="importLocked"
                                                         >
                                                             <option value="">Select current Insight value</option>
                                                             <option v-for="option in props.translationOptions[issue.destination_key]" :key="option" :value="option">{{ option }}</option>
                                                         </select>
                                                     </div>
                                                     <Button
-                                                        v-if="can(Permissions.DATA_IMPORT_MANAGE)"
+                                                        v-if="can(Permissions.DATA_IMPORT_MANAGE) && !importLocked"
                                                         type="button"
                                                         size="sm"
                                                         variant="outline"
@@ -580,8 +601,8 @@ function sampleValues(index: number): string {
                                                     <div class="text-sm font-medium">Existing {{ entityLabel(entity.entity) }} #{{ entity.id }}</div>
                                                     <select
                                                         v-model="resolutionSelections[`${row.id}:${entity.entity}`]"
-                                                        class="h-9 rounded-md border bg-background px-3 text-sm"
-                                                        :disabled="!can(Permissions.DATA_IMPORT_MANAGE)"
+                                                        class="h-9 rounded-md border bg-background px-3 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                                                        :disabled="!can(Permissions.DATA_IMPORT_MANAGE) || importLocked"
                                                     >
                                                         <option value="">Choose action</option>
                                                         <option value="update">Update Existing</option>
@@ -605,7 +626,7 @@ function sampleValues(index: number): string {
                                                 </div>
                                             </div>
 
-                                            <div v-if="can(Permissions.DATA_IMPORT_MANAGE)" class="flex flex-wrap gap-2">
+                                            <div v-if="can(Permissions.DATA_IMPORT_MANAGE) && !importLocked" class="flex flex-wrap gap-2">
                                                 <Button type="button" size="sm" @click="saveRowResolution(row)">Save Review Decisions</Button>
                                                 <Button type="button" size="sm" variant="outline" @click="skipRow(row)">Skip Row</Button>
                                             </div>

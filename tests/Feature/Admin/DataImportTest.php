@@ -1244,3 +1244,58 @@ test('part seven rejects worksheets above the supported row limit', function () 
         @unlink($path);
     }
 });
+
+
+test('part seven completed imports are read only and cannot be reconfigured or revalidated', function () {
+    $user = dataImportUser(['view_admin', 'access_data_import', 'manage_data_import']);
+
+    $import = DataImport::query()->create([
+        'uuid' => fake()->uuid(),
+        'status' => 'completed',
+        'original_filename' => 'Completed Import.xlsx',
+        'stored_path' => 'data-imports/example/source.xlsx',
+        'worksheet' => 'Sheet1',
+        'worksheet_index' => 0,
+        'row_count' => 1,
+        'column_count' => 1,
+        'source_headers' => ['Position Code'],
+        'workbook_metadata' => [
+            'sheets' => [[
+                'index' => 0,
+                'name' => 'Sheet1',
+                'row_count' => 1,
+                'column_count' => 1,
+                'headers' => ['Position Code'],
+                'sample_rows' => [['LOCKED-1']],
+            ]],
+        ],
+        'mapping_snapshot' => [
+            'workflow_code' => null,
+            'columns' => [[
+                'source_index' => 0,
+                'source_header' => 'Position Code',
+                'destination_key' => 'position.position_code',
+            ]],
+        ],
+        'validation_summary' => ['total' => 1, 'ready' => 1, 'review' => 0, 'error' => 0, 'ignored' => 0],
+        'completed_at' => now(),
+        'uploaded_by' => $user->id,
+    ]);
+
+    $this->actingAs($user)
+        ->put("/admin/data-imports/{$import->id}/worksheet", ['worksheet_index' => 0])
+        ->assertRedirect()
+        ->assertSessionHasErrors('import');
+
+    $this->actingAs($user)
+        ->post("/admin/data-imports/{$import->id}/validate")
+        ->assertRedirect()
+        ->assertSessionHasErrors('import');
+
+    $import->refresh();
+
+    expect($import->status)->toBe('completed')
+        ->and($import->worksheet)->toBe('Sheet1')
+        ->and($import->source_headers)->toBe(['Position Code'])
+        ->and($import->validation_summary['ready'])->toBe(1);
+});

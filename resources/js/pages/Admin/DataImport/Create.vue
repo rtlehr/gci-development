@@ -25,9 +25,9 @@ function submit(): void { form.post('/admin/data-imports', { forceFormData: true
         <form class="max-w-3xl space-y-6 rounded-xl border bg-background p-6 shadow-sm" @submit.prevent="submit">
             <div class="space-y-2">
                 <Label for="data-import-file">Excel workbook</Label>
-                <input id="data-import-file" type="file" accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" class="block w-full rounded-md border bg-background px-3 py-2 text-sm" @change="form.file = ($event.target as HTMLInputElement).files?.[0] ?? null" />
-                <p class="text-sm text-muted-foreground">Maximum file size: 20 MB. The workbook is stored in Insight's protected private storage.</p>
-                <p v-if="form.errors.file" class="text-sm font-medium text-destructive">{{ form.errors.file }}</p>
+                <input id="data-import-file" type="file" accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" class="block w-full rounded-md border bg-background px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" :aria-invalid="Boolean(form.errors.file)" aria-describedby="data-import-file-help data-import-file-error" @change="form.file = ($event.target as HTMLInputElement).files?.[0] ?? null" />
+                <p id="data-import-file-help" class="text-sm text-muted-foreground">Maximum file size: 20 MB. The workbook is stored in Insight's protected private storage.</p>
+                <p v-if="form.errors.file" id="data-import-file-error" class="text-sm font-medium text-destructive" role="alert">{{ form.errors.file }}</p>
             </div>
             <div class="flex gap-2"><Button type="submit" :disabled="form.processing || !form.file"><Upload class="mr-2 h-4 w-4" />Inspect Workbook</Button><Button as-child type="button" variant="outline"><Link href="/admin/data-imports">Cancel</Link></Button></div>
         </form>

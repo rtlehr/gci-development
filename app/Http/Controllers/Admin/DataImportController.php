@@ -144,12 +144,14 @@ class DataImportController extends Controller
         ImportConflictResolutionService $conflicts,
         ImportValueTranslationService $translations,
     ): Response {
+        $importLocked = $this->isImportLocked($dataImport);
+
         $templates = DataImportMappingTemplate::query()
             ->orderBy('name')
             ->get(['id', 'name', 'description', 'mapping', 'source_headers', 'updated_at']);
 
         $requestedTemplate = null;
-        if ($request->filled('template_id')) {
+        if (! $importLocked && $request->filled('template_id')) {
             $requestedTemplate = $templates->firstWhere('id', (int) $request->integer('template_id'));
         }
 
@@ -213,6 +215,7 @@ class DataImportController extends Controller
                 'rolled_back_by' => $dataImport->rolled_back_by,
                 'change_count' => $dataImport->changes()->count(),
                 'rollback_summary' => $dataImport->error_summary['rollback'] ?? null,
+                'is_locked' => $importLocked,
             ],
             'workflows' => $workflows->map(fn (Workflow $workflow) => [
                 'id' => $workflow->id,
@@ -255,6 +258,8 @@ class DataImportController extends Controller
 
     public function selectWorksheet(Request $request, DataImport $dataImport): RedirectResponse
     {
+        $this->ensureImportEditable($dataImport);
+
         $validated = $request->validate(['worksheet_index' => ['required', 'integer', 'min:0']]);
         $sheets = $dataImport->workbook_metadata['sheets'] ?? [];
         $sheet = collect($sheets)->firstWhere('index', (int) $validated['worksheet_index']);
@@ -284,6 +289,8 @@ class DataImportController extends Controller
         DataImport $dataImport,
         ImportMappingRegistry $registry,
     ): RedirectResponse {
+        $this->ensureImportEditable($dataImport);
+
         $workflow = $this->validatedWorkflow($request);
         $columns = $this->validatedMappings($request, $dataImport, $registry, $workflow);
 
@@ -303,6 +310,8 @@ class DataImportController extends Controller
 
     public function validateImport(DataImport $dataImport, ImportValidationService $validator): RedirectResponse
     {
+        $this->ensureImportEditable($dataImport);
+
         if (empty($dataImport->mapping_snapshot['columns'] ?? null)) {
             throw ValidationException::withMessages([
                 'mapping' => 'Save the column mapping before validating this import.',
@@ -358,6 +367,8 @@ class DataImportController extends Controller
         DataImportRow $dataImportRow,
         ImportConflictResolutionService $conflicts,
     ): RedirectResponse {
+        $this->ensureImportEditable($dataImport);
+
         $validated = $request->validate([
             'row_action' => ['nullable', 'in:continue,skip'],
             'person_action' => ['nullable', 'in:update,use_existing'],
@@ -379,6 +390,8 @@ class DataImportController extends Controller
         ImportValueTranslationService $translations,
         ImportValidationService $validator,
     ): RedirectResponse {
+        $this->ensureImportEditable($dataImport);
+
         $validated = $request->validate([
             'destination_key' => ['required', 'string', 'max:255'],
             'source_value' => ['required', 'string', 'max:1000'],
@@ -413,6 +426,8 @@ class DataImportController extends Controller
         DataImport $dataImport,
         ImportMappingRegistry $registry,
     ): RedirectResponse {
+        $this->ensureImportEditable($dataImport);
+
         $validated = $request->validate([
             'template_name' => ['required', 'string', 'max:150'],
             'template_description' => ['nullable', 'string', 'max:1000'],
@@ -458,6 +473,18 @@ class DataImportController extends Controller
         DataImport $dataImport,
         ImportMappingTemplateService $templateService,
     ): ?Workflow {
+        if ($this->isImportLocked($dataImport)) {
+            $snapshotCode = $dataImport->mapping_snapshot['workflow_code'] ?? null;
+            if ($snapshotCode) {
+                $match = $workflows->firstWhere('code', $snapshotCode);
+                if ($match) {
+                    return $match;
+                }
+            }
+
+            return $workflows->firstWhere('is_primary', true) ?? $workflows->first();
+        }
+
         if ($request->filled('workflow_id')) {
             return $workflows->firstWhere('id', (int) $request->integer('workflow_id'));
         }
@@ -481,6 +508,30 @@ class DataImportController extends Controller
         }
 
         return $workflows->firstWhere('is_primary', true) ?? $workflows->first();
+    }
+
+    private function ensureImportEditable(DataImport $dataImport): void
+    {
+        if (! $this->isImportLocked($dataImport)) {
+            return;
+        }
+
+        throw ValidationException::withMessages([
+            'import' => 'This import has already been executed and its configuration is now read-only. Use the recorded results or rollback instead of changing the original import.',
+        ]);
+    }
+
+    private function isImportLocked(DataImport $dataImport): bool
+    {
+        return $dataImport->completed_at !== null
+            || in_array($dataImport->status, [
+                'importing',
+                'completed',
+                'completed_with_errors',
+                'rolled_back',
+                'rolled_back_with_conflicts',
+            ], true)
+            || $dataImport->changes()->exists();
     }
 
     private function validatedWorkflow(Request $request): ?Workflow
