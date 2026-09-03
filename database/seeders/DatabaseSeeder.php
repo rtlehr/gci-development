@@ -6,26 +6,14 @@ use Illuminate\Database\Seeder;
 
 class DatabaseSeeder extends Seeder
 {
+    /**
+     * Keep Laravel's default --seed behavior pointed at the development profile.
+     *
+     * QA/UAT data must be selected explicitly with QaDatabaseSeeder or the
+     * app:reset-qa command so a normal development reset never surprises us.
+     */
     public function run(): void
     {
-        $this->call([
-            SiteSettingSeeder::class,
-            ContentPageSeeder::class,
-            PermissionSeeder::class,
-            RoleSeeder::class,
-            OrganizationSeeder::class,
-            TeamSeeder::class,
-            GroupSeeder::class,
-            JobTitleSeeder::class,
-            JobTitleRequirementSeeder::class,
-            WorkflowStepSeeder::class,
-            WorkflowStepStatusSeeder::class,
-            AdminUserSeeder::class,
-            PositionSeeder::class,
-            PageHelpSeeder::class,
-            TicketSeeder::class,
-            CandidateSeeder::class,
-            PositionAssignmentSeeder::class,
-        ]);
+        $this->call(DevelopmentDatabaseSeeder::class);
     }
 }

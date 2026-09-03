@@ -13,6 +13,7 @@ use App\Models\User;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Str;
 
 class AdminUserSeeder extends Seeder
 {
@@ -25,7 +26,7 @@ class AdminUserSeeder extends Seeder
                 $this->user('cotr@localhost', '2345678', 'Margaret', 'Margaret', 'Houlihan', 'cotr', 'Default seeded COTR account.'),
                 $this->user('pmo@localhost', '3456789', 'John', 'Trapper John', 'McIntyre', 'pmo', 'Default seeded PMO account.'),
                 $this->user('candidate@localhost', '4567890', 'Walter', 'Radar', "O'Reilly", 'candidate', 'Default seeded Candidate account.'),
-                $this->user('developer@localhost', '5678912', 'Maxwell', 'Klinger', 'admin', 'Default seeded Developer account.', teams: ['DEVELOPER']),
+                $this->user('developer@localhost', '5678912', 'Maxwell', 'Klinger', 'developer', 'Default seeded Developer account.', teams: ['DEVELOPER']),
 
                 $this->user('project.manager1@localhost', '6789123', 'B. J.', 'B. J.', 'Hunnicutt', 'project_manager', 'Seeded project manager account.', groups: ['GROUPS ONE'], teams: ['TEAM ONE']),
                 $this->user('project.manager2@localhost', '7891234', 'Charles', 'Charles', 'Winchester', 'project_manager', 'Seeded project manager account.', groups: ['GROUPS TWO'], teams: ['TEAM TWO']),
@@ -47,7 +48,7 @@ class AdminUserSeeder extends Seeder
                     ['email' => $seedUser['email']],
                     [
                         'name' => $seedUser['name'],
-                        'password' => Hash::make($seedUser['password']),
+                        'password' => Hash::make(Str::random(64)),
                     ]
                 );
 
@@ -121,7 +122,6 @@ class AdminUserSeeder extends Seeder
         return [
             'email' => $email,
             'name' => trim($preferredName.' '.$lastName),
-            'password' => 'password',
             'person_code' => $personCode,
             'first_name' => $firstName,
             'preferred_name' => $preferredName,

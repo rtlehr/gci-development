@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\AttachmentController;
+use App\Http\Controllers\Setup\InitialSetupController;
 use App\Models\Person;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -17,6 +18,14 @@ Route::get('/admin', fn () => Inertia::render('Admin/Index'))
 Route::get('/admin/component-showcase', fn () => Inertia::render('Admin/ComponentShowcase'))
     ->name('admin.component-showcase')
     ->middleware(['permission:view_admin', 'permission:access_component_showcase']);
+
+
+Route::middleware('auth')->group(function () {
+    Route::get('/setup', [InitialSetupController::class, 'index'])->name('setup.index');
+    Route::post('/setup/complete', [InitialSetupController::class, 'complete'])
+        ->middleware('throttle:3,1')
+        ->name('setup.complete');
+});
 
 Route::get('/dashboard', fn () => redirect()->route('portal.dashboard'))
     ->middleware('auth')

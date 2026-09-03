@@ -5,6 +5,7 @@ namespace App\Http\Middleware;
 use App\Contracts\Identity\PersonCodeProvider;
 use App\Models\Person;
 use App\Models\User;
+use App\Services\Auth\BootstrapOwnerService;
 use Closure;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -16,6 +17,7 @@ class ResolveUserFromPhpSource
 {
     public function __construct(
         private readonly PersonCodeProvider $personCodeProvider,
+        private readonly BootstrapOwnerService $bootstrapOwner,
     ) {
     }
 
@@ -112,9 +114,16 @@ class ResolveUserFromPhpSource
          * when ADFS is no longer supplying an identity.
          */
         if (blank($personCode)) {
+            if ($this->bootstrapOwner->hasValidBootstrapSession($request)) {
+                return $next($request);
+            }
+
             $this->clearAuthenticatedSession($request);
 
             if ($this->requiresAuthentication($request)) {
+                if ($this->bootstrapOwner->loginAvailable()) {
+                    return redirect()->route('login');
+                }
                 Log::warning('IRAD did not receive a person_code from ADFS.', [
                     'source' => config('identity.drivers.adfs.person_code_source'),
                     'path' => $request->path(),
@@ -129,6 +138,9 @@ class ResolveUserFromPhpSource
 
             return $next($request);
         }
+
+        // A real ADFS identity is authoritative even if a bootstrap session existed.
+        $this->bootstrapOwner->clearSession($request);
 
         $person = Person::findByPersonCode($personCode);
 
