@@ -9,6 +9,7 @@ use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
 use Illuminate\Http\Middleware\AddLinkHeadersForPreloadedAssets;
+use Illuminate\Http\Request;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
@@ -17,6 +18,26 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
+        /*
+         * Trust only explicitly configured reverse proxies. The Insite Authentication
+         * Gateway sets X-Forwarded-* after terminating TLS. Leaving this environment
+         * value blank preserves direct/local behavior and trusts no proxy.
+         */
+        $trustedProxies = array_values(array_filter(array_map(
+            'trim',
+            explode(',', (string) env('IRAD_TRUSTED_PROXIES', ''))
+        )));
+
+        if ($trustedProxies !== []) {
+            $middleware->trustProxies(
+                at: $trustedProxies,
+                headers: Request::HEADER_X_FORWARDED_FOR
+                    | Request::HEADER_X_FORWARDED_HOST
+                    | Request::HEADER_X_FORWARDED_PORT
+                    | Request::HEADER_X_FORWARDED_PROTO,
+            );
+        }
+
         $middleware->prepend(EnforceSecureTransport::class);
 
         $middleware->encryptCookies(except: ['appearance', 'sidebar_state']);

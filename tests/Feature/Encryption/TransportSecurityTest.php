@@ -58,3 +58,65 @@ it('adds hsts to secure responses when enabled', function () {
     expect($response->headers->get('Strict-Transport-Security'))
         ->toBe('max-age=31536000; includeSubDomains');
 });
+
+
+it('recognizes gateway forwarded https only from a trusted proxy', function () {
+    Request::setTrustedProxies(
+        ['127.0.0.1'],
+        Request::HEADER_X_FORWARDED_FOR
+            | Request::HEADER_X_FORWARDED_HOST
+            | Request::HEADER_X_FORWARDED_PORT
+            | Request::HEADER_X_FORWARDED_PROTO,
+    );
+
+    try {
+        $request = Request::create(
+            'http://127.0.0.1/portal',
+            'GET',
+            server: [
+                'REMOTE_ADDR' => '127.0.0.1',
+                'HTTP_X_FORWARDED_PROTO' => 'https',
+                'HTTP_X_FORWARDED_HOST' => 'insite.example.test',
+                'HTTP_X_FORWARDED_PORT' => '443',
+            ],
+        );
+
+        expect($request->isSecure())->toBeTrue()
+            ->and($request->getSchemeAndHttpHost())->toBe('https://insite.example.test');
+    } finally {
+        Request::setTrustedProxies([], Request::HEADER_X_FORWARDED_FOR
+            | Request::HEADER_X_FORWARDED_HOST
+            | Request::HEADER_X_FORWARDED_PORT
+            | Request::HEADER_X_FORWARDED_PROTO);
+    }
+});
+
+it('ignores forwarded https from an untrusted client', function () {
+    Request::setTrustedProxies(
+        ['127.0.0.1'],
+        Request::HEADER_X_FORWARDED_FOR
+            | Request::HEADER_X_FORWARDED_HOST
+            | Request::HEADER_X_FORWARDED_PORT
+            | Request::HEADER_X_FORWARDED_PROTO,
+    );
+
+    try {
+        $request = Request::create(
+            'http://127.0.0.1/portal',
+            'GET',
+            server: [
+                'REMOTE_ADDR' => '192.0.2.25',
+                'HTTP_X_FORWARDED_PROTO' => 'https',
+                'HTTP_X_FORWARDED_HOST' => 'attacker.example.test',
+            ],
+        );
+
+        expect($request->isSecure())->toBeFalse()
+            ->and($request->getHost())->toBe('127.0.0.1');
+    } finally {
+        Request::setTrustedProxies([], Request::HEADER_X_FORWARDED_FOR
+            | Request::HEADER_X_FORWARDED_HOST
+            | Request::HEADER_X_FORWARDED_PORT
+            | Request::HEADER_X_FORWARDED_PROTO);
+    }
+});
