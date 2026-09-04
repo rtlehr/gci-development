@@ -10,6 +10,7 @@ use InvalidArgumentException;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\Date;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\URL;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Validation\Rules\Password;
 
@@ -53,7 +54,36 @@ class AppServiceProvider extends ServiceProvider
 
     public function boot(): void
     {
+        $this->configureExternalUrl();
         $this->configureDefaults();
+    }
+
+    /**
+     * Keep generated URLs on the externally visible gateway URL while ADFS is active.
+     *
+     * The authentication gateway terminates HTTPS and proxies to Laravel over a
+     * private HTTP hop. APP_URL is therefore the authoritative public URL for URL
+     * generation in ADFS mode. Normal development mode remains unaffected.
+     */
+    protected function configureExternalUrl(): void
+    {
+        if ((string) config('identity.driver') !== 'adfs') {
+            return;
+        }
+
+        $appUrl = rtrim((string) config('app.url'), '/');
+
+        if ($appUrl === '' || filter_var($appUrl, FILTER_VALIDATE_URL) === false) {
+            return;
+        }
+
+        URL::forceRootUrl($appUrl);
+
+        $scheme = parse_url($appUrl, PHP_URL_SCHEME);
+
+        if (is_string($scheme) && $scheme !== '') {
+            URL::forceScheme($scheme);
+        }
     }
 
     protected function configureDefaults(): void

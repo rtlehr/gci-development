@@ -1,5 +1,6 @@
 <?php
 
+use App\Models\ImpersonationLog;
 use App\Models\Person;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -105,3 +106,105 @@ it('returns a controlled configuration error when the adfs person code source is
         ->assertSee('IRAD identity configuration error');
 });
 
+
+
+it('preserves an active insite impersonation when adfs still identifies the original impersonator', function () {
+    $impersonator = User::factory()->create();
+    $impersonated = User::factory()->create();
+
+    Person::query()->create([
+        'user_id' => $impersonator->id,
+        'person_code' => 'ADFS-OWNER-300',
+        'first_name' => 'Original',
+        'last_name' => 'Administrator',
+        'email' => 'original-admin@example.test',
+    ]);
+
+    $log = ImpersonationLog::query()->create([
+        'impersonator_user_id' => $impersonator->id,
+        'impersonated_user_id' => $impersonated->id,
+        'session_identifier' => '11111111-1111-4111-8111-111111111111',
+        'started_at' => now(),
+    ]);
+
+    $this->actingAs($impersonated)
+        ->withSession([
+            'impersonator_user_id' => $impersonator->id,
+            'impersonation_log_id' => $log->id,
+            'impersonation_session_identifier' => $log->session_identifier,
+        ])
+        ->withServerVariables(['HTTP_PERSON_CODE' => 'ADFS-OWNER-300'])
+        ->get('/_tests/adfs/protected')
+        ->assertOk()
+        ->assertJson(['user_id' => $impersonated->id]);
+
+    $this->assertAuthenticatedAs($impersonated);
+    expect($log->fresh()->ended_at)->toBeNull();
+});
+
+it('ends impersonation when adfs changes to a different upstream identity', function () {
+    $impersonator = User::factory()->create();
+    $impersonated = User::factory()->create();
+    $newAdfsUser = User::factory()->create();
+
+    Person::query()->create([
+        'user_id' => $newAdfsUser->id,
+        'person_code' => 'ADFS-OTHER-400',
+        'first_name' => 'Different',
+        'last_name' => 'Identity',
+        'email' => 'different@example.test',
+    ]);
+
+    $log = ImpersonationLog::query()->create([
+        'impersonator_user_id' => $impersonator->id,
+        'impersonated_user_id' => $impersonated->id,
+        'session_identifier' => '22222222-2222-4222-8222-222222222222',
+        'started_at' => now(),
+    ]);
+
+    $this->actingAs($impersonated)
+        ->withSession([
+            'impersonator_user_id' => $impersonator->id,
+            'impersonation_log_id' => $log->id,
+            'impersonation_session_identifier' => $log->session_identifier,
+        ])
+        ->withServerVariables(['HTTP_PERSON_CODE' => 'ADFS-OTHER-400'])
+        ->get('/_tests/adfs/protected')
+        ->assertOk()
+        ->assertJson(['user_id' => $newAdfsUser->id])
+        ->assertSessionMissing('impersonator_user_id');
+
+    $this->assertAuthenticatedAs($newAdfsUser);
+
+    $log->refresh();
+    expect($log->ended_at)->not->toBeNull();
+    expect($log->termination_reason)->toBe('upstream_identity_changed');
+});
+
+it('ends impersonation when the adfs identity disappears', function () {
+    $impersonator = User::factory()->create();
+    $impersonated = User::factory()->create();
+
+    $log = ImpersonationLog::query()->create([
+        'impersonator_user_id' => $impersonator->id,
+        'impersonated_user_id' => $impersonated->id,
+        'session_identifier' => '33333333-3333-4333-8333-333333333333',
+        'started_at' => now(),
+    ]);
+
+    $this->actingAs($impersonated)
+        ->withSession([
+            'impersonator_user_id' => $impersonator->id,
+            'impersonation_log_id' => $log->id,
+            'impersonation_session_identifier' => $log->session_identifier,
+        ])
+        ->get('/_tests/adfs/protected')
+        ->assertStatus(401)
+        ->assertSessionMissing('impersonator_user_id');
+
+    $this->assertGuest();
+
+    $log->refresh();
+    expect($log->ended_at)->not->toBeNull();
+    expect($log->termination_reason)->toBe('upstream_identity_missing');
+});
