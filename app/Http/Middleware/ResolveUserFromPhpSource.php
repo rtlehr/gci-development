@@ -7,6 +7,7 @@ use App\Models\ImpersonationLog;
 use App\Models\Person;
 use App\Models\User;
 use App\Services\Auth\BootstrapOwnerService;
+use App\Services\Auth\OwnerRecoveryService;
 use Closure;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -19,6 +20,7 @@ class ResolveUserFromPhpSource
     public function __construct(
         private readonly PersonCodeProvider $personCodeProvider,
         private readonly BootstrapOwnerService $bootstrapOwner,
+        private readonly OwnerRecoveryService $ownerRecovery,
     ) {
     }
 
@@ -90,15 +92,33 @@ class ResolveUserFromPhpSource
 
     private function handleAdfs(Request $request, Closure $next): Response
     {
+        /*
+         * Owner Recovery routes must remain reachable even when the upstream
+         * ADFS identity is unknown/unlinked. Otherwise redirecting an invalid
+         * ADFS user to the recovery screen would immediately redirect back to
+         * itself and create a loop.
+         */
+        if ($request->routeIs('owner-recovery.*')) {
+            return $next($request);
+        }
+
         try {
             $personCode = $this->personCodeProvider->resolve();
         } catch (Throwable $exception) {
-            if ($this->requiresAuthentication($request)) {
-                Log::error('IRAD could not read the configured ADFS person_code source.', [
-                    'source' => config('identity.drivers.adfs.person_code_source'),
-                    'path' => $request->path(),
-                ]);
+            if ($this->ownerRecovery->hasValidSession($request)) {
+                return $next($request);
+            }
 
+            Log::error('IRAD could not read the configured ADFS person_code source.', [
+                'source' => config('identity.drivers.adfs.person_code_source'),
+                'path' => $request->path(),
+            ]);
+
+            if ($this->ownerRecovery->enabled()) {
+                return redirect()->route('owner-recovery.show', ['reason' => 'identity']);
+            }
+
+            if ($this->requiresAuthentication($request)) {
                 return $this->identityError(
                     'IRAD identity configuration error',
                     'IRAD could not read the configured ADFS person identifier. Please contact the system administrator.',
@@ -115,6 +135,10 @@ class ResolveUserFromPhpSource
          * when ADFS is no longer supplying an identity.
          */
         if (blank($personCode)) {
+            if ($this->ownerRecovery->hasValidSession($request)) {
+                return $next($request);
+            }
+
             if ($this->bootstrapOwner->hasValidBootstrapSession($request)) {
                 return $next($request);
             }
@@ -125,14 +149,19 @@ class ResolveUserFromPhpSource
 
             $this->clearAuthenticatedSession($request);
 
+            Log::warning('IRAD did not receive a person_code from ADFS.', [
+                'source' => config('identity.drivers.adfs.person_code_source'),
+                'path' => $request->path(),
+            ]);
+
+            if ($this->ownerRecovery->enabled()) {
+                return redirect()->route('owner-recovery.show', ['reason' => 'missing']);
+            }
+
             if ($this->requiresAuthentication($request)) {
                 if ($this->bootstrapOwner->loginAvailable()) {
                     return redirect()->route('login');
                 }
-                Log::warning('IRAD did not receive a person_code from ADFS.', [
-                    'source' => config('identity.drivers.adfs.person_code_source'),
-                    'path' => $request->path(),
-                ]);
 
                 return $this->identityError(
                     'Unable to identify your network account',
@@ -150,19 +179,27 @@ class ResolveUserFromPhpSource
         $person = Person::findByPersonCode($personCode);
 
         if (! $person) {
+            if ($this->ownerRecovery->hasValidSession($request)) {
+                return $next($request);
+            }
+
             if ($this->hasImpersonationSession($request)) {
                 $this->terminateImpersonation($request, 'upstream_identity_unknown');
             }
 
             $this->clearAuthenticatedSession($request);
 
-            if ($this->requiresAuthentication($request)) {
-                Log::warning('ADFS supplied a person_code that is not configured in IRAD.', [
-                    'source' => config('identity.drivers.adfs.person_code_source'),
-                    'person_code_hash' => hash('sha256', (string) $personCode),
-                    'path' => $request->path(),
-                ]);
+            Log::warning('ADFS supplied a person_code that is not configured in IRAD.', [
+                'source' => config('identity.drivers.adfs.person_code_source'),
+                'person_code_hash' => hash('sha256', (string) $personCode),
+                'path' => $request->path(),
+            ]);
 
+            if ($this->ownerRecovery->enabled()) {
+                return redirect()->route('owner-recovery.show', ['reason' => 'unknown']);
+            }
+
+            if ($this->requiresAuthentication($request)) {
                 return $this->identityError(
                     'Your account is not configured in IRAD',
                     'ADFS identified your network account, but IRAD could not find a matching person record. Please contact the system administrator.',
@@ -174,18 +211,26 @@ class ResolveUserFromPhpSource
         }
 
         if (! $person->user_id) {
+            if ($this->ownerRecovery->hasValidSession($request)) {
+                return $next($request);
+            }
+
             if ($this->hasImpersonationSession($request)) {
                 $this->terminateImpersonation($request, 'upstream_identity_unlinked');
             }
 
             $this->clearAuthenticatedSession($request);
 
-            if ($this->requiresAuthentication($request)) {
-                Log::warning('ADFS person_code resolved to a Person without a linked User.', [
-                    'person_id' => $person->id,
-                    'path' => $request->path(),
-                ]);
+            Log::warning('ADFS person_code resolved to a Person without a linked User.', [
+                'person_id' => $person->id,
+                'path' => $request->path(),
+            ]);
 
+            if ($this->ownerRecovery->enabled()) {
+                return redirect()->route('owner-recovery.show', ['reason' => 'unlinked']);
+            }
+
+            if ($this->requiresAuthentication($request)) {
                 return $this->identityError(
                     'Your IRAD account is incomplete',
                     'Your person record was found, but it is not linked to an IRAD user account. Please contact the system administrator.',
@@ -199,19 +244,27 @@ class ResolveUserFromPhpSource
         $user = User::query()->find($person->user_id);
 
         if (! $user) {
+            if ($this->ownerRecovery->hasValidSession($request)) {
+                return $next($request);
+            }
+
             if ($this->hasImpersonationSession($request)) {
                 $this->terminateImpersonation($request, 'upstream_identity_user_missing');
             }
 
             $this->clearAuthenticatedSession($request);
 
-            if ($this->requiresAuthentication($request)) {
-                Log::error('ADFS person_code resolved to a Person with a missing User record.', [
-                    'person_id' => $person->id,
-                    'user_id' => $person->user_id,
-                    'path' => $request->path(),
-                ]);
+            Log::error('ADFS person_code resolved to a Person with a missing User record.', [
+                'person_id' => $person->id,
+                'user_id' => $person->user_id,
+                'path' => $request->path(),
+            ]);
 
+            if ($this->ownerRecovery->enabled()) {
+                return redirect()->route('owner-recovery.show', ['reason' => 'unlinked']);
+            }
+
+            if ($this->requiresAuthentication($request)) {
                 return $this->identityError(
                     'Your IRAD account is incomplete',
                     'Your person record references an IRAD user account that could not be found. Please contact the system administrator.',
@@ -221,6 +274,9 @@ class ResolveUserFromPhpSource
 
             return $next($request);
         }
+
+        // A valid mapped ADFS identity always overrides local recovery access.
+        $this->ownerRecovery->clearSession($request);
 
         /*
          * ADFS remains authoritative while an Insite impersonation session is

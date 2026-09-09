@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\AttachmentController;
+use App\Http\Controllers\Auth\OwnerRecoveryController;
 use App\Http\Controllers\Setup\InitialSetupController;
 use App\Models\Person;
 use Illuminate\Http\Request;
@@ -10,6 +11,18 @@ use Inertia\Inertia;
 
 require __DIR__.'/public.php';
 require __DIR__.'/portal.php';
+
+
+Route::get('/owner-recovery', [OwnerRecoveryController::class, 'show'])
+    ->name('owner-recovery.show');
+
+Route::post('/owner-recovery', [OwnerRecoveryController::class, 'store'])
+    ->middleware('throttle:5,1')
+    ->name('owner-recovery.store');
+
+Route::post('/owner-recovery/logout', [OwnerRecoveryController::class, 'destroy'])
+    ->middleware('auth')
+    ->name('owner-recovery.destroy');
 
 Route::get('/admin', fn () => Inertia::render('Admin/Index'))
     ->name('admin.index')

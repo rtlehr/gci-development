@@ -4,6 +4,7 @@ import { usePage } from '@inertiajs/vue3';
 import FlashMessages from '@/components/FlashMessages.vue';
 import HelpPanel from '@/components/ui/HelpPanel.vue';
 import ImpersonationBanner from '@/components/public-portal/ImpersonationBanner.vue';
+import OwnerRecoveryBanner from '@/components/public-portal/OwnerRecoveryBanner.vue';
 import PublicPortalFooter from '@/components/public-portal/PublicPortalFooter.vue';
 import PublicPortalHeader from '@/components/public-portal/PublicPortalHeader.vue';
 
@@ -66,6 +67,7 @@ provide('currentHelpKey', currentHelpKey);
         </a>
 
         <div class="min-w-0 flex-1">
+            <OwnerRecoveryBanner />
             <ImpersonationBanner />
             <PublicPortalHeader />
             <FlashMessages />

@@ -4,6 +4,7 @@ namespace App\Http\Middleware;
 
 use App\Models\Alert;
 use App\Models\Person;
+use App\Services\Auth\OwnerRecoveryService;
 use App\Services\CurrentUserContext;
 use App\Services\SiteSettingsService;
 use App\Services\ContentPageNavigationService;
@@ -88,6 +89,10 @@ class HandleInertiaRequests extends Middleware
                 'active' => session()->has('impersonator_user_id'),
                 'impersonator_user_id' => session('impersonator_user_id'),
                 'log_id' => session('impersonation_log_id'),
+            ],
+
+            'ownerRecovery' => [
+                'active' => session()->has(OwnerRecoveryService::SESSION_KEY),
             ],
 
             'dev' => [
