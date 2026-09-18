@@ -20,6 +20,7 @@ class HandleInertiaRequests extends Middleware
         private readonly CurrentUserContext $currentUser,
         private readonly SiteSettingsService $siteSettings,
         private readonly ContentPageNavigationService $contentPages,
+        private readonly \App\Services\MessageBoxService $messageBoxService,
     ) {
     }
 
@@ -75,6 +76,8 @@ class HandleInertiaRequests extends Middleware
             )
                 ? $this->contentPages->forHeader($user !== null, $this->currentUser->permissions())
                 : collect(),
+
+            'messageBoxes' => fn () => $this->messageBoxService->forRequest($request, $user, $this->currentUser->permissions()),
 
             'headerAlerts' => [
                 'count' => $alertCount,

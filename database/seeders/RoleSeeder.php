@@ -102,6 +102,7 @@ class RoleSeeder extends Seeder
             'manage_workflows',
             'access_content_pages',
             'manage_content_pages',
+            'manage_message_boxes',
             'access_custom_fields',
             'manage_custom_fields',
             'access_user_event_log',

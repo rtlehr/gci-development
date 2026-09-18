@@ -2,6 +2,7 @@
 import { computed, provide, ref } from 'vue';
 import { usePage } from '@inertiajs/vue3';
 import FlashMessages from '@/components/FlashMessages.vue';
+import MessageBoxHost from '@/components/message-boxes/MessageBoxHost.vue';
 import HelpPanel from '@/components/ui/HelpPanel.vue';
 import ImpersonationBanner from '@/components/public-portal/ImpersonationBanner.vue';
 import OwnerRecoveryBanner from '@/components/public-portal/OwnerRecoveryBanner.vue';
@@ -76,6 +77,8 @@ provide('currentHelpKey', currentHelpKey);
             </main>
             <PublicPortalFooter />
         </div>
+
+        <MessageBoxHost />
 
         <HelpPanel :open="helpOpen" :help-key="currentHelpKey" @close="closeHelpPanel" />
     </div>

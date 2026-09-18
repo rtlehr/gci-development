@@ -670,6 +670,14 @@ class PermissionSeeder extends Seeder
                 'is_locked' => false,
             ],
             [
+                'name' => 'manage_message_boxes',
+                'group_name' => 'Message Boxes',
+                'label' => 'Manage Message Boxes',
+                'description' => 'Can create, edit, schedule, target, and remove message boxes.',
+                'is_system' => false,
+                'is_locked' => false,
+            ],
+            [
                 'name' => 'access_custom_fields',
                 'group_name' => 'Custom Fields',
                 'label' => 'Access Custom Fields',

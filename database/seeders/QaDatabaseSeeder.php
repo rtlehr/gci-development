@@ -17,6 +17,7 @@ class QaDatabaseSeeder extends Seeder
         $this->call([
             SiteSettingSeeder::class,
             ContentPageSeeder::class,
+            MessageBoxSeeder::class,
             PermissionSeeder::class,
             RoleSeeder::class,
             WorkflowStepSeeder::class,
