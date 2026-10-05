@@ -31,8 +31,6 @@
                     v-for="(attachment, index) in internalExistingAttachments"
                     :key="attachment.id"
                     class="rounded-xl border p-4 space-y-4"
-
-                    <!-- Visually indicate pending removal -->
                     :class="attachment.marked_for_removal ? 'opacity-60 border-red-300' : ''"
                 >
                     <div class="flex items-center justify-between gap-4">
@@ -137,9 +135,10 @@
                                 File <span class="text-red-500">*</span>
                             </Label>
 
-                            <Input
+                            <input
                                 :id="`attachment-file-${uid}-${index}`"
                                 type="file"
+                                class="file:text-foreground placeholder:text-muted-foreground border-input h-9 w-full min-w-0 rounded-md border bg-transparent px-3 py-1 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]"
                                 @change="handleFileChange($event, index)"
                             />
 
@@ -238,7 +237,6 @@ import { computed, ref, watch } from 'vue'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 
@@ -336,6 +334,8 @@ const internalRemoveAttachmentIds = ref([...(props.removeAttachmentIds ?? [])])
 watch(
     () => props.modelValue,
     (value) => {
+        if (attachmentListsEqual(value, internalNewAttachments.value)) return
+
         internalNewAttachments.value = structuredCloneSafe(value)
     },
     { deep: true }
@@ -345,6 +345,8 @@ watch(
 watch(
     () => props.existingAttachments,
     (value) => {
+        if (attachmentListsEqual(value, internalExistingAttachments.value)) return
+
         internalExistingAttachments.value = structuredCloneSafe(value)
     },
     { deep: true }
@@ -354,6 +356,8 @@ watch(
 watch(
     () => props.removeAttachmentIds,
     (value) => {
+        if (idListsEqual(value, internalRemoveAttachmentIds.value)) return
+
         internalRemoveAttachmentIds.value = [...(value ?? [])]
     },
     { deep: true }
@@ -390,6 +394,34 @@ watch(
 // to avoid mutating props directly
 function structuredCloneSafe(value) {
     return (value ?? []).map((item) => ({ ...item }))
+}
+
+// Compare attachment state before copying a v-model prop back into the
+// internal array. Without this guard, the deep watchers can repeatedly
+// clone/emit the same attachment data and lock the page after Add File.
+function attachmentListsEqual(left, right) {
+    const a = left ?? []
+    const b = right ?? []
+
+    if (a.length !== b.length) return false
+
+    return a.every((item, index) => {
+        const other = b[index] ?? {}
+        const keys = new Set([...Object.keys(item ?? {}), ...Object.keys(other)])
+
+        for (const key of keys) {
+            if ((item ?? {})[key] !== other[key]) return false
+        }
+
+        return true
+    })
+}
+
+function idListsEqual(left, right) {
+    const a = left ?? []
+    const b = right ?? []
+
+    return a.length === b.length && a.every((value, index) => value === b[index])
 }
 
 // Returns a blank attachment object

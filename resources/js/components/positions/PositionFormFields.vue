@@ -43,7 +43,7 @@ const selectClass = (error?: string) => [
         description="Define the position identifier, status, job title, level, team, and project manager."
     >
         <div class="grid gap-5 md:grid-cols-2">
-            <FormField label="Position Code" for-id="position_code" :error="form.errors.position_code" description="Use the approved position or requisition identifier.">
+            <FormField label="Position Code" for-id="position_code" required :error="form.errors.position_code" description="Use the approved position or requisition identifier.">
                 <template #default="{ describedBy }">
                     <Input id="position_code" v-model="form.position_code" :aria-describedby="describedBy" :aria-invalid="Boolean(form.errors.position_code)" />
                 </template>
@@ -150,8 +150,30 @@ const selectClass = (error?: string) => [
             <BooleanField id="request_to_close" v-model="form.request_to_close" label="Request to Close" description="Indicates that the position is being considered for closure." />
             <div class="grid gap-5 md:grid-cols-2">
                 <FormField label="Scheduled to Close" for-id="scheduled_to_close" :error="form.errors.scheduled_to_close"><Input id="scheduled_to_close" v-model="form.scheduled_to_close" type="date" /></FormField>
-                <FormField label="Close Date" for-id="close_date" :error="form.errors.close_date"><Input id="close_date" v-model="form.close_date" type="date" :disabled="form.status !== 'Closed'" /></FormField>
-                <FormField label="Close Reason" for-id="close_reason" :error="form.errors.close_reason" class="md:col-span-2"><Textarea id="close_reason" v-model="form.close_reason" rows="4" :disabled="form.status !== 'Closed'" /></FormField>
+                <FormField label="Close Date" for-id="close_date" :required="form.status === 'Closed'" :error="form.errors.close_date">
+                    <template #default="{ describedBy }">
+                        <Input
+                            id="close_date"
+                            v-model="form.close_date"
+                            type="date"
+                            :disabled="form.status !== 'Closed'"
+                            :aria-describedby="describedBy"
+                            :aria-invalid="Boolean(form.errors.close_date)"
+                        />
+                    </template>
+                </FormField>
+                <FormField label="Close Reason" for-id="close_reason" :required="form.status === 'Closed'" :error="form.errors.close_reason" class="md:col-span-2">
+                    <template #default="{ describedBy }">
+                        <Textarea
+                            id="close_reason"
+                            v-model="form.close_reason"
+                            rows="4"
+                            :disabled="form.status !== 'Closed'"
+                            :aria-describedby="describedBy"
+                            :aria-invalid="Boolean(form.errors.close_reason)"
+                        />
+                    </template>
+                </FormField>
             </div>
         </FormSection>
 

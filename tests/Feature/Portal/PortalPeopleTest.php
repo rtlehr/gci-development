@@ -76,8 +76,24 @@ it('allows an authorized user to create a person in the portal', function () {
             'last_name' => 'Person',
             'email' => 'portal.person@example.test',
             'employment_status' => 'active',
-            'phone_numbers' => [],
-            'addresses' => [],
+            'phone_numbers' => [[
+                'phone_number' => '555-0100',
+                'phone_type' => 'work',
+                'is_primary' => true,
+                'extension' => null,
+                'notes' => null,
+            ]],
+            'addresses' => [[
+                'address_type' => 'work',
+                'line_1' => '100 QA Way',
+                'line_2' => null,
+                'city' => 'Arlington',
+                'state' => 'VA',
+                'postal_code' => '22201',
+                'country' => 'USA',
+                'is_primary' => true,
+                'notes' => null,
+            ]],
             'group_ids' => [],
             'team_ids' => [],
             'role_ids' => [],
@@ -87,6 +103,35 @@ it('allows an authorized user to create a person in the portal', function () {
 
     $response->assertRedirect(route('portal.people.show', $person->id));
     $this->assertNotNull($person->user_id);
+});
+
+it('requires a phone number and address line 1 when creating a person', function () {
+    $user = portalCrudPeopleUser(['access_people', 'create_people']);
+
+    $this->actingAs($user)
+        ->post(route('portal.people.store'), [
+            'person_code' => 'PORTAL-MISSING-CONTACT',
+            'first_name' => 'Missing',
+            'last_name' => 'Contact',
+            'phone_numbers' => [[
+                'phone_number' => '',
+                'is_primary' => true,
+            ]],
+            'addresses' => [[
+                'line_1' => '',
+                'country' => 'USA',
+                'is_primary' => true,
+            ]],
+            'group_ids' => [],
+            'team_ids' => [],
+            'role_ids' => [],
+        ])
+        ->assertSessionHasErrors([
+            'phone_numbers.0.phone_number',
+            'addresses.0.line_1',
+        ]);
+
+    expect(Person::query()->wherePersonCode('PORTAL-MISSING-CONTACT')->exists())->toBeFalse();
 });
 
 it('renders portal person detail and edit pages', function () {
@@ -111,6 +156,34 @@ it('renders portal person detail and edit pages', function () {
             ->has('groups')
             ->has('teams')
         );
+});
+
+
+it('updates a portal person without failing while recording the before state', function () {
+    $user = portalCrudPeopleUser(['access_people', 'read_people', 'update_people']);
+    $person = Person::factory()->create([
+        'first_name' => 'Before',
+        'last_name' => 'Person',
+        'email' => 'before.person@example.test',
+    ]);
+
+    $response = $this->actingAs($user)
+        ->put(route('portal.people.update', $person->id), [
+            'person_code' => $person->person_code,
+            'first_name' => 'After',
+            'last_name' => 'Person',
+            'email' => 'after.person@example.test',
+            'group_ids' => [],
+            'team_ids' => [],
+            'role_ids' => [],
+        ]);
+
+    $response->assertRedirect(route('portal.people.index'));
+
+    $person->refresh();
+
+    expect($person->first_name)->toBe('After')
+        ->and($person->email)->toBe('after.person@example.test');
 });
 
 it('records categorized person notes with the entered date and user', function () {

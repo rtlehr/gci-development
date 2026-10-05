@@ -55,6 +55,14 @@ import {
     DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
+import {
+    Table,
+    TableBody,
+    TableCell,
+    TableHead,
+    TableHeader,
+    TableRow,
+} from '@/components/ui/table'
 
 type GenericRecord = Record<string, any>
 
@@ -509,13 +517,13 @@ function confirmDelete(): void {
                             v-if="position.activities?.length"
                             class="overflow-x-auto"
                         >
-                            <Table class="min-w-[1000px]">
+                            <Table class="min-w-[1000px] text-sm">
                                 <TableHeader>
                                     <TableRow>
-                                        <TableHead>Date</TableHead>
-                                        <TableHead>User</TableHead>
-                                        <TableHead>Action</TableHead>
-                                        <TableHead>Field</TableHead>
+                                        <TableHead class="w-[190px]">Date</TableHead>
+                                        <TableHead class="w-[180px]">User</TableHead>
+                                        <TableHead class="w-[120px]">Action</TableHead>
+                                        <TableHead class="w-[180px]">Field</TableHead>
                                         <TableHead>Old Value</TableHead>
                                         <TableHead>New Value</TableHead>
                                     </TableRow>
@@ -532,7 +540,7 @@ function confirmDelete(): void {
                                         <TableCell>
                                             {{ activity.user?.name || activity.user?.username || 'System' }}
                                         </TableCell>
-                                        <TableCell>
+                                        <TableCell class="capitalize">
                                             {{ activity.action || '—' }}
                                         </TableCell>
                                         <TableCell>

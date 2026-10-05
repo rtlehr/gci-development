@@ -341,11 +341,11 @@ class QaScenarioSeeder extends Seeder
     {
         $workflow = Workflow::query()->where('code', 'default_candidate_workflow')->firstOrFail();
         $steps = WorkflowStep::query()->where('workflow_id', $workflow->id)->get()->keyBy('code');
-        $submitter = $people->get('QA10005'); // PMO
+        $submitter = $people->get('9000005'); // PMO
 
         $partial = Candidate::query()->create([
             'candidate_code' => 'QA-CAND-PART',
-            'person_id' => $people->get('QA10008')->id,
+            'person_id' => $people->get('9000008')->id,
             'position_id' => $positions['pm1']->id,
             'workflow_id' => $workflow->id,
             'status' => 'submitted',

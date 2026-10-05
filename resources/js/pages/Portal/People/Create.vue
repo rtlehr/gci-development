@@ -5,6 +5,9 @@
 <div class="grid gap-6 lg:grid-cols-[270px_minmax(0,1fr)]">
 <PersonSectionNav v-model:active-section="activeSection" :sections="sections" />
 <div class="min-w-0 space-y-6">
+<div v-if="validationMessage" class="rounded-lg border border-red-300 bg-red-50 px-4 py-3 text-sm text-red-800" role="alert">
+<strong>Please complete the required information.</strong> {{ validationMessage }}
+</div>
 <section v-show="activeSection === 'details'"><Card>
 <CardHeader><CardTitle>Person Details</CardTitle><CardDescription>Basic identity and employment information.</CardDescription></CardHeader>
 <CardContent class="space-y-6">
@@ -54,14 +57,94 @@ const createEmptyAddress = (isPrimary=false) => ({ id:null, address_type:'', lin
 const isEdit = false
 const props = defineProps({ roles:{type:Array,default:()=>[]}, groups:{type:Array,default:()=>[]}, teams:{type:Array,default:()=>[]}, customFields:{type:Array,default:()=>[]} })
 const form = useForm({ person_code:'', first_name:'', alternate_first_name:'', preferred_name:'', last_name:'', alternate_last_name:'', company_name:'', email:'', employment_status:'', group_ids:[], team_ids:[], role_ids:[], phone_numbers:[createEmptyPhoneNumber(true)], addresses:[createEmptyAddress(true)], attachments:[], existing_attachments:[], remove_attachment_ids:[], custom_fields:{} })
+const validationMessage = ref('')
+
+const detailError = computed(() => ['person_code', 'first_name', 'last_name', 'email'].some(key => Boolean(form.errors[key])))
+const organizationError = computed(() => Object.keys(form.errors).some(key => key.startsWith('group_ids') || key.startsWith('team_ids')))
+const contactError = computed(() => Object.keys(form.errors).some(key => key.startsWith('phone_numbers') || key.startsWith('addresses')))
+const otherError = computed(() => Object.keys(form.errors).some(key => key.startsWith('custom_fields')))
+const accessError = computed(() => Object.keys(form.errors).some(key => key.startsWith('role_ids')))
+const attachmentError = computed(() => Object.keys(form.errors).some(key => key.startsWith('new_attachments') || key.startsWith('attachment_meta') || key.startsWith('attachments')))
+
 const sections = computed(() => [
-{id:'details',title:'Person Details',description:'Identity and employment.',complete:Boolean(form.person_code && form.first_name && form.last_name)},
-{id:'organization',title:'Organization',description:'Groups and teams.',complete:Boolean(form.group_ids.length || form.team_ids.length)},
-{id:'contact',title:'Contact Information',description:'Phone numbers and addresses.',complete:Boolean(form.phone_numbers.some(p=>p.phone_number) || form.addresses.some(a=>a.line_1))},
-{id:'other',title:'Other Information',description:'Installation-specific fields.',complete:Object.values(form.custom_fields).some(v=>Array.isArray(v)?v.length:Boolean(v))},
-{id:'access',title:'Roles & Access',description:'Application roles.',complete:Boolean(form.role_ids.length)},
-{id:'attachments',title:'Attachments',description:'Documents and files.',complete:Boolean(form.attachments.length)},])
-function validate(){ form.clearErrors(); let error=false; if(!form.person_code?.trim()){form.setError('person_code','Person code is required.');error=true} if(!form.first_name?.trim()){form.setError('first_name','First name is required.');error=true} if(!form.last_name?.trim()){form.setError('last_name','Last name is required.');error=true} if(phoneNumbersRef.value&&!phoneNumbersRef.value.validate())error=true; if(addressesRef.value&&!addressesRef.value.validate())error=true; if(attachmentsRef.value&&!attachmentsRef.value.validate())error=true; return !error }
-function submit(){ if(!validate())return; form.transform(data=>{const transformed={...data,attachment_meta:data.attachments.map((a,i)=>({category:a.category??'',description:a.description??'',is_primary:a.is_primary?1:0,sort_order:i})),new_attachments:data.attachments.map(a=>a.file).filter(Boolean)};delete transformed.attachments;delete transformed.existing_attachments;delete transformed.remove_attachment_ids;return transformed}).post('/portal/people',{forceFormData:true}) }
+{id:'details',title:'Person Details',description:'Identity and employment.',complete:Boolean(form.person_code && form.first_name && form.last_name) && !detailError.value,error:detailError.value},
+{id:'organization',title:'Organization',description:'Groups and teams.',complete:Boolean(form.group_ids.length || form.team_ids.length) && !organizationError.value,error:organizationError.value},
+{id:'contact',title:'Contact Information',description:'Phone numbers and addresses.',complete:Boolean(form.phone_numbers.some(p=>p.phone_number) || form.addresses.some(a=>a.line_1)) && !contactError.value,error:contactError.value},
+{id:'other',title:'Other Information',description:'Installation-specific fields.',complete:Object.values(form.custom_fields).some(v=>Array.isArray(v)?v.length:Boolean(v)) && !otherError.value,error:otherError.value},
+{id:'access',title:'Roles & Access',description:'Application roles.',complete:Boolean(form.role_ids.length) && !accessError.value,error:accessError.value},
+{id:'attachments',title:'Attachments',description:'Documents and files.',complete:Boolean(form.attachments.length) && !attachmentError.value,error:attachmentError.value},])
+
+function firstSectionWithError(){
+    if(detailError.value)return 'details'
+    if(organizationError.value)return 'organization'
+    if(contactError.value)return 'contact'
+    if(otherError.value)return 'other'
+    if(accessError.value)return 'access'
+    if(attachmentError.value)return 'attachments'
+    return null
+}
+
+function validate(){
+    form.clearErrors()
+    validationMessage.value = ''
+    let error=false
+
+    if(!form.person_code?.trim()){form.setError('person_code','Person code is required.');error=true}
+    if(!form.first_name?.trim()){form.setError('first_name','First name is required.');error=true}
+    if(!form.last_name?.trim()){form.setError('last_name','Last name is required.');error=true}
+
+    if(!form.phone_numbers.length){
+        form.setError('phone_numbers','At least one phone number is required.')
+        error=true
+    }
+    form.phone_numbers.forEach((phone,index)=>{
+        if(!phone.phone_number?.trim()){
+            form.setError(`phone_numbers.${index}.phone_number`, index === 0 ? 'Phone 1 Phone Number is required.' : 'Phone Number is required.')
+            error=true
+        }
+    })
+    if(form.phone_numbers.length && form.phone_numbers.filter(phone=>phone.is_primary).length!==1){
+        form.setError('phone_numbers.0.is_primary','Select one primary phone number.')
+        error=true
+    }
+
+    if(!form.addresses.length){
+        form.setError('addresses','At least one address is required.')
+        error=true
+    }
+    form.addresses.forEach((address,index)=>{
+        if(!address.line_1?.trim()){
+            form.setError(`addresses.${index}.line_1`, index === 0 ? 'Address 1 Address Line 1 is required.' : 'Address Line 1 is required.')
+            error=true
+        }
+    })
+    if(form.addresses.length && form.addresses.filter(address=>address.is_primary).length!==1){
+        form.setError('addresses.0.is_primary','Select one primary address.')
+        error=true
+    }
+
+    props.customFields.filter(field=>field.is_required).forEach(field=>{
+        const value=form.custom_fields[String(field.id)] ?? form.custom_fields[field.id]
+        const missing=Array.isArray(value) ? value.length===0 : value===undefined || value===null || String(value).trim()===''
+        if(missing){form.setError(`custom_fields.${field.id}`,`${field.name} is required.`);error=true}
+    })
+
+    if(phoneNumbersRef.value&&!phoneNumbersRef.value.validate())error=true
+    if(addressesRef.value&&!addressesRef.value.validate())error=true
+    if(attachmentsRef.value&&!attachmentsRef.value.validate()){form.setError('attachments','Complete or remove unfinished attachment rows.');error=true}
+
+    if(error){
+        const invalidSection=firstSectionWithError()
+        if(invalidSection)activeSection.value=invalidSection
+        validationMessage.value='The section marked with a red warning icon needs attention.'
+    }
+
+    return !error
+}
+
+function submit(){
+    if(!validate())return
+    form.transform(data=>{const transformed={...data,attachment_meta:data.attachments.map((a,i)=>({category:a.category??'',description:a.description??'',is_primary:a.is_primary?1:0,sort_order:i})),new_attachments:data.attachments.map(a=>a.file).filter(Boolean)};delete transformed.attachments;delete transformed.existing_attachments;delete transformed.remove_attachment_ids;return transformed}).post('/portal/people',{forceFormData:true,onError:()=>{const invalidSection=firstSectionWithError();if(invalidSection)activeSection.value=invalidSection;validationMessage.value='The section marked with a red warning icon needs attention.'}})
+}
 
 </script>

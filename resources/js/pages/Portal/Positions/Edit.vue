@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { Link, router, useForm } from '@inertiajs/vue3'
 import { BadgeCheck, BriefcaseBusiness, Building2, ClipboardList, ListPlus, MapPinned, Settings2, Trash2, Users } from 'lucide-vue-next'
 import ConfirmActionDialog from '@/components/ConfirmActionDialog.vue'
@@ -49,6 +49,7 @@ type PositionEditSection = 'details' | 'qualifications' | 'mission' | 'organizat
 const normalizedInitialSection = props.initialSection === 'general' ? 'details' : props.initialSection
 const activeSection = ref<PositionEditSection>((normalizedInitialSection as PositionEditSection) || 'details')
 const deleteDialogOpen = ref(false)
+const validationMessage = ref('')
 const pendingCustomDelete = ref<{ type: 'skill' | 'task'; id: number } | null>(null)
 
 watch(activeSection, (section) => {
@@ -121,13 +122,92 @@ const desiredCustomSkills = computed(() =>
 )
 
 
+const detailsError = computed(() => [
+    'position_code',
+    'status',
+    'job_title_id',
+    'level',
+    'team_name',
+    'project_manager_user_id',
+].some((key) => Boolean(form.errors[key])))
+
+const qualificationsError = computed(() => Object.keys(form.errors).some((key) =>
+    ['certifications_required', 'training_required', 'experience'].includes(key)
+))
+
+const missionError = computed(() => Object.keys(form.errors).some((key) =>
+    ['is_essential', 'travel_required', 'high_risk_role', 'location', 'building', 'mission_description', 'component'].includes(key)
+))
+
+const organizationError = computed(() => Object.keys(form.errors).some((key) =>
+    ['position_organization_id', 'sponsoring_organization_id', 'funding_organization_id'].includes(key)
+))
+
+const otherError = computed(() => Object.keys(form.errors).some((key) => key.startsWith('custom_fields')))
+
+const operationsError = computed(() => Object.keys(form.errors).some((key) =>
+    [
+        'funding_info',
+        'request_to_close',
+        'scheduled_to_close',
+        'close_date',
+        'close_reason',
+        'project_team_name',
+        'customer_lead_name',
+        'customer_created_at',
+        'notes',
+    ].includes(key)
+))
+
 const sections = computed(() => [
-    { id: 'details', title: 'Position Details', description: 'Identifier, status, title, level, and manager.', icon: BriefcaseBusiness, complete: Boolean(form.status && form.job_title_id) },
-    { id: 'qualifications', title: 'Qualifications', description: 'Certifications, training, and experience.', icon: BadgeCheck, complete: Boolean(form.certifications_required || form.training_required || form.experience) },
-    { id: 'mission', title: 'Mission & Location', description: 'Operational flags, workplace, and mission.', icon: MapPinned, complete: Boolean(form.location || form.building || form.mission_description) },
-    { id: 'organization', title: 'Organizations', description: 'Owning, sponsoring, and funding organizations.', icon: Building2, complete: Boolean(form.position_organization_id || form.sponsoring_organization_id || form.funding_organization_id) },
-    { id: 'other', title: 'Other Information', description: 'Installation-specific fields.', icon: ListPlus, complete: Object.values(form.custom_fields).some((value) => Array.isArray(value) ? value.length > 0 : Boolean(value)) },
-    { id: 'operations', title: 'Operations', description: 'Funding, closure, customer, and internal details.', icon: Settings2, complete: Boolean(form.funding_info || form.customer_lead_name || form.notes) },
+    {
+        id: 'details',
+        title: 'Position Details',
+        description: 'Identifier, status, title, level, and manager.',
+        icon: BriefcaseBusiness,
+        complete: Boolean(form.position_code?.trim() && form.status && form.job_title_id) && !detailsError.value,
+        error: detailsError.value,
+    },
+    {
+        id: 'qualifications',
+        title: 'Qualifications',
+        description: 'Certifications, training, and experience.',
+        icon: BadgeCheck,
+        complete: Boolean(form.certifications_required || form.training_required || form.experience) && !qualificationsError.value,
+        error: qualificationsError.value,
+    },
+    {
+        id: 'mission',
+        title: 'Mission & Location',
+        description: 'Operational flags, workplace, and mission.',
+        icon: MapPinned,
+        complete: Boolean(form.location || form.building || form.mission_description) && !missionError.value,
+        error: missionError.value,
+    },
+    {
+        id: 'organization',
+        title: 'Organizations',
+        description: 'Owning, sponsoring, and funding organizations.',
+        icon: Building2,
+        complete: Boolean(form.position_organization_id || form.sponsoring_organization_id || form.funding_organization_id) && !organizationError.value,
+        error: organizationError.value,
+    },
+    {
+        id: 'other',
+        title: 'Other Information',
+        description: 'Installation-specific fields.',
+        icon: ListPlus,
+        complete: Object.values(form.custom_fields).some((value) => Array.isArray(value) ? value.length > 0 : Boolean(value)) && !otherError.value,
+        error: otherError.value,
+    },
+    {
+        id: 'operations',
+        title: 'Operations',
+        description: 'Funding, closure, customer, and internal details.',
+        icon: Settings2,
+        complete: Boolean(form.funding_info || form.customer_lead_name || form.notes || form.close_date || form.close_reason) && !operationsError.value,
+        error: operationsError.value,
+    },
     { id: 'requirements', title: 'Skills & Tasks', description: 'Job-title defaults and position-specific requirements.', icon: ClipboardList, complete: Boolean(props.jobTitleSkills.length || props.jobTitleTasks.length || customSkills.value.length || customTasks.value.length) },
     { id: 'candidates', title: 'Candidates', description: 'Connected candidates and workflow activity.', icon: Users, badge: props.positionCandidates.length, complete: Boolean(props.positionCandidates.length) },
 ])
@@ -137,6 +217,11 @@ watch(() => form.status, (status) => {
     if (status !== 'Closed') {
         form.close_date = ''
         form.close_reason = ''
+        form.clearErrors('close_date', 'close_reason')
+
+        if (!operationsError.value) {
+            validationMessage.value = ''
+        }
     }
 })
 
@@ -144,12 +229,57 @@ function setActiveSection(value: string): void {
     activeSection.value = value as PositionEditSection
 }
 
-function focusFirstError(): void {
-    requestAnimationFrame(() => document.querySelector<HTMLElement>('[aria-invalid="true"], .border-destructive')?.focus())
+function firstSectionWithError(): PositionEditSection | null {
+    if (detailsError.value) return 'details'
+    if (qualificationsError.value) return 'qualifications'
+    if (missionError.value) return 'mission'
+    if (organizationError.value) return 'organization'
+    if (otherError.value) return 'other'
+    if (operationsError.value) return 'operations'
+    return null
+}
+
+async function showFirstErrorSection(): Promise<void> {
+    const section = firstSectionWithError()
+    if (section) activeSection.value = section
+
+    validationMessage.value = 'The section marked with a red warning icon needs attention.'
+
+    await nextTick()
+    requestAnimationFrame(() => {
+        document.querySelector<HTMLElement>('[aria-invalid="true"], .border-destructive')?.focus()
+    })
+}
+
+function validate(): boolean {
+    form.clearErrors()
+    validationMessage.value = ''
+    let hasError = false
+
+    if (form.status === 'Closed') {
+        if (!form.close_date) {
+            form.setError('close_date', 'Close Date is required when Status is Closed.')
+            hasError = true
+        }
+
+        if (!form.close_reason?.trim()) {
+            form.setError('close_reason', 'Close Reason is required when Status is Closed.')
+            hasError = true
+        }
+    }
+
+    if (hasError) void showFirstErrorSection()
+
+    return !hasError
 }
 
 function submit(): void {
-    form.put(`/portal/positions/${props.position.id}`, { preserveScroll: true, onError: focusFirstError })
+    if (!validate()) return
+
+    form.put(`/portal/positions/${props.position.id}`, {
+        preserveScroll: true,
+        onError: () => void showFirstErrorSection(),
+    })
 }
 
 function submitCustomSkill(): void {
@@ -223,6 +353,14 @@ onBeforeUnmount(() => window.removeEventListener('beforeunload', handleBeforeUnl
                 />
 
                 <div class="min-w-0 space-y-6">
+            <div
+                v-if="validationMessage"
+                class="rounded-lg border border-red-300 bg-red-50 px-4 py-3 text-sm text-red-800"
+                role="alert"
+            >
+                <strong>Please complete the required information.</strong> {{ validationMessage }}
+            </div>
+
             <PositionCandidatesPanel
                 v-if="activeSection === 'candidates'"
                 :position-id="position.id"

@@ -14,7 +14,7 @@ class PositionsDefinition
             'default_direction' => 'desc',
 
             'columns' => [
-                self::column('id', 'ID', 'positions.id', true, true, 1),
+                self::column('position_code', 'Position Code', 'positions.position_code', true, true, 1),
                 self::column('job_title', 'Job Title', 'positions.job_title', true, true, 2),
                 self::column('level', 'Level', 'positions.level', true, true, 3),
                 self::column('team_name', 'Team Name', 'positions.team_name', true, true, 4),
@@ -23,7 +23,7 @@ class PositionsDefinition
                 self::column('created_at', 'Created', 'positions.created_at', true, false, 7),
                 self::column('close_date', 'Closed', 'positions.close_date', true, false, 8),
 
-                self::column('position_code', 'Position Code', 'positions.position_code', false, true, 20),
+                self::column('id', 'ID', 'positions.id', false, true, 20),
                 self::column('labor_category', 'Labor Category', 'positions.labor_category', false, true, 21),
                 self::column('status', 'Status', 'positions.status', false, true, 22),
                 self::column('component', 'Component', 'positions.component', false, true, 23),

@@ -232,8 +232,6 @@
                                     :checked="address.is_primary"
                                     type="checkbox"
                                     class="h-4 w-4"
-
-                                    <!-- Ensures only one address is marked primary -->
                                     @change="setPrimaryAddress(index)"
                                 />
 
@@ -428,7 +426,6 @@ function validate() {
             address.city?.trim() !== '' ||
             address.state?.trim() !== '' ||
             address.postal_code?.trim() !== '' ||
-            address.country?.trim() !== '' ||
             address.notes?.trim() !== ''
         )
     })
@@ -446,7 +443,6 @@ function validate() {
             address.city?.trim() !== '' ||
             address.state?.trim() !== '' ||
             address.postal_code?.trim() !== '' ||
-            address.country?.trim() !== '' ||
             address.notes?.trim() !== ''
 
         // Address Line 1 is required if any address data exists

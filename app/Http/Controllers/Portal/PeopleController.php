@@ -115,18 +115,18 @@ class PeopleController extends Controller
             'employment_status' => ['nullable', 'string', 'max:255'],
             'notes' => ['nullable', 'string'],
 
-            'phone_numbers' => ['nullable', 'array'],
+            'phone_numbers' => ['required', 'array', 'min:1'],
             'phone_numbers.*.id' => ['nullable', 'integer'],
-            'phone_numbers.*.phone_number' => ['nullable', 'string', 'max:50'],
+            'phone_numbers.*.phone_number' => ['required', 'string', 'max:50'],
             'phone_numbers.*.phone_type' => ['nullable', 'string', 'max:50'],
             'phone_numbers.*.is_primary' => ['nullable', 'boolean'],
             'phone_numbers.*.extension' => ['nullable', 'string', 'max:20'],
             'phone_numbers.*.notes' => ['nullable', 'string'],
 
-            'addresses' => ['nullable', 'array'],
+            'addresses' => ['required', 'array', 'min:1'],
             'addresses.*.id' => ['nullable', 'integer'],
             'addresses.*.address_type' => ['nullable', 'string', 'max:50'],
-            'addresses.*.line_1' => ['nullable', 'string', 'max:255'],
+            'addresses.*.line_1' => ['required', 'string', 'max:255'],
             'addresses.*.line_2' => ['nullable', 'string', 'max:255'],
             'addresses.*.city' => ['nullable', 'string', 'max:255'],
             'addresses.*.state' => ['nullable', 'string', 'max:100'],
@@ -368,6 +368,7 @@ class PeopleController extends Controller
 
         return DB::transaction(function () use (
             $person,
+            $before,
             $validated,
             $newAttachments,
             $personPhoneService,

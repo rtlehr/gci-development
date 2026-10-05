@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { CheckCircle2, ChevronRight, Circle } from 'lucide-vue-next'
+import { AlertCircle, CheckCircle2, ChevronRight, Circle } from 'lucide-vue-next'
 import type { Component } from 'vue'
 
 export type PortalSectionNavItem = {
@@ -7,6 +7,7 @@ export type PortalSectionNavItem = {
     title: string
     description?: string
     complete?: boolean
+    error?: boolean
     badge?: string | number
     icon?: Component
 }
@@ -47,8 +48,13 @@ const emit = defineEmits<{
                 <span class="min-w-0 flex-1">
                     <span class="flex items-center gap-2 text-sm font-medium">
                         {{ section.title }}
+                        <AlertCircle
+                            v-if="section.error"
+                            class="h-4 w-4 shrink-0 text-red-500"
+                            aria-label="Needs attention"
+                        />
                         <CheckCircle2
-                            v-if="section.complete"
+                            v-else-if="section.complete"
                             class="h-3.5 w-3.5 shrink-0 opacity-80"
                         />
                         <span
