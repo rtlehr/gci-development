@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { inject } from 'vue'
+const publicPortalPageWidth = inject('publicPortalPageWidth', false)
 withDefaults(defineProps<{
     size?: 'default' | 'wide' | 'full'
 }>(), {
@@ -13,7 +15,7 @@ const sizes = {
 </script>
 
 <template>
-    <div :class="['mx-auto w-full space-y-6 p-4 sm:p-6 lg:p-8', sizes[size]]">
+    <div :class="['mx-auto w-full space-y-6 p-4 sm:p-6 lg:p-8', publicPortalPageWidth ? 'max-w-7xl' : sizes[size]]">
         <slot />
     </div>
 </template>

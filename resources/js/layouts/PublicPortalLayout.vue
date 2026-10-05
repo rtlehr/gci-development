@@ -9,6 +9,8 @@ import OwnerRecoveryBanner from '@/components/public-portal/OwnerRecoveryBanner.
 import PublicPortalFooter from '@/components/public-portal/PublicPortalFooter.vue';
 import PublicPortalHeader from '@/components/public-portal/PublicPortalHeader.vue';
 
+provide('publicPortalPageWidth', true);
+
 const props = defineProps<{ helpKey?: string }>();
 const page = usePage();
 const helpOpen = ref(false);

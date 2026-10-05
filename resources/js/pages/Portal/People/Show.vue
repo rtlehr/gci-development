@@ -170,7 +170,7 @@ function confirmDelete() {
 </script>
 
 <template>
-    <div class="space-y-6 p-6">
+    <div class="mx-auto w-full max-w-7xl space-y-6 px-4 py-6 sm:px-6 lg:px-8">
         <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div>
                 <h1 class="text-2xl font-semibold">{{ fullName(person) }}</h1>

@@ -1,12 +1,10 @@
-# Position candidate resume search
-Apply after previous resume patches; overwrite included files only.
+# Public / portal page widths
+Based on the supplied layout.zip.
 
-Edit Position > Candidates now includes Search Resumes and an optional checkbox to use saved position skills. Search opens the resume database with the position selected so candidates can be added through the existing workflow.
+All PageContainer pages using the public/portal layout now use the centered max-w-7xl (1280px) container matching Edit Position, regardless of default/wide/full size. Covers resume search/upload/review/view, People and Positions lists, Position View, Candidates list, Job Title pages, and requirements pages. Person View and My Portal Dashboard have also been narrowed to the same width. Existing narrower content pages remain as-is. Responsive padding is preserved; tables retain their existing overflow behavior.
 
-Skills include inherited job-title skills and active custom skills. Each distinct skill name contributes one match when its text appears in the resume search text, ignoring case. Results matching at least one skill are ranked by match count, newest first for ties. This is text matching, not semantic/AI matching. Optional keywords still require all words. No skills means normal search. Save Skills changes before searching. Checkbox may be changed in the results and applied with Search.
+Admin page container sizes are unchanged: the width setting is provided only by PublicPortalLayout.
 
-Run:
-php artisan optimize:clear
-npm run build
+Copy the included files into your project, preserving paths. Run npm run build and refresh the browser. No migration or backend changes are needed.
 
-No migration or new dependencies. Validation: 23 related tests passed (241 assertions); production build passed.
+Validation: production build passed with the latest supplied source. No live-browser layout review was performed.

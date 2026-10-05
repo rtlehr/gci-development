@@ -90,7 +90,7 @@ withDefaults(defineProps<{
     <Head title="My Portal" />
 
     <section class="border-b border-[#e3e3e3] bg-white">
-        <div class="mx-auto max-w-[1600px] px-4 py-10 sm:px-6 lg:px-8">
+        <div class="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
             <p class="text-sm font-bold uppercase tracking-[0.16em] text-[#005c43]">My Portal</p>
             <h1 class="mt-2 text-3xl font-bold tracking-tight">Welcome, {{ username }}</h1>
             <p class="mt-3 max-w-2xl text-[#3a3a3a]/70">
@@ -99,7 +99,7 @@ withDefaults(defineProps<{
         </div>
     </section>
 
-    <div class="mx-auto max-w-[1600px] space-y-6 px-4 py-8 sm:px-6 lg:px-8">
+    <div class="mx-auto max-w-7xl space-y-6 px-4 py-8 sm:px-6 lg:px-8">
         <div
             v-if="!(showPmoPositions || showProjectManagerPositions)"
             class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4"
