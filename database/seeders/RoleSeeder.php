@@ -52,6 +52,7 @@ class RoleSeeder extends Seeder
         ];
 
         $adminOperational = [
+            'view_resumes', 'manage_resumes', 'manage_resume_formats',
             'view_admin',
             ...$standardPortal,
             'portal_view_directory',

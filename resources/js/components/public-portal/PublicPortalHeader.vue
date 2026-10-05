@@ -41,6 +41,7 @@ const manageGroups = [
         label: 'Workforce',
         items: [
             { label: 'People', href: '/portal/people', icon: Users, permission: 'portal_view_directory' },
+            { label: 'Resumes', href: '/portal/resumes', icon: UserSearch, permission: 'view_resumes' },
             { label: 'Candidates', href: '/portal/candidates', icon: UserSearch, permission: 'portal_view_positions' },
         ],
     },

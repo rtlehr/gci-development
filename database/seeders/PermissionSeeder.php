@@ -13,6 +13,9 @@ class PermissionSeeder extends Seeder
     public function run(): void
     {
         $permissions = [
+            ['name'=>'view_resumes','group_name'=>'Resumes','label'=>'View Resumes','description'=>'Search and view the resume database.','is_system'=>false,'is_locked'=>false],
+            ['name'=>'manage_resumes','group_name'=>'Resumes','label'=>'Manage Resumes','description'=>'Upload, review, edit and delete resumes.','is_system'=>false,'is_locked'=>false],
+            ['name'=>'manage_resume_formats','group_name'=>'Resumes','label'=>'Manage Resume Formats','description'=>'Create and version resume formats.','is_system'=>false,'is_locked'=>false],
             [
                 'name' => 'view_owner',
                 'group_name' => 'Admin',

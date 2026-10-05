@@ -1,20 +1,21 @@
 <script setup>
 import {
     Building2,
+    FileText,
     ContactRound,
     MessageSquareText,
     Paperclip,
     ShieldCheck,
     UserRound,
-} from 'lucide-vue-next'
-import PortalSectionNav from '@/components/portal/PortalSectionNav.vue'
+} from 'lucide-vue-next';
+import PortalSectionNav from '@/components/portal/PortalSectionNav.vue';
 
 const props = defineProps({
     sections: { type: Array, required: true },
     activeSection: { type: String, required: true },
-})
+});
 
-const emit = defineEmits(['update:activeSection'])
+const emit = defineEmits(['update:activeSection']);
 
 const icons = {
     details: UserRound,
@@ -23,12 +24,14 @@ const icons = {
     contact: ContactRound,
     access: ShieldCheck,
     attachments: Paperclip,
-}
+    resumes: FileText,
+};
 
-const mappedSections = () => props.sections.map((section) => ({
-    ...section,
-    icon: icons[section.id],
-}))
+const mappedSections = () =>
+    props.sections.map((section) => ({
+        ...section,
+        icon: icons[section.id],
+    }));
 </script>
 
 <template>

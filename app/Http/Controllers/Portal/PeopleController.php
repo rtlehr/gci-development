@@ -5,6 +5,8 @@ namespace App\Http\Controllers\Portal;
 use App\Http\Controllers\Controller;
 use App\Models\Group;
 use App\Models\Person;
+use App\Models\Resume;
+use App\Models\ResumeFormat;
 use App\Models\Role;
 use App\Models\Team;
 use App\Models\User;
@@ -12,6 +14,7 @@ use App\Models\UserListPreference;
 use App\Rules\UniquePersonCode;
 use App\Services\AddressService;
 use App\Services\AttachmentService;
+use App\Services\CurrentUserContext;
 use App\Services\CustomFieldService;
 use App\Services\CustomFieldListService;
 use App\Services\ListEngine;
@@ -235,7 +238,14 @@ class PeopleController extends Controller
             'personNotes.enteredBy:id,name',
         ])->findOrFail($id);
 
+        $resumeAccess = app(CurrentUserContext::class);
+        $personResumes = $resumeAccess->hasPermission('view_resumes')
+            ? Resume::where('person_id', $person->id)->where('status', 'saved')->latest()->get()
+            : [];
+
         return inertia('Portal/People/Show', [
+            'resumes' => $personResumes,
+            'initialSection' => request('section') === 'resumes' && $resumeAccess->hasPermission('view_resumes') ? 'resumes' : 'details',
             'person' => $person,
             'customFieldDisplay' => app(CustomFieldService::class)->displayValues($person, 'person'),
         ]);
@@ -285,7 +295,20 @@ class PeopleController extends Controller
 
         $customFieldService = app(CustomFieldService::class);
 
+        $resumeAccess = app(CurrentUserContext::class);
+        $personResumes = $resumeAccess->hasPermission('view_resumes')
+            ? Resume::where('person_id', $person->id)
+                ->where(fn ($query) => $query->where('status', 'saved')->orWhere(fn ($drafts) => $drafts->where('status', 'draft')->where('uploaded_by', $resumeAccess->user()->id)))
+                ->latest()->get(['id', 'person_id', 'name', 'status', 'original_filename', 'format_snapshot', 'created_at'])
+            : collect();
+        $resumeFormats = $resumeAccess->hasPermission('view_resumes') && $resumeAccess->hasPermission('manage_resumes')
+            ? ResumeFormat::where('is_active', true)->orderBy('name')->get(['id', 'name', 'version', 'description'])
+            : collect();
+
         return inertia('Portal/People/Edit', [
+            'resumes' => $personResumes,
+            'resumeFormats' => $resumeFormats,
+            'initialSection' => request('section') === 'resumes' && $resumeAccess->hasPermission('view_resumes') ? 'resumes' : 'details',
             'person' => $person,
             'selectedRoleIds' => $selectedRoleIds,
             'users' => $users,

@@ -130,3 +130,5 @@ require __DIR__.'/user-event-log.php';
 
 require __DIR__.'/data-imports.php';
 require __DIR__.'/message-boxes.php';
+
+require __DIR__.'/resumes.php';

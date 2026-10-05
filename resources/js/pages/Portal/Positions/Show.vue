@@ -266,6 +266,9 @@ function confirmDelete(): void {
             </template>
 
             <template #actions>
+                <Button v-if="can('view_resumes')" as-child variant="outline">
+                    <Link :href="`/portal/resumes?position_id=${position.id}`">Find Candidates</Link>
+                </Button>
                 <Button as-child v-if="can('view_admin')" variant="outline"><Link
                     :href="`/position-assignments/create?position_id=${position.id}`"
                 >

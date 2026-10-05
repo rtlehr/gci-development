@@ -6,6 +6,7 @@ import CustomFieldsDisplay from '@/components/custom-fields/CustomFieldsDisplay.
 import AttachmentList from '@/components/attachments/AttachmentList.vue'
 import DetailItem from '@/components/DetailItem.vue'
 import PersonSectionNav from '@/components/portal/people/PersonSectionNav.vue'
+import PersonResumesPanel from '@/components/portal/people/PersonResumesPanel.vue'
 import PersonNotesPanel from '@/components/portal/people/PersonNotesPanel.vue'
 import { useAppLabels } from '@/composables/useAppLabels'
 import { useAuth } from '@/composables/useAuth'
@@ -42,12 +43,14 @@ import {
 
 const props = defineProps({
     person: { type: Object, required: true },
+    resumes: { type: Array, default: () => [] },
+    initialSection: { type: String, default: 'details' },
     customFieldDisplay: { type: Array, default: () => [] },
 })
 
 const { label } = useAppLabels()
 const { can } = useAuth()
-const activeSection = ref('details')
+const activeSection = ref(props.initialSection)
 const deleteDialogOpen = ref(false)
 const assignmentToDelete = ref(null)
 
@@ -111,6 +114,7 @@ const sections = computed(() => [
         description: 'Linked account and roles.',
         complete: Boolean(roles.value.length),
     },
+    ...(can('view_resumes') ? [{ id: 'resumes', title: 'Resumes', description: 'View uploaded resumes.', complete: Boolean(props.resumes.length) }] : []),
     {
         id: 'attachments',
         title: 'Attachments',
@@ -177,6 +181,8 @@ function confirmDelete() {
 
             <div class="flex flex-wrap gap-2">
                 <Button as-child variant="outline"><Link href="/portal/people">Back to List</Link></Button>
+                <Button as-child v-if="can('view_resumes')" variant="outline"><Link :href="`/portal/people/${person.id}?section=resumes`">Resumes</Link></Button>
+                <Button as-child v-if="can('view_resumes') && can('manage_resumes')" variant="outline"><Link :href="`/portal/resumes/upload?person_id=${person.id}`">Upload Resume</Link></Button>
                 <Button as-child v-if="can(Permissions.PEOPLE_UPDATE)"><Link :href="`/portal/people/${person.id}/edit`">Edit Person</Link></Button>
                 <Button as-child v-if="can(Permissions.POSITIONS_UPDATE)" variant="outline"><Link :href="`/position-assignments/create?person_id=${person.id}`">Add Assignment</Link></Button>
             </div>
@@ -354,6 +360,10 @@ function confirmDelete() {
                             <p v-else class="text-sm text-muted-foreground">No application roles assigned.</p>
                         </CardContent>
                     </Card>
+                </section>
+
+                <section v-if="can('view_resumes')" v-show="activeSection === 'resumes'">
+                    <PersonResumesPanel :person-id="person.id" :resumes="resumes" :formats="[]" read-only />
                 </section>
 
                 <section v-show="activeSection === 'attachments'">

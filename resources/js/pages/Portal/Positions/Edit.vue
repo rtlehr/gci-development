@@ -9,6 +9,7 @@ import FormSection from '@/components/forms/FormSection.vue'
 import PositionCandidatesPanel from '@/components/positions/PositionCandidatesPanel.vue'
 import PositionFormFields from '@/components/positions/PositionFormFields.vue'
 import PortalSectionNav from '@/components/portal/PortalSectionNav.vue'
+import { useAuth } from '@/composables/useAuth'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
@@ -45,6 +46,13 @@ const props = withDefaults(defineProps<{
 
 
 type PositionEditSection = 'details' | 'qualifications' | 'mission' | 'organization' | 'other' | 'operations' | 'requirements' | 'candidates'
+
+const { can } = useAuth()
+const resumeKeywords = ref('')
+const usePositionSkills = ref(false)
+function searchResumes() {
+    router.get('/portal/resumes', { position_id: props.position.id, q: resumeKeywords.value, use_position_skills: usePositionSkills.value ? 1 : 0 })
+}
 
 const normalizedInitialSection = props.initialSection === 'general' ? 'details' : props.initialSection
 const activeSection = ref<PositionEditSection>((normalizedInitialSection as PositionEditSection) || 'details')
@@ -359,6 +367,17 @@ onBeforeUnmount(() => window.removeEventListener('beforeunload', handleBeforeUnl
                 role="alert"
             >
                 <strong>Please complete the required information.</strong> {{ validationMessage }}
+            </div>
+
+            <div v-if="activeSection === 'candidates' && can('view_resumes')" class="space-y-4 rounded-xl border bg-card p-5">
+                <h2 class="font-semibold">Search Resumes</h2>
+                <p class="text-sm text-muted-foreground">Find resumes and add people to this position's candidate workflow.</p>
+                <form class="space-y-3" @submit.prevent="searchResumes">
+                    <label class="block space-y-2"><span>Resume keywords</span><Input v-model="resumeKeywords" placeholder="Optional keywords, e.g. Java" /></label>
+                    <label class="flex items-center gap-2"><input v-model="usePositionSkills" type="checkbox" />Use this position's saved Skills to find the best matches</label>
+                    <p class="text-sm text-muted-foreground">Includes job-title and custom skill names. Results rank by the number of matching skills. Save Skills changes before searching.</p>
+                    <Button type="submit">Search Resumes</Button>
+                </form>
             </div>
 
             <PositionCandidatesPanel
