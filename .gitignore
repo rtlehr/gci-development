@@ -12,6 +12,7 @@
 /vendor
 .DS_Store
 .env.backup
+.env-azure
 .env-development
 .phpactor.json
 .phpunit.result.cache
@@ -26,4 +27,5 @@ yarn-error.log
 /.vscode
 /.zed
 *.zip
+AZURE-INFO
 
