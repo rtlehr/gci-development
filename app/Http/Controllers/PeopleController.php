@@ -388,7 +388,7 @@ class PeopleController extends Controller
             );
 
             return redirect()
-                ->route('people.index')
+                ->back()
                 ->with('success', 'Person updated successfully.');
         });
     }

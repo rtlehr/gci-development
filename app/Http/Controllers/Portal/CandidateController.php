@@ -608,7 +608,7 @@ class CandidateController extends Controller
         );
 
         return redirect()
-            ->route('portal.candidates.show', $candidate)
+            ->back()
             ->with('success', 'Candidate updated successfully.');
     }
 

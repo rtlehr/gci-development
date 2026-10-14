@@ -394,7 +394,7 @@ class PositionController extends Controller
         );
 
         return redirect()
-            ->route('portal.positions.edit', $position->id)
+            ->back()
             ->with('success', 'Position updated successfully.');
     }
 

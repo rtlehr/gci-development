@@ -565,7 +565,7 @@ class CandidateController extends Controller
         }
 
         return redirect()
-            ->route('candidates.index')
+            ->back()
             ->with('success', 'Candidate updated successfully.');
     }
 
