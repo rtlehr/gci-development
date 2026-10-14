@@ -47,8 +47,14 @@ class AzureBlobAdapter implements LeagueFilesystemAdapter
         if ($authenticate) $headers[] = 'Authorization: Bearer '.$this->token();
         $headers[] = 'x-ms-version: 2023-11-03';
         $ch = curl_init($url);
-        curl_setopt_array($ch, [CURLOPT_HTTPHEADER => $headers, CURLOPT_CUSTOMREQUEST => $method,
-            CURLOPT_RETURNTRANSFER => true, CURLOPT_HEADER => true, CURLOPT_TIMEOUT => 60]);
+        curl_setopt_array($ch, [
+                    CURLOPT_HTTPHEADER => $headers,
+                    CURLOPT_CUSTOMREQUEST => $method,
+                    CURLOPT_NOBODY => $method === 'HEAD',
+                    CURLOPT_RETURNTRANSFER => true,
+                    CURLOPT_HEADER => true,
+                    CURLOPT_TIMEOUT => 60,
+                ]);
         if ($body !== null) curl_setopt($ch, CURLOPT_POSTFIELDS, $body);
         $response = curl_exec($ch);
         if ($response === false) throw new RuntimeException('Azure Storage HTTP failure: '.curl_error($ch));
@@ -122,7 +128,7 @@ class AzureBlobAdapter implements LeagueFilesystemAdapter
     public function setVisibility(string $path, string $visibility): void {}
     public function visibility(string $path): FileAttributes { return new FileAttributes($path, null, Visibility::PRIVATE); }
 
-    private function headers(string $path): array
+    private function headers(string $path): string
     {
         [$code, , $headers] = $this->http($this->endpoint($path), 'HEAD', []);
         if ($code !== 200) throw UnableToRetrieveMetadata::create($path, 'HTTP '.$code);

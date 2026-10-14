@@ -8,6 +8,7 @@ use App\Models\Person;
 use App\Models\User;
 use App\Services\Auth\BootstrapOwnerService;
 use App\Services\Auth\OwnerRecoveryService;
+use App\Support\AzureTestIdentity;
 use Closure;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -47,7 +48,7 @@ class ResolveUserFromPhpSource
          * A production deployment must explicitly use the ADFS driver so an
          * .env mistake cannot silently impersonate DEV_PERSON_CODE.
          */
-        if (app()->isProduction()) {
+        if (app()->isProduction() && ! AzureTestIdentity::authorized($request)) {
             if ($this->requiresAuthentication($request)) {
                 Log::error('IRAD identity driver is misconfigured for production.', [
                     'driver' => 'development',
@@ -67,6 +68,7 @@ class ResolveUserFromPhpSource
         if (
             ! app()->environment('local')
             && ! app()->environment('testing')
+            && ! AzureTestIdentity::authorized($request)
         ) {
             return $next($request);
         }

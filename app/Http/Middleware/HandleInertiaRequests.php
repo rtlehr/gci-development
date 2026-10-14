@@ -9,6 +9,7 @@ use App\Services\CurrentUserContext;
 use App\Services\SiteSettingsService;
 use App\Services\ContentPageNavigationService;
 use App\Support\RoleAbbreviation;
+use App\Support\AzureTestIdentity;
 use Illuminate\Http\Request;
 use Inertia\Middleware;
 
@@ -34,8 +35,7 @@ class HandleInertiaRequests extends Middleware
     {
         $user = $this->currentUser->user();
 
-        $devSwitcherAvailable = app()->environment('local')
-            && config('devuser.enabled') === true;
+        $devSwitcherAvailable = AzureTestIdentity::switcherAvailable($request);
 
         $alertCount = 0;
         $recentAlerts = [];

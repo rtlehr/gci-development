@@ -4,6 +4,7 @@ use App\Http\Controllers\AttachmentController;
 use App\Http\Controllers\Auth\OwnerRecoveryController;
 use App\Http\Controllers\Setup\InitialSetupController;
 use App\Models\Person;
+use App\Support\AzureTestIdentity;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
@@ -45,7 +46,7 @@ Route::get('/dashboard', fn () => redirect()->route('portal.dashboard'))
     ->name('dashboard');
 
 Route::post('/dev/switch-user', function (Request $request) {
-    abort_unless(app()->environment('local'), 404);
+    abort_unless(AzureTestIdentity::switcherAvailable($request), 404);
     abort_unless(config('devuser.enabled') === true, 404);
 
     $validated = $request->validate([
@@ -71,7 +72,7 @@ Route::post('/dev/switch-user', function (Request $request) {
 })->name('dev.switch-user');
 
 Route::post('/dev/clear-user', function (Request $request) {
-    abort_unless(app()->environment('local'), 404);
+    abort_unless(AzureTestIdentity::switcherAvailable($request), 404);
     abort_unless(config('devuser.enabled') === true, 404);
 
     session()->forget('dev_person_code');
