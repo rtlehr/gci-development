@@ -9,6 +9,7 @@ use App\Models\Resume;
 use App\Models\ResumeFormat;
 use App\Models\Workflow;
 use App\Services\CurrentUserContext;
+use App\Services\Storage\PortableFiles;
 use App\Services\PortalWorkforceAccessService;
 use App\Services\Resumes\DocxResumeParser;
 use App\Services\Resumes\ResumeFields;
@@ -134,7 +135,9 @@ class ResumeController extends Controller
         $data = $request->validate(['resume_format_id' => ['required', 'integer', Rule::exists('resume_formats', 'id')->where('is_active', true)], 'file' => ['required', 'file', 'extensions:docx', 'max:20480']]);
         $format = ResumeFormat::findOrFail($data['resume_format_id']);
         $result = $parser->parse($request->file('file')->getRealPath(), $format->mappings, $format->column_orders ?? []);
-        $path = $request->file('file')->store('resumes', 'local');
+        $disk = PortableFiles::documentsDisk();
+        $storedPath = $request->file('file')->store('resumes', $disk);
+        $path = $storedPath ? PortableFiles::reference($disk, $storedPath, 'local') : false;
         abort_unless($path, 500, 'The resume could not be stored.');
         try {
             $resume = DB::transaction(function () use ($format, $result, $path, $request) {
@@ -144,7 +147,8 @@ class ResumeController extends Controller
                 return $resume;
             });
         } catch (\Throwable $e) {
-            Storage::disk('local')->delete($path);
+            [$disk, $storedPath] = PortableFiles::resolve($path, 'local');
+            Storage::disk($disk)->delete($storedPath);
             throw $e;
         }
         $this->log($resume, 'upload', 'Uploaded a resume for review.');
@@ -227,10 +231,11 @@ class ResumeController extends Controller
     public function download(Resume $resume)
     {
         $this->authorizeDraft($resume);
-        abort_unless(Storage::disk('local')->exists($resume->file_path), 404);
+        [$disk, $filePath] = PortableFiles::resolve($resume->file_path, 'local');
+        abort_unless(Storage::disk($disk)->exists($filePath), 404);
         $this->log($resume, 'download', 'Downloaded the original resume document.');
 
-        return Storage::disk('local')->download($resume->file_path, $resume->original_filename, ['X-Content-Type-Options' => 'nosniff']);
+        return Storage::disk($disk)->download($filePath, $resume->original_filename, ['X-Content-Type-Options' => 'nosniff']);
     }
 
     public function destroy(Request $request, Resume $resume)
@@ -239,7 +244,8 @@ class ResumeController extends Controller
         $this->log($resume, 'delete', 'Deleted a resume.');
         $path = $resume->file_path;
         $resume->delete();
-        Storage::disk('local')->delete($path);
+        [$disk, $storedPath] = PortableFiles::resolve($path, 'local');
+        Storage::disk($disk)->delete($storedPath);
 
         if ($person = $this->personContext()) {
             return redirect()->route('portal.people.edit', ['id' => $person->id, 'section' => 'resumes'])->with('success', 'Resume deleted.');

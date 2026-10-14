@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\Attachment;
+use App\Services\Storage\PortableFiles;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Collection;
@@ -16,8 +17,9 @@ class AttachmentService
         array $files = [],
         array $metadata = [],
         ?int $uploadedByUserId = null,
-        string $disk = 'local'
+        ?string $disk = null
     ): array {
+        $disk ??= PortableFiles::documentsDisk();
         $created = [];
 
         foreach ($files as $index => $file) {
@@ -88,7 +90,7 @@ class AttachmentService
         array $metadata = [],
         array $removeIds = [],
         ?int $uploadedByUserId = null,
-        string $disk = 'local'
+        ?string $disk = null
     ): void {
         $this->deleteForModel($model, $removeIds);
         $this->uploadForModel($model, $newFiles, $metadata, $uploadedByUserId, $disk);

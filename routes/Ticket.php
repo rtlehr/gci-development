@@ -28,6 +28,10 @@ Route::get('/admin/tickets/export/csv', [TicketAdminController::class, 'exportCs
     ->name('admin.tickets.export.csv')
     ->middleware('permission:access_tickets');
 
+Route::get('/admin/tickets/{ticket}/screenshot', [\App\Http\Controllers\TicketScreenshotController::class, 'admin'])
+    ->middleware('permission:read_tickets')
+    ->name('admin.tickets.screenshot');
+
 Route::get('/admin/tickets/{ticket}', [TicketAdminController::class, 'show'])
     ->name('admin.tickets.show')
     ->middleware('permission:read_tickets');

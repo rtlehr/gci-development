@@ -54,6 +54,12 @@ class AppServiceProvider extends ServiceProvider
 
     public function boot(): void
     {
+        \Illuminate\Support\Facades\Storage::extend('azure_managed_blob', function ($app, $config) {
+            $adapter = new \App\Storage\AzureBlobAdapter($config['account'], $config['container']);
+            return new \Illuminate\Filesystem\FilesystemAdapter(
+                new \League\Flysystem\Filesystem($adapter), $adapter, $config
+            );
+        });
         $this->configureExternalUrl();
         $this->configureDefaults();
     }

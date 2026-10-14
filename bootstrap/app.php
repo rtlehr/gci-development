@@ -30,7 +30,7 @@ return Application::configure(basePath: dirname(__DIR__))
 
         if ($trustedProxies !== []) {
             $middleware->trustProxies(
-                at: $trustedProxies,
+                at: $trustedProxies === ['*'] ? '*' : $trustedProxies,
                 headers: Request::HEADER_X_FORWARDED_FOR
                     | Request::HEADER_X_FORWARDED_HOST
                     | Request::HEADER_X_FORWARDED_PORT
@@ -38,7 +38,8 @@ return Application::configure(basePath: dirname(__DIR__))
             );
         }
 
-        $middleware->prepend(EnforceSecureTransport::class);
+        //$middleware->prepend(EnforceSecureTransport::class);
+        $middleware->append(EnforceSecureTransport::class);
 
         $middleware->encryptCookies(except: ['appearance', 'sidebar_state']);
 

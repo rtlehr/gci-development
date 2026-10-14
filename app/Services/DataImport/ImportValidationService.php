@@ -14,6 +14,7 @@ use App\Models\Workflow;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Storage;
+use App\Services\Storage\PortableFiles;
 
 class ImportValidationService
 {
@@ -32,10 +33,9 @@ class ImportValidationService
         $workflow = $this->workflow($payload['workflow_code'] ?? null);
         $destinations = $this->registry->flat($workflow);
 
-        $sheet = $this->reader->readWorksheet(
-            Storage::disk('local')->path($import->stored_path),
-            (int) $import->worksheet_index,
-        );
+        $sheet = PortableFiles::localPath($import->stored_path, 'local', fn ($localPath) => $this->reader->readWorksheet(
+            $localPath, (int) $import->worksheet_index,
+        ));
 
         $import->rows()->delete();
         $seenPersonPosition = [];

@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Portal;
 
 use App\Http\Controllers\Controller;
 use App\Models\Ticket;
+use App\Services\Storage\PortableFiles;
 use App\Models\TicketActivity;
 use App\Services\AlertService;
 use App\Services\UserResolver;
@@ -97,7 +98,8 @@ class TicketController extends Controller
             'description' => $validated['description'],
             'source_url' => $validated['source_url'] ?? null,
             'screenshot_path' => $request->hasFile('screenshot')
-                ? $request->file('screenshot')->store('ticket-screenshots', 'public')
+                ? PortableFiles::reference(PortableFiles::documentsDisk() === 'local' ? 'public' : PortableFiles::documentsDisk(),
+                    $request->file('screenshot')->store('ticket-screenshots', PortableFiles::documentsDisk() === 'local' ? 'public' : PortableFiles::documentsDisk()), 'public')
                 : null,
             'status' => 'new',
         ]);
@@ -149,7 +151,7 @@ class TicketController extends Controller
                 'description' => $ticket->description,
                 'source_url' => $ticket->source_url,
                 'screenshot_url' => $ticket->screenshot_path
-                    ? Storage::disk('public')->url($ticket->screenshot_path)
+                    ? route('portal.tickets.screenshot', $ticket)
                     : null,
                 'resolution_notes' => $ticket->resolution_notes,
                 'assigned_to' => $this->displayName($ticket->assignedTo),

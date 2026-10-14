@@ -395,12 +395,12 @@ function unwatchTicket() {
                     <p class="text-sm text-muted-foreground">Screenshot</p>
 
                     <a
-                        :href="`/storage/${ticket.screenshot_path}`"
+                        :href="`/admin/tickets/${ticket.id}/screenshot`"
                         target="_blank"
                         class="inline-block"
                     >
                         <img
-                            :src="`/storage/${ticket.screenshot_path}`"
+                            :src="`/admin/tickets/${ticket.id}/screenshot`"
                             alt="Ticket screenshot"
                             class="max-h-[400px] rounded-lg border"
                         />

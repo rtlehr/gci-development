@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Ticket;
+use App\Services\Storage\PortableFiles;
 use App\Models\TicketActivity;
 use App\Models\User;
 use App\Services\AlertService;
@@ -56,7 +57,8 @@ class TicketController extends Controller
         $screenshotPath = null;
 
         if ($request->hasFile('screenshot')) {
-            $screenshotPath = $request->file('screenshot')->store('ticket-screenshots', 'public');
+            $screenshotPath = PortableFiles::reference(PortableFiles::documentsDisk() === 'local' ? 'public' : PortableFiles::documentsDisk(),
+                    $request->file('screenshot')->store('ticket-screenshots', PortableFiles::documentsDisk() === 'local' ? 'public' : PortableFiles::documentsDisk()), 'public');
         }
 
         $ticket = Ticket::create([

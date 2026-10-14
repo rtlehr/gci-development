@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\UploadDataImportRequest;
 use App\Models\DataImport;
+use App\Services\Storage\PortableFiles;
 use App\Models\DataImportMappingTemplate;
 use App\Models\DataImportRow;
 use App\Models\Workflow;
@@ -107,18 +108,21 @@ class DataImportController extends Controller
     {
         $file = $request->file('file');
         $uuid = (string) Str::uuid();
-        $storedPath = $file->storeAs("data-imports/{$uuid}", 'source.xlsx', 'local');
+        $disk = PortableFiles::importsDisk();
+        $path = $file->storeAs("data-imports/{$uuid}", 'source.xlsx', $disk);
+        abort_unless($path, 500, 'Could not store the uploaded workbook.');
+        $storedPath = PortableFiles::reference($disk, $path, 'local');
 
         try {
-            $metadata = $reader->inspect(Storage::disk('local')->path($storedPath));
+            $metadata = PortableFiles::localPath($storedPath, 'local', fn ($localPath) => $reader->inspect($localPath));
         } catch (RuntimeException $exception) {
-            Storage::disk('local')->deleteDirectory("data-imports/{$uuid}");
+            Storage::disk($disk)->deleteDirectory("data-imports/{$uuid}");
 
             return back()->withErrors(['file' => $exception->getMessage()]);
         }
 
         if (empty($metadata['sheets'])) {
-            Storage::disk('local')->deleteDirectory("data-imports/{$uuid}");
+            Storage::disk($disk)->deleteDirectory("data-imports/{$uuid}");
 
             return back()->withErrors(['file' => 'The workbook does not contain a readable worksheet.']);
         }

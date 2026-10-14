@@ -47,6 +47,20 @@ return [
             'report' => false,
         ],
 
+        'azure_documents' => [
+            'driver' => 'azure_managed_blob',
+            'account' => env('AZURE_STORAGE_ACCOUNT', ''),
+            'container' => env('AZURE_DOCUMENTS_CONTAINER', 'insite-documents'),
+            'throw' => true,
+        ],
+
+        'azure_imports' => [
+            'driver' => 'azure_managed_blob',
+            'account' => env('AZURE_STORAGE_ACCOUNT', ''),
+            'container' => env('AZURE_IMPORTS_CONTAINER', 'insite-imports'),
+            'throw' => true,
+        ],
+
         's3' => [
             'driver' => 's3',
             'key' => env('AWS_ACCESS_KEY_ID'),

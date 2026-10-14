@@ -243,6 +243,10 @@ Route::middleware(['auth', 'permission:access_portal'])
             ->middleware(['permission:portal_create_tickets', 'portal-feature:features.support_tickets'])
             ->name('tickets.store');
 
+        Route::get('/tickets/{ticket}/screenshot', [\App\Http\Controllers\TicketScreenshotController::class, 'portal'])
+            ->middleware(['permission:portal_view_own_tickets', 'portal-feature:features.support_tickets'])
+            ->name('tickets.screenshot');
+
         Route::get('/tickets/{ticket}', [TicketController::class, 'show'])
             ->middleware(['permission:portal_view_own_tickets', 'portal-feature:features.support_tickets'])
             ->name('tickets.show');
