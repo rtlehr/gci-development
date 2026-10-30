@@ -168,6 +168,7 @@ it('updates a portal person without failing while recording the before state', f
     ]);
 
     $response = $this->actingAs($user)
+        ->from(route('portal.people.edit', $person->id))
         ->put(route('portal.people.update', $person->id), [
             'person_code' => $person->person_code,
             'first_name' => 'After',
@@ -178,7 +179,7 @@ it('updates a portal person without failing while recording the before state', f
             'role_ids' => [],
         ]);
 
-    $response->assertRedirect(route('portal.people.index'));
+    $response->assertRedirect(route('portal.people.edit', $person->id));
 
     $person->refresh();
 
