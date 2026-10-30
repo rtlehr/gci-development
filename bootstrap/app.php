@@ -66,6 +66,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->alias([
             'security' => \App\Http\Middleware\CheckSecurityLevel::class,
             'permission' => \App\Http\Middleware\CheckPermission::class,
+            'insite-module' => \App\Http\Middleware\EnsureInsiteModuleEnabled::class,
             'portal-feature' => \App\Http\Middleware\EnsurePortalFeatureEnabled::class,
         ]);
     })

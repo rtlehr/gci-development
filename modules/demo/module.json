@@ -1,0 +1,7 @@
+{
+  "id": "demo",
+  "name": "Module Activation Demonstration",
+  "version": "1.0.0",
+  "requires": {},
+  "provider": "Insite\\Modules\\Demo\\DemoServiceProvider"
+}

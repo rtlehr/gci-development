@@ -14,7 +14,7 @@ final class ModuleCatalog
 {
     public function __construct(private readonly string $directory) {}
 
-    /** @return list<array{id: string, name: string, version: string, path: string, requires: array<string, string>}> */
+    /** @return list<array{id: string, name: string, version: string, path: string, requires: array<string, string>, provider: ?string}> */
     public function all(): array
     {
         if (! File::isDirectory($this->directory)) {
@@ -75,7 +75,15 @@ final class ModuleCatalog
             }
             ksort($requires);
 
-            $modules[$data['id']] = [
+            $provider = $data['provider'] ?? null;
+            if ($provider !== null && (! is_string($provider)
+                || ! str_starts_with($provider, 'Insite\\Modules\\')
+                || ! preg_match('/^[A-Za-z0-9_\\\\]+$/D', substr($provider, strlen('Insite\\Modules\\')))
+                || str_ends_with($provider, '\\'))) {
+                throw new InvalidArgumentException("Module [{$data['id']}] has an invalid provider class.");
+            }
+
+            $modules[$data['id']] = ['provider' => $provider,
                 'id' => $data['id'],
                 'name' => $data['name'],
                 'version' => $data['version'],
@@ -89,7 +97,7 @@ final class ModuleCatalog
         return array_values($modules);
     }
 
-    /** @return array{id: string, name: string, version: string, path: string, requires: array<string, string>}|null */
+    /** @return array{id: string, name: string, version: string, path: string, requires: array<string, string>, provider: ?string}|null */
     public function find(string $id): ?array
     {
         foreach ($this->all() as $module) {
