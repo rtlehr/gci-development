@@ -7,5 +7,7 @@
 $selected = array_map('trim', explode(',', (string) env('INSITE_ENABLED_MODULES', '')));
 
 return [
+    // Independently versioned Core module contract, not the Laravel framework version.
+    'core_version' => '1.0.0',
     'enabled' => array_values(array_filter($selected, static fn (string $id): bool => $id !== '')),
 ];

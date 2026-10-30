@@ -14,7 +14,7 @@ final class ModuleCatalog
 {
     public function __construct(private readonly string $directory) {}
 
-    /** @return list<array{id: string, name: string, version: string, path: string, requires: array<string, string>, provider: ?string}> */
+    /** @return list<array{id: string, name: string, version: string, path: string, requires: array<string, string>, provider: ?string, core: ?string}> */
     public function all(): array
     {
         if (! File::isDirectory($this->directory)) {
@@ -62,6 +62,11 @@ final class ModuleCatalog
                 throw new InvalidArgumentException("Module [{$data['id']}] must declare a stable semantic version (major.minor.patch).");
             }
 
+            $core = $data['core'] ?? null;
+            if ($core !== null && (! is_string($core) || ! ModuleVersion::isValidConstraint($core))) {
+                throw new InvalidArgumentException("Module [{$data['id']}] has an invalid Core version constraint.");
+            }
+
             $requires = $data['requires'] ?? [];
             if (! is_array($requires) || array_is_list($requires) && $requires !== []) {
                 throw new InvalidArgumentException("Module [{$data['id']}] requires must be an object mapping IDs to version constraints.");
@@ -89,6 +94,7 @@ final class ModuleCatalog
                 'version' => $data['version'],
                 'path' => $directory,
                 'requires' => $requires,
+                'core' => $core,
             ];
         }
 
@@ -97,7 +103,7 @@ final class ModuleCatalog
         return array_values($modules);
     }
 
-    /** @return array{id: string, name: string, version: string, path: string, requires: array<string, string>, provider: ?string}|null */
+    /** @return array{id: string, name: string, version: string, path: string, requires: array<string, string>, provider: ?string, core: ?string}|null */
     public function find(string $id): ?array
     {
         foreach ($this->all() as $module) {
