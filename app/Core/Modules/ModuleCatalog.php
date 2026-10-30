@@ -14,7 +14,7 @@ final class ModuleCatalog
 {
     public function __construct(private readonly string $directory) {}
 
-    /** @return list<array{id: string, name: string, version: string, path: string}> */
+    /** @return list<array{id: string, name: string, version: string, path: string, requires: array<string, string>}> */
     public function all(): array
     {
         if (! File::isDirectory($this->directory)) {
@@ -58,11 +58,29 @@ final class ModuleCatalog
                 throw new InvalidArgumentException("Duplicate module identifier [{$data['id']}].");
             }
 
+            if (! preg_match('/^\d+\.\d+\.\d+$/D', $data['version'])) {
+                throw new InvalidArgumentException("Module [{$data['id']}] must declare a stable semantic version (major.minor.patch).");
+            }
+
+            $requires = $data['requires'] ?? [];
+            if (! is_array($requires) || array_is_list($requires) && $requires !== []) {
+                throw new InvalidArgumentException("Module [{$data['id']}] requires must be an object mapping IDs to version constraints.");
+            }
+            foreach ($requires as $dependency => $constraint) {
+                if (! is_string($dependency) || ! preg_match('/^[a-z][a-z0-9-]*$/D', $dependency)
+                    || $dependency === $data['id'] || ! is_string($constraint)
+                    || ! ModuleVersion::isValidConstraint($constraint)) {
+                    throw new InvalidArgumentException("Invalid dependency declaration on module [{$data['id']}].");
+                }
+            }
+            ksort($requires);
+
             $modules[$data['id']] = [
                 'id' => $data['id'],
                 'name' => $data['name'],
                 'version' => $data['version'],
                 'path' => $directory,
+                'requires' => $requires,
             ];
         }
 
@@ -71,7 +89,7 @@ final class ModuleCatalog
         return array_values($modules);
     }
 
-    /** @return array{id: string, name: string, version: string, path: string}|null */
+    /** @return array{id: string, name: string, version: string, path: string, requires: array<string, string>}|null */
     public function find(string $id): ?array
     {
         foreach ($this->all() as $module) {
