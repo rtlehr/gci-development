@@ -105,7 +105,11 @@ Route::get('/attachments/{attachment}', [AttachmentController::class, 'show'])
     ->name('attachments.show');
 
 require __DIR__.'/people.php';
-require __DIR__.'/position.php';
+// During the transition, unselected installations retain the host-owned legacy routes.
+// When Positions is selected, its module route file owns the same URLs/names.
+if (! in_array('positions', (array) config('insite_modules.enabled', []), true)) {
+    require __DIR__.'/position.php';
+}
 require __DIR__.'/PositionAssignments.php';
 require __DIR__.'/settings.php';
 require __DIR__.'/UserPermissions.php';
