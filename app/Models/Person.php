@@ -4,10 +4,11 @@ namespace App\Models;
 
 use App\Casts\EncryptedValue;
 use App\Casts\EncryptedSearchableValue;
+use App\Contracts\Workforce\PersonPositionRelationships;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use App\Models\PositionAssignment;
-use App\Models\Position;
 use App\Models\User;
 use App\Models\PersonPhoneNumber;
 use App\Models\Address;
@@ -74,16 +75,18 @@ class Person extends Model
         return $person;
     }
 
-    public function assignments()
+    /**
+     * Legacy public API retained until Positions moves into its own module.
+     * Core does not define or reference a Position model.
+     */
+    public function assignments(): HasMany
     {
-        return $this->hasMany(PositionAssignment::class);
+        return app(PersonPositionRelationships::class)->assignments($this);
     }
 
-    public function positions()
+    public function positions(): BelongsToMany
     {
-        return $this->belongsToMany(Position::class, 'position_assignments')
-            ->withPivot(['start_date', 'end_date', 'assignment_status', 'assignment_type', 'notes'])
-            ->withTimestamps();
+        return app(PersonPositionRelationships::class)->positions($this);
     }
 
 

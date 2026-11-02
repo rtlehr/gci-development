@@ -4,6 +4,8 @@ namespace App\Providers;
 
 use App\Contracts\Encryption\DataEncryptionProvider;
 use App\Contracts\Identity\PersonCodeProvider;
+use App\Contracts\Workforce\PersonPositionRelationships;
+use App\Services\Positions\LegacyPersonPositionRelationships;
 use App\Services\CurrentUserContext;
 use App\Services\Encryption\EncryptionManager;
 use InvalidArgumentException;
@@ -19,6 +21,9 @@ class AppServiceProvider extends ServiceProvider
     public function register(): void
     {
         $this->app->singleton(EncryptionManager::class);
+
+        // Transitional binding: the Positions module will own this when extracted.
+        $this->app->bind(PersonPositionRelationships::class, LegacyPersonPositionRelationships::class);
 
         $this->app->bind(DataEncryptionProvider::class, function ($app): DataEncryptionProvider {
             return $app->make(EncryptionManager::class)->provider();
