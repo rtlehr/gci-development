@@ -24,8 +24,11 @@ class AppServiceProvider extends ServiceProvider
     {
         $this->app->singleton(EncryptionManager::class);
 
-        // Transitional legacy integration. Disabled installations do not bind Positions.
-        LegacyPositionsBinding::register($this->app);
+        // Existing installations retain legacy service registration until the Positions
+        // module is selected. When selected, its provider owns the relationship binding.
+        if (! in_array('positions', (array) config('insite_modules.enabled', []), true)) {
+            LegacyPositionsBinding::register($this->app);
+        }
 
         // The Core dashboard never directly resolves a Positions/Recruitment model service.
         $this->app->bind(WorkforceDashboardProvider::class, function ($app): WorkforceDashboardProvider {
