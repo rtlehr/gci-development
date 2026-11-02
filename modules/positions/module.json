@@ -1,0 +1,8 @@
+{
+  "id": "positions",
+  "name": "Positions",
+  "version": "1.0.0",
+  "core": "^1.0.0",
+  "requires": {},
+  "provider": "Insite\\Modules\\Positions\\PositionsServiceProvider"
+}
