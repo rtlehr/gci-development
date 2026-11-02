@@ -16,6 +16,7 @@
 .env-development
 .phpactor.json
 .phpunit.result.cache
+.phpstorm.meta.php
 Homestead.json
 Homestead.yaml
 npm-debug.log
