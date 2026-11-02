@@ -8,7 +8,7 @@ use App\Models\Ticket;
 use App\Models\User;
 use App\Models\UserListPreference;
 use App\Services\CurrentUserContext;
-use App\Services\ProjectManagerDashboardService;
+use App\Contracts\Dashboard\WorkforceDashboardProvider;
 use App\Services\SiteSettingsService;
 use App\Services\UserResolver;
 use Illuminate\Http\Request;
@@ -24,13 +24,14 @@ class DashboardController extends Controller
     public function __invoke(
         UserResolver $userResolver,
         CurrentUserContext $currentUser,
-        ProjectManagerDashboardService $dashboardService,
+        WorkforceDashboardProvider $dashboardService,
         SiteSettingsService $siteSettings,
     ): Response {
         $user = $userResolver->resolveUser();
         $supportTicketsEnabled = $siteSettings->get('features.support_tickets', true) === true;
         $alertsEnabled = $siteSettings->get('features.alerts', true) === true;
         $candidateOpportunitiesEnabled = $siteSettings->get('features.candidate_opportunities', true) === true;
+        $workforceEnabled = (bool) config('insite_modules.legacy_positions_enabled', true);
 
         $assignedTickets = $supportTicketsEnabled
             ? Ticket::query()
@@ -91,16 +92,16 @@ class DashboardController extends Controller
         |
         */
 
-        $showAllPositions = $currentUser->hasPermission(
+        $showAllPositions = $workforceEnabled && $currentUser->hasPermission(
             'portal_view_all_positions',
         );
 
-        $showAssignedPositions = ! $showAllPositions
+        $showAssignedPositions = $workforceEnabled && ! $showAllPositions
             && $currentUser->hasPermission(
                 'portal_view_assigned_positions',
             );
 
-        $showCandidateProgress = $candidateOpportunitiesEnabled
+        $showCandidateProgress = $workforceEnabled && $candidateOpportunitiesEnabled
             && ! $showAllPositions
             && ! $showAssignedPositions
             && $currentUser->hasPermission(
@@ -165,7 +166,7 @@ class DashboardController extends Controller
     public function saveStaffingPreferences(
         Request $request,
         UserResolver $userResolver,
-        ProjectManagerDashboardService $dashboardService,
+        WorkforceDashboardProvider $dashboardService,
     ) {
         $validKeys = collect($dashboardService->staffingColumns())
             ->pluck('key')
@@ -223,7 +224,7 @@ class DashboardController extends Controller
         Request $request,
         UserResolver $userResolver,
         CurrentUserContext $currentUser,
-        ProjectManagerDashboardService $dashboardService,
+        WorkforceDashboardProvider $dashboardService,
     ): StreamedResponse {
         $user = $userResolver->resolveUser();
         $columns = collect($dashboardService->staffingColumns())->keyBy('key');
@@ -357,7 +358,7 @@ class DashboardController extends Controller
     private function staffingPositionsFor(
         User $user,
         CurrentUserContext $currentUser,
-        ProjectManagerDashboardService $dashboardService,
+        WorkforceDashboardProvider $dashboardService,
     ): Collection {
         if ($currentUser->hasPermission('portal_view_all_positions')) {
             return $dashboardService->allPositionsForPmo();

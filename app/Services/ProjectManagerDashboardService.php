@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Contracts\Dashboard\WorkforceDashboardProvider;
 use App\Models\Candidate;
 use App\Models\Person;
 use App\Models\Position;
@@ -10,7 +11,7 @@ use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Str;
 
-class ProjectManagerDashboardService
+class ProjectManagerDashboardService implements WorkforceDashboardProvider
 {
     /**
      * Return dashboard-ready positions assigned to the supplied project manager.

@@ -2,6 +2,9 @@
 
 namespace App\Providers;
 
+use App\Contracts\Dashboard\WorkforceDashboardProvider;
+use App\Services\Dashboard\EmptyWorkforceDashboardProvider;
+use App\Services\ProjectManagerDashboardService;
 use App\Contracts\Encryption\DataEncryptionProvider;
 use App\Contracts\Identity\PersonCodeProvider;
 use App\Services\CurrentUserContext;
@@ -23,6 +26,13 @@ class AppServiceProvider extends ServiceProvider
 
         // Transitional legacy integration. Disabled installations do not bind Positions.
         LegacyPositionsBinding::register($this->app);
+
+        // The Core dashboard never directly resolves a Positions/Recruitment model service.
+        $this->app->bind(WorkforceDashboardProvider::class, function ($app): WorkforceDashboardProvider {
+            return (bool) config('insite_modules.legacy_positions_enabled', true)
+                ? $app->make(ProjectManagerDashboardService::class)
+                : $app->make(EmptyWorkforceDashboardProvider::class);
+        });
 
         $this->app->bind(DataEncryptionProvider::class, function ($app): DataEncryptionProvider {
             return $app->make(EncryptionManager::class)->provider();
