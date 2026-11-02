@@ -6,6 +6,7 @@ use App\Core\Modules\ModuleActivator;
 use App\Services\Positions\LegacyPersonPositionRelationships;
 use App\Services\ProjectManagerDashboardService;
 use Insite\Modules\Positions\PositionsServiceProvider;
+use Insite\Modules\Positions\Services\ModulePersonPositionRelationships;
 
 it('keeps legacy services usable in installations without the module selected', function () {
     expect(config('insite_modules.enabled', []))->not->toContain('positions')
@@ -24,7 +25,7 @@ it('lets the positions provider own workforce service bindings when activated', 
 
     expect(app(ModuleActivator::class)->activate())->toBe(['positions'])
         ->and(app()->getLoadedProviders()[PositionsServiceProvider::class] ?? false)->toBeTrue()
-        ->and(app(PersonPositionRelationships::class))->toBeInstanceOf(LegacyPersonPositionRelationships::class)
+        ->and(app(PersonPositionRelationships::class))->toBeInstanceOf(ModulePersonPositionRelationships::class)
         ->and(app(WorkforceDashboardProvider::class))->toBeInstanceOf(ProjectManagerDashboardService::class);
 });
 
