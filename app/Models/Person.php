@@ -5,6 +5,7 @@ namespace App\Models;
 use App\Casts\EncryptedValue;
 use App\Casts\EncryptedSearchableValue;
 use App\Contracts\Workforce\PersonPositionRelationships;
+use RuntimeException;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -81,12 +82,26 @@ class Person extends Model
      */
     public function assignments(): HasMany
     {
-        return app(PersonPositionRelationships::class)->assignments($this);
+        return $this->positionRelationships()->assignments($this);
     }
 
     public function positions(): BelongsToMany
     {
-        return app(PersonPositionRelationships::class)->positions($this);
+        return $this->positionRelationships()->positions($this);
+    }
+
+
+    /**
+     * Eloquent relationship methods cannot safely return an empty stand-in when
+     * their owner module is absent. Other Person operations remain available.
+     */
+    private function positionRelationships(): PersonPositionRelationships
+    {
+        if (! app()->bound(PersonPositionRelationships::class)) {
+            throw new RuntimeException('Positions integration is unavailable for this installation.');
+        }
+
+        return app(PersonPositionRelationships::class);
     }
 
 
