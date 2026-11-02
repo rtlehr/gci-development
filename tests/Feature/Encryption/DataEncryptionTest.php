@@ -1,48 +1,13 @@
 <?php
 
-use App\Casts\EncryptedValue;
-use App\Contracts\Encryption\DataEncryptionProvider;
 use App\Exceptions\DataEncryptionException;
 use App\Services\Encryption\EncryptionManager;
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
+use Tests\Support\Encryption\EncryptedCastTestRecord;
+use Tests\Support\Encryption\TestEncryptionProvider;
 
-class TestEncryptionProvider implements DataEncryptionProvider
-{
-    public function encrypt(mixed $value, string $keyVersion): string
-    {
-        return base64_encode(serialize(['key' => $keyVersion, 'value' => $value]));
-    }
-
-    public function decrypt(string $payload, string $keyVersion): mixed
-    {
-        $decoded = unserialize(base64_decode($payload, true));
-
-        if (! is_array($decoded) || ($decoded['key'] ?? null) !== $keyVersion) {
-            throw new DataEncryptionException('Test provider could not decrypt value.');
-        }
-
-        return $decoded['value'];
-    }
-}
-
-class EncryptedCastTestRecord extends Model
-{
-    protected $table = 'encrypted_cast_test_records';
-
-    public $timestamps = false;
-
-    protected $guarded = [];
-
-    protected function casts(): array
-    {
-        return [
-            'secret' => EncryptedValue::class,
-        ];
-    }
-}
 
 beforeEach(function () {
     config()->set('data-encryption.driver', 'laravel');
