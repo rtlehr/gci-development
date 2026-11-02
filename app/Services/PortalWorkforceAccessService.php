@@ -70,31 +70,12 @@ class PortalWorkforceAccessService
         return $query->whereRaw('1 = 0');
     }
 
+    /**
+     * Compatibility entry point while existing callers migrate to Recruitment.
+     */
     public function scopeCandidates(Builder $query): Builder
     {
-        if ($this->canViewAllPositions()) {
-            return $query;
-        }
-
-        if ($this->canViewAssignedPositions()) {
-            return $query->whereHas(
-                'position',
-                fn (Builder $positionQuery) => $positionQuery
-                    ->where('project_manager_user_id', $this->user()->id),
-            );
-        }
-
-        if ($this->canViewCandidatePositions()) {
-            $personId = $this->currentUser->person()?->id;
-
-            if (! $personId) {
-                return $query->whereRaw('1 = 0');
-            }
-
-            return $query->where('person_id', $personId);
-        }
-
-        return $query->whereRaw('1 = 0');
+        return app(\App\Services\Recruitment\CandidateAccessService::class)->scopeCandidates($query);
     }
 
     public function authorizePositionView(Position $position): void
@@ -107,13 +88,9 @@ class PortalWorkforceAccessService
         );
     }
 
+    /** Compatibility entry point; authorization rules are owned by Recruitment. */
     public function authorizeCandidateView(Candidate $candidate): void
     {
-        abort_unless(
-            $this->scopeCandidates(Candidate::query())
-                ->whereKey($candidate->id)
-                ->exists(),
-            403,
-        );
+        app(\App\Services\Recruitment\CandidateAccessService::class)->authorizeCandidateView($candidate);
     }
 }
