@@ -134,10 +134,10 @@ function save() {
 
                     <div class="flex items-center gap-3">
                         <Checkbox
-                            :checked="column.visible !== false"
+                            :model-value="column.visible !== false"
                             :disabled="visibleCount <= 1 && column.visible !== false"
                             :aria-label="`${column.visible === false ? 'Show' : 'Hide'} ${column.label} column`"
-                            @update:checked="toggleColumn(column.key, Boolean($event))"
+                            @update:model-value="toggleColumn(column.key, $event === true)"
                         />
 
                         <div class="flex items-center gap-1">

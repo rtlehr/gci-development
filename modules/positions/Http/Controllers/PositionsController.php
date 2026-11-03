@@ -17,7 +17,7 @@ use App\Services\ListEngine;
 use App\Services\ListExportService;
 use App\Contracts\Positions\PositionOperations;
 use App\Services\UserResolver;
-use App\Support\ListDefinitions\PositionsDefinition;
+use Insite\Modules\Positions\Support\ListDefinitions\PositionsDefinition;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 use Inertia\Inertia;

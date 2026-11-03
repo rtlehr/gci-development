@@ -19,7 +19,7 @@ use App\Contracts\Positions\PositionOperations;
 use App\Services\PortalWorkforceAccessService;
 use App\Services\UserResolver;
 use App\Services\UserEventLogger;
-use App\Support\ListDefinitions\PositionsDefinition;
+use Insite\Modules\Positions\Support\ListDefinitions\PositionsDefinition;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
