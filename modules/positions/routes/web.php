@@ -12,10 +12,10 @@ if (! (bool) config('insite_modules.legacy_positions_enabled', true)) {
 use App\Http\Controllers\PositionCandidateController;
 use App\Http\Controllers\PositionsController;
 use App\Http\Controllers\Portal\PositionController;
-use App\Http\Controllers\PositionCustomSkillTaskController;
+use Insite\Modules\Positions\Http\Controllers\PositionCustomSkillTaskController;
 use Illuminate\Support\Facades\Route;
 
-Route::middleware('insite-module:positions')->group(function (): void {
+Route::middleware(['insite-module:positions', 'web'])->group(function (): void {
     Route::get('/positions', fn () => redirect()->route('portal.positions.index'))
         ->name('positions.index');
     Route::get('/positions/create', fn () => redirect()->route('portal.positions.create'))
@@ -49,8 +49,9 @@ Route::middleware('insite-module:positions')->group(function (): void {
 // Route names, verbs, parameters, actions, and permissions are identical to the
 // transitional host definitions in routes/portal.php. The module guard also
 // protects cached routes if deployment selection subsequently changes.
-// Run the module guard before auth so disabled modules return 404, not a login redirect.
-Route::middleware(['insite-module:positions', 'auth', 'permission:access_portal'])
+// Include the web group for sessions and implicit Eloquent route model binding.
+// Keep the module guard ahead of auth so disabled modules return 404.
+Route::middleware(['insite-module:positions', 'web', 'auth', 'permission:access_portal'])
     ->prefix('portal')
     ->name('portal.')
     ->group(function (): void {

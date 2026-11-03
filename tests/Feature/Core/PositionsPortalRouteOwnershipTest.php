@@ -50,7 +50,8 @@ it('registers all fifteen portal position routes from the activated module', fun
             ->and($route->gatherMiddleware())->toContain('auth')
             ->and($route->gatherMiddleware())->toContain('permission:access_portal')
             ->and($route->gatherMiddleware())->toContain($permission)
-            ->and($route->gatherMiddleware())->toContain('insite-module:positions');
+            ->and($route->gatherMiddleware())->toContain('insite-module:positions')
+            ->and($route->gatherMiddleware())->toContain('web');
     }
 });
 
