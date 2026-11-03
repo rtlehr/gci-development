@@ -10,7 +10,6 @@ use App\Models\PositionActivity;
 use App\Models\Person;
 use App\Models\Workflow;
 use App\Models\User;
-use App\Models\UserListPreference;
 use App\Services\CustomFieldService;
 use App\Services\CustomFieldListService;
 use App\Services\ListEngine;
@@ -21,6 +20,7 @@ use App\Services\UserResolver;
 use App\Services\UserEventLogger;
 use Insite\Modules\Positions\Support\ListDefinitions\PositionsDefinition;
 use Insite\Modules\Positions\Services\PositionInputValidator;
+use Insite\Modules\Positions\Services\PositionListPreferences;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
@@ -441,49 +441,7 @@ class PositionController extends Controller
         Request $request,
         UserResolver $userResolver
     ) {
-        $definition = app(CustomFieldListService::class)->augmentDefinition(PositionsDefinition::get(), 'position');
-
-        $validKeys = collect($definition['columns'])
-            ->pluck('key')
-            ->toArray();
-
-        $validated = $request->validate([
-            'visible_columns' => [
-                'required',
-                'array',
-            ],
-            'visible_columns.*' => [
-                'string',
-            ],
-            'column_order' => [
-                'required',
-                'array',
-            ],
-            'column_order.*' => [
-                'string',
-            ],
-        ]);
-
-        $visibleColumns = collect($validated['visible_columns'])
-            ->filter(fn ($key) => in_array($key, $validKeys))
-            ->values()
-            ->toArray();
-
-        $columnOrder = collect($validated['column_order'])
-            ->filter(fn ($key) => in_array($key, $validKeys))
-            ->values()
-            ->toArray();
-
-        UserListPreference::updateOrCreate(
-            [
-                'user_id' => $userResolver->resolveUserId(),
-                'list_key' => $definition['list_key'],
-            ],
-            [
-                'visible_columns' => $visibleColumns,
-                'column_order' => $columnOrder,
-            ]
-        );
+        app(PositionListPreferences::class)->save($request, $userResolver->resolveUserId());
 
         return redirect()
             ->route('portal.positions.index')
@@ -492,11 +450,7 @@ class PositionController extends Controller
 
     public function resetPreferences(UserResolver $userResolver)
     {
-        $definition = app(CustomFieldListService::class)->augmentDefinition(PositionsDefinition::get(), 'position');
-
-        UserListPreference::where('user_id', $userResolver->resolveUserId())
-            ->where('list_key', $definition['list_key'])
-            ->delete();
+        app(PositionListPreferences::class)->reset($userResolver->resolveUserId());
 
         return redirect()
             ->route('portal.positions.index')
