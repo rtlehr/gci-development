@@ -8,13 +8,15 @@ use App\Models\Position;
 use App\Models\PositionAssignment;
 use Insite\Modules\Positions\Services\ModulePersonPositionRelationships;
 use App\Services\ProjectManagerDashboardService;
+use App\Services\PositionService;
+use Insite\Modules\Positions\Services\ModulePositionService;
 use Illuminate\Support\ServiceProvider;
 
 /**
  * Positions module service ownership (Phase 5C.2).
  *
- * Relationship implementation is now module-owned; dashboard data still uses
- * the host implementation until its later extraction.
+ * Relationship and position write implementations are module-owned; dashboard
+ * data still uses the host implementation until its later extraction.
  * Legacy installations without the module retain the transitional Core fallback.
  */
 final class PositionsServiceProvider extends ServiceProvider
@@ -31,6 +33,10 @@ final class PositionsServiceProvider extends ServiceProvider
         if (class_exists(Position::class) && class_exists(PositionAssignment::class)) {
             $this->app->bind(PersonPositionRelationships::class, ModulePersonPositionRelationships::class);
         }
+        // Existing controllers type-hint the legacy concrete PositionService.
+        // With the module selected, the container resolves that contract to
+        // module-owned business logic; unselected installs use the host service.
+        $this->app->bind(PositionService::class, ModulePositionService::class);
         $this->app->bind(WorkforceDashboardProvider::class, ProjectManagerDashboardService::class);
     }
 }
