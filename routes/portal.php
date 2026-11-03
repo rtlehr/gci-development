@@ -131,65 +131,69 @@ Route::middleware(['auth', 'permission:access_portal'])
             ->middleware('permission:update_positions')
             ->name('job-titles.tasks.destroy');
 
-        Route::get('/positions', [PositionController::class, 'index'])
-            ->middleware('permission:portal_view_positions')
-            ->name('positions.index');
+        // Transitional host-owned portal Positions endpoints for unselected installations.
+        // When the module is selected, it registers these endpoints from its own route file.
+        if (! in_array('positions', (array) config('insite_modules.enabled', []), true)) {
+            Route::get('/positions', [PositionController::class, 'index'])
+                ->middleware('permission:portal_view_positions')
+                ->name('positions.index');
 
-        Route::post('/positions/preferences', [PositionController::class, 'savePreferences'])
-            ->middleware('permission:portal_view_positions')
-            ->name('positions.preferences.save');
+            Route::post('/positions/preferences', [PositionController::class, 'savePreferences'])
+                ->middleware('permission:portal_view_positions')
+                ->name('positions.preferences.save');
 
-        Route::delete('/positions/preferences', [PositionController::class, 'resetPreferences'])
-            ->middleware('permission:portal_view_positions')
-            ->name('positions.preferences.reset');
+            Route::delete('/positions/preferences', [PositionController::class, 'resetPreferences'])
+                ->middleware('permission:portal_view_positions')
+                ->name('positions.preferences.reset');
 
-        Route::post('/positions/export/csv', [PositionController::class, 'exportCsv'])
-            ->middleware('permission:portal_view_positions')
-            ->name('positions.export.csv');
+            Route::post('/positions/export/csv', [PositionController::class, 'exportCsv'])
+                ->middleware('permission:portal_view_positions')
+                ->name('positions.export.csv');
 
-        Route::get('/positions/create', [PositionController::class, 'create'])
-            ->middleware('permission:create_positions')
-            ->name('positions.create');
+            Route::get('/positions/create', [PositionController::class, 'create'])
+                ->middleware('permission:create_positions')
+                ->name('positions.create');
 
-        Route::post('/positions', [PositionController::class, 'store'])
-            ->middleware('permission:create_positions')
-            ->name('positions.store');
+            Route::post('/positions', [PositionController::class, 'store'])
+                ->middleware('permission:create_positions')
+                ->name('positions.store');
 
-        Route::get('/positions/{id}', [PositionController::class, 'show'])
-            ->middleware('permission:portal_view_positions')
-            ->name('positions.show');
+            Route::get('/positions/{id}', [PositionController::class, 'show'])
+                ->middleware('permission:portal_view_positions')
+                ->name('positions.show');
 
-        Route::get('/positions/{id}/edit', [PositionController::class, 'edit'])
-            ->middleware('permission:update_positions')
-            ->name('positions.edit');
+            Route::get('/positions/{id}/edit', [PositionController::class, 'edit'])
+                ->middleware('permission:update_positions')
+                ->name('positions.edit');
 
-        Route::put('/positions/{id}', [PositionController::class, 'update'])
-            ->middleware('permission:update_positions')
-            ->name('positions.update');
+            Route::put('/positions/{id}', [PositionController::class, 'update'])
+                ->middleware('permission:update_positions')
+                ->name('positions.update');
 
-        Route::delete('/positions/{id}', [PositionController::class, 'destroy'])
-            ->middleware('permission:delete_positions')
-            ->name('positions.destroy');
+            Route::delete('/positions/{id}', [PositionController::class, 'destroy'])
+                ->middleware('permission:delete_positions')
+                ->name('positions.destroy');
 
-        Route::post('/positions/{id}/candidates', [PositionCandidateController::class, 'store'])
-            ->middleware('permission:create_candidates')
-            ->name('positions.candidates.store');
+            Route::post('/positions/{id}/candidates', [PositionCandidateController::class, 'store'])
+                ->middleware('permission:create_candidates')
+                ->name('positions.candidates.store');
 
-        Route::post('/positions/{position}/custom-skills', [PositionCustomSkillTaskController::class, 'storeSkill'])
-            ->middleware('permission:update_positions')
-            ->name('positions.custom-skills.store');
+            Route::post('/positions/{position}/custom-skills', [PositionCustomSkillTaskController::class, 'storeSkill'])
+                ->middleware('permission:update_positions')
+                ->name('positions.custom-skills.store');
 
-        Route::delete('/positions/{position}/custom-skills/{skill}', [PositionCustomSkillTaskController::class, 'destroySkill'])
-            ->middleware('permission:update_positions')
-            ->name('positions.custom-skills.destroy');
+            Route::delete('/positions/{position}/custom-skills/{skill}', [PositionCustomSkillTaskController::class, 'destroySkill'])
+                ->middleware('permission:update_positions')
+                ->name('positions.custom-skills.destroy');
 
-        Route::post('/positions/{position}/custom-tasks', [PositionCustomSkillTaskController::class, 'storeTask'])
-            ->middleware('permission:update_positions')
-            ->name('positions.custom-tasks.store');
+            Route::post('/positions/{position}/custom-tasks', [PositionCustomSkillTaskController::class, 'storeTask'])
+                ->middleware('permission:update_positions')
+                ->name('positions.custom-tasks.store');
 
-        Route::delete('/positions/{position}/custom-tasks/{task}', [PositionCustomSkillTaskController::class, 'destroyTask'])
-            ->middleware('permission:update_positions')
-            ->name('positions.custom-tasks.destroy');
+            Route::delete('/positions/{position}/custom-tasks/{task}', [PositionCustomSkillTaskController::class, 'destroyTask'])
+                ->middleware('permission:update_positions')
+                ->name('positions.custom-tasks.destroy');
+        }
 
         Route::get('/candidates', [CandidateController::class, 'index'])
             ->middleware('permission:portal_view_positions')
