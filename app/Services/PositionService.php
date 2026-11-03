@@ -2,6 +2,8 @@
 
 namespace App\Services;
 
+use App\Contracts\Positions\PositionOperations;
+
 use App\Models\Position;
 use App\Models\PositionActivity;
 use App\Models\User;
@@ -9,7 +11,7 @@ use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
-class PositionService
+class PositionService implements PositionOperations
 {
     /**
      * Return only users who may be assigned as Position Project Managers.

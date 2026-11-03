@@ -2,6 +2,8 @@
 
 namespace Insite\Modules\Positions\Services;
 
+use App\Contracts\Positions\PositionOperations;
+
 use App\Models\Position;
 use App\Models\PositionActivity;
 use App\Models\User;
@@ -10,14 +12,10 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
 /**
- * Module-owned implementation of the Positions write/eligibility service.
- *
- * The host service remains a temporary fallback for unselected deployments.
- * Controllers continue type-hinting App\Services\PositionService during
- * the compatibility period; this module implementation extends that class so
- * existing constructor and method contracts are unchanged.
+ * Independent Positions module implementation of the host-facing contract.
+ * The host PositionService remains as fallback for unselected installations.
  */
-class ModulePositionService extends \App\Services\PositionService
+final class ModulePositionService implements PositionOperations
 {
     /**
      * Return only users who may be assigned as Position Project Managers.

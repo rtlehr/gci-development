@@ -8,7 +8,7 @@ use App\Models\Position;
 use App\Models\PositionAssignment;
 use Insite\Modules\Positions\Services\ModulePersonPositionRelationships;
 use App\Services\ProjectManagerDashboardService;
-use App\Services\PositionService;
+use App\Contracts\Positions\PositionOperations;
 use Insite\Modules\Positions\Services\ModulePositionService;
 use Illuminate\Support\ServiceProvider;
 
@@ -33,10 +33,9 @@ final class PositionsServiceProvider extends ServiceProvider
         if (class_exists(Position::class) && class_exists(PositionAssignment::class)) {
             $this->app->bind(PersonPositionRelationships::class, ModulePersonPositionRelationships::class);
         }
-        // Existing controllers type-hint the legacy concrete PositionService.
-        // With the module selected, the container resolves that contract to
-        // module-owned business logic; unselected installs use the host service.
-        $this->app->bind(PositionService::class, ModulePositionService::class);
+        // Controllers depend on the boundary, never the host concrete class.
+        // Module activation replaces the host fallback implementation.
+        $this->app->bind(PositionOperations::class, ModulePositionService::class);
         $this->app->bind(WorkforceDashboardProvider::class, ProjectManagerDashboardService::class);
     }
 }

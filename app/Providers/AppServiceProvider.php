@@ -3,6 +3,8 @@
 namespace App\Providers;
 
 use App\Contracts\Dashboard\WorkforceDashboardProvider;
+use App\Contracts\Positions\PositionOperations;
+use App\Services\PositionService;
 use App\Services\Dashboard\EmptyWorkforceDashboardProvider;
 use App\Services\ProjectManagerDashboardService;
 use App\Contracts\Encryption\DataEncryptionProvider;
@@ -28,6 +30,13 @@ class AppServiceProvider extends ServiceProvider
         // module is selected. When selected, its provider owns the relationship binding.
         if (! in_array('positions', (array) config('insite_modules.enabled', []), true)) {
             LegacyPositionsBinding::register($this->app);
+        }
+
+        // Transitional fallback while Positions controllers remain in the host.
+        // The selected module supplies the independent implementation instead.
+        if ((bool) config('insite_modules.legacy_positions_enabled', true)
+            && ! in_array('positions', (array) config('insite_modules.enabled', []), true)) {
+            $this->app->bind(PositionOperations::class, PositionService::class);
         }
 
         // The Core dashboard never directly resolves a Positions/Recruitment model service.

@@ -15,7 +15,7 @@ use App\Services\CustomFieldService;
 use App\Services\CustomFieldListService;
 use App\Services\ListEngine;
 use App\Services\ListExportService;
-use App\Services\PositionService;
+use App\Contracts\Positions\PositionOperations;
 use App\Services\PortalWorkforceAccessService;
 use App\Services\UserResolver;
 use App\Services\UserEventLogger;
@@ -84,7 +84,7 @@ class PositionController extends Controller
                 'name',
             ]);
 
-        $projectManagers = app(PositionService::class)->projectManagers();
+        $projectManagers = app(PositionOperations::class)->projectManagers();
 
         return Inertia::render('Portal/Positions/Create', [
             'organizations' => $organizations,
@@ -97,7 +97,7 @@ class PositionController extends Controller
     public function store(
         Request $request,
         UserResolver $userResolver,
-        PositionService $positionService
+        PositionOperations $positionService
     ) {
         $validated = $this->validatePosition($request);
         $customFieldValues = $validated['custom_fields'] ?? [];
@@ -268,7 +268,7 @@ class PositionController extends Controller
                 'name',
             ]);
 
-        $projectManagers = app(PositionService::class)->projectManagers();
+        $projectManagers = app(PositionOperations::class)->projectManagers();
 
         $candidatePersonIds = $position->candidates
             ->pluck('person_id')
@@ -358,7 +358,7 @@ class PositionController extends Controller
     public function update(
         Request $request,
         UserResolver $userResolver,
-        PositionService $positionService,
+        PositionOperations $positionService,
         $id
     ) {
         $position = Position::findOrFail($id);
@@ -680,7 +680,7 @@ class PositionController extends Controller
             ],
         ] + app(CustomFieldService::class)->rules('position'));
 
-        app(PositionService::class)->assertEligibleProjectManager(
+        app(PositionOperations::class)->assertEligibleProjectManager(
             $validated['project_manager_user_id'] ?? null
         );
 

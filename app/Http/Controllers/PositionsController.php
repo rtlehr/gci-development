@@ -13,7 +13,7 @@ use App\Models\UserListPreference;
 use App\Services\CustomFieldListService;
 use App\Services\ListEngine;
 use App\Services\ListExportService;
-use App\Services\PositionService;
+use App\Contracts\Positions\PositionOperations;
 use App\Services\UserResolver;
 use App\Support\ListDefinitions\PositionsDefinition;
 use Illuminate\Http\Request;
@@ -73,7 +73,7 @@ class PositionsController extends Controller
                 'name',
             ]);
 
-        $projectManagers = app(PositionService::class)->projectManagers();
+        $projectManagers = app(PositionOperations::class)->projectManagers();
 
         return Inertia::render('Positions/Create', [
             'organizations' => $organizations,
@@ -85,7 +85,7 @@ class PositionsController extends Controller
     public function store(
         Request $request,
         UserResolver $userResolver,
-        PositionService $positionService
+        PositionOperations $positionService
     ) {
         $validated = $this->validatePosition($request);
 
@@ -236,7 +236,7 @@ class PositionsController extends Controller
                 'name',
             ]);
 
-        $projectManagers = app(PositionService::class)->projectManagers();
+        $projectManagers = app(PositionOperations::class)->projectManagers();
 
         $candidatePersonIds = $position->candidates
             ->pluck('person_id')
@@ -324,7 +324,7 @@ class PositionsController extends Controller
     public function update(
         Request $request,
         UserResolver $userResolver,
-        PositionService $positionService,
+        PositionOperations $positionService,
         $id
     ) {
         $position = Position::findOrFail($id);
@@ -607,7 +607,7 @@ class PositionsController extends Controller
             ],
         ]);
 
-        app(PositionService::class)->assertEligibleProjectManager(
+        app(PositionOperations::class)->assertEligibleProjectManager(
             $validated['project_manager_user_id'] ?? null
         );
 
