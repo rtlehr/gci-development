@@ -4,6 +4,7 @@ use App\Support\ListDefinitions\PositionsDefinition as HostPositionsDefinition;
 use Insite\Modules\Positions\Http\Controllers\Portal\PositionController as ModulePortalPositionController;
 use Insite\Modules\Positions\Http\Controllers\PositionsController as ModuleLegacyPositionsController;
 use Insite\Modules\Positions\Support\ListDefinitions\PositionsDefinition as ModulePositionsDefinition;
+use Insite\Modules\Positions\Services\PositionListConfiguration;
 
 it('preserves the original Positions list definition for host fallback', function () {
     $host = HostPositionsDefinition::get();
@@ -41,7 +42,7 @@ it('uses the module-owned list definition in both extracted controllers', functi
         $source = file_get_contents($file);
 
         expect($source)->toContain(
-            'use Insite\\Modules\\Positions\\Support\\ListDefinitions\\PositionsDefinition;'
+            'use Insite\\Modules\\Positions\\Services\\PositionListConfiguration;'
         )->not->toContain('use App\\Support\\ListDefinitions\\PositionsDefinition;');
     }
 

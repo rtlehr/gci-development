@@ -10,15 +10,14 @@ use App\Models\Position;
 use App\Models\Person;
 use App\Models\Workflow;
 use App\Models\User;
-use App\Services\CustomFieldListService;
 use App\Services\ListEngine;
 use App\Services\ListExportService;
 use App\Contracts\Positions\PositionOperations;
 use App\Services\UserResolver;
-use Insite\Modules\Positions\Support\ListDefinitions\PositionsDefinition;
 use Insite\Modules\Positions\Services\PositionInputValidator;
 use Insite\Modules\Positions\Services\PositionListPreferences;
 use Insite\Modules\Positions\Services\PositionDeletionService;
+use Insite\Modules\Positions\Services\PositionListConfiguration;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Symfony\Component\HttpFoundation\StreamedResponse;
@@ -30,18 +29,14 @@ class PositionsController extends Controller
         UserResolver $userResolver,
         ListEngine $listEngine
     ) {
-        $definition = app(CustomFieldListService::class)->augmentDefinition(PositionsDefinition::get(), 'position');
+        $definition = app(PositionListConfiguration::class)->definition();
 
         $list = $listEngine->run(
             request: $request,
             definition: $definition,
             userId: $userResolver->resolveUserId(),
             query: Position::query(),
-            filterCallback: function ($query, $request) {
-                if ($request->filled('status')) {
-                    $query->where('status', $request->input('status'));
-                }
-            }
+            filterCallback: [app(PositionListConfiguration::class), 'applyStatusFilter']
         );
 
         $list['filters']['status'] = $request->input('status', '');
@@ -385,14 +380,10 @@ class PositionsController extends Controller
     ): StreamedResponse {
         return $listExportService->exportCsv(
             request: $request,
-            definition: app(CustomFieldListService::class)->augmentDefinition(PositionsDefinition::get(), 'position'),
+            definition: app(PositionListConfiguration::class)->definition(),
             query: Position::query(),
             filenamePrefix: 'positions-export',
-            filterCallback: function ($query, $request) {
-                if ($request->filled('status')) {
-                    $query->where('status', $request->input('status'));
-                }
-            }
+            filterCallback: [app(PositionListConfiguration::class), 'applyStatusFilter']
         );
     }
 

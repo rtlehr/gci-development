@@ -17,10 +17,10 @@ use App\Contracts\Positions\PositionOperations;
 use App\Services\PortalWorkforceAccessService;
 use App\Services\UserResolver;
 use App\Services\UserEventLogger;
-use Insite\Modules\Positions\Support\ListDefinitions\PositionsDefinition;
 use Insite\Modules\Positions\Services\PositionInputValidator;
 use Insite\Modules\Positions\Services\PositionListPreferences;
 use Insite\Modules\Positions\Services\PositionDeletionService;
+use Insite\Modules\Positions\Services\PositionListConfiguration;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
@@ -38,18 +38,14 @@ class PositionController extends Controller
         UserResolver $userResolver,
         ListEngine $listEngine
     ) {
-        $definition = app(CustomFieldListService::class)->augmentDefinition(PositionsDefinition::get(), 'position');
+        $definition = app(PositionListConfiguration::class)->definition();
 
         $list = $listEngine->run(
             request: $request,
             definition: $definition,
             userId: $userResolver->resolveUserId(),
             query: $this->workforceAccess->scopePositions(Position::query()),
-            filterCallback: function ($query, $request) {
-                if ($request->filled('status')) {
-                    $query->where('status', $request->input('status'));
-                }
-            }
+            filterCallback: [app(PositionListConfiguration::class), 'applyStatusFilter']
         );
 
         $list['filters']['status'] = $request->input('status', '');
@@ -447,14 +443,10 @@ class PositionController extends Controller
 
         return $listExportService->exportCsv(
             request: $request,
-            definition: app(CustomFieldListService::class)->augmentDefinition(PositionsDefinition::get(), 'position'),
+            definition: app(PositionListConfiguration::class)->definition(),
             query: $this->workforceAccess->scopePositions(Position::query()),
             filenamePrefix: 'positions-export',
-            filterCallback: function ($query, $request) {
-                if ($request->filled('status')) {
-                    $query->where('status', $request->input('status'));
-                }
-            }
+            filterCallback: [app(PositionListConfiguration::class), 'applyStatusFilter']
         );
     }
 
