@@ -7,7 +7,7 @@ use App\Contracts\Workforce\PersonPositionRelationships;
 use App\Models\Position;
 use App\Models\PositionAssignment;
 use Insite\Modules\Positions\Services\ModulePersonPositionRelationships;
-use App\Services\ProjectManagerDashboardService;
+use Insite\Modules\Positions\Services\ModuleWorkforceDashboardService;
 use App\Contracts\Positions\PositionOperations;
 use Insite\Modules\Positions\Services\ModulePositionService;
 use Illuminate\Support\ServiceProvider;
@@ -16,7 +16,7 @@ use Illuminate\Support\ServiceProvider;
  * Positions module service ownership (Phase 5C.2).
  *
  * Relationship and position write implementations are module-owned; dashboard
- * data still uses the host implementation until its later extraction.
+ * data is now supplied by the module-owned dashboard implementation.
  * Legacy installations without the module retain the transitional Core fallback.
  */
 final class PositionsServiceProvider extends ServiceProvider
@@ -36,6 +36,6 @@ final class PositionsServiceProvider extends ServiceProvider
         // Controllers depend on the boundary, never the host concrete class.
         // Module activation replaces the host fallback implementation.
         $this->app->bind(PositionOperations::class, ModulePositionService::class);
-        $this->app->bind(WorkforceDashboardProvider::class, ProjectManagerDashboardService::class);
+        $this->app->bind(WorkforceDashboardProvider::class, ModuleWorkforceDashboardService::class);
     }
 }
