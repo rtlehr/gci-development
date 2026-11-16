@@ -7,8 +7,6 @@ use App\Http\Controllers\Controller;
 use App\Models\JobTitle;
 use App\Models\Organization;
 use App\Models\Position;
-use App\Models\Person;
-use App\Models\Workflow;
 use App\Models\User;
 use App\Services\ListEngine;
 use App\Services\ListExportService;
@@ -18,6 +16,7 @@ use Insite\Modules\Positions\Services\PositionInputValidator;
 use Insite\Modules\Positions\Services\PositionListPreferences;
 use Insite\Modules\Positions\Services\PositionDeletionService;
 use Insite\Modules\Positions\Services\PositionListConfiguration;
+use Insite\Modules\Positions\Services\PositionCandidateEditOptions;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Symfony\Component\HttpFoundation\StreamedResponse;
@@ -235,39 +234,9 @@ class PositionsController extends Controller
 
         $projectManagers = app(PositionOperations::class)->projectManagers();
 
-        $candidatePersonIds = $position->candidates
-            ->pluck('person_id')
-            ->filter()
-            ->values();
-
-        $candidateOptions = Person::query()
-            ->with('primaryPhoneNumber:id,person_id,phone_number,extension')
-            ->when($candidatePersonIds->isNotEmpty(), fn ($query) => $query->whereNotIn('id', $candidatePersonIds))
-            ->orderBy('last_name')
-            ->orderBy('first_name')
-            ->get(['id', 'first_name', 'preferred_name', 'last_name', 'email', 'person_code'])
-            ->map(fn (Person $person) => [
-                'id' => $person->id,
-                'full_name' => trim(($person->preferred_name ?: $person->first_name).' '.$person->last_name),
-                'email' => $person->email,
-                'person_code' => $person->person_code,
-                'primary_phone' => $person->primaryPhoneNumber?->phone_number,
-                'primary_phone_extension' => $person->primaryPhoneNumber?->extension,
-            ])
-            ->values();
-
-        $workflows = Workflow::query()
-            ->where('is_active', true)
-            ->orderByDesc('is_primary')
-            ->orderBy('name')
-            ->get(['id', 'name', 'code', 'is_primary'])
-            ->map(fn (Workflow $workflow) => [
-                'id' => $workflow->id,
-                'name' => $workflow->name,
-                'code' => $workflow->code,
-                'is_primary' => (bool) $workflow->is_primary,
-            ])
-            ->values();
+        $candidateEditOptions = app(PositionCandidateEditOptions::class);
+        $candidateOptions = $candidateEditOptions->candidateOptions($position);
+        $workflows = $candidateEditOptions->workflows();
 
         $positionCandidates = $position->candidates
             ->map(function ($candidate) {
