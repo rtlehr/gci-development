@@ -61,9 +61,9 @@ it('routes all ten Portal Positions controller actions to the activated module',
             ->and($route->gatherMiddleware())->toContain($permission);
     }
 
-    // The candidate integration remains owned by its existing controller.
+    // Candidate-add is owned by Positions when selected; the host handles fallback.
     expect(Route::getRoutes()->getByName('portal.positions.candidates.store')->getControllerClass())
-        ->toBe(PositionCandidateController::class);
+        ->toBe(\Insite\Modules\Positions\Http\Controllers\PositionCandidateController::class);
 });
 
 it('keeps selected Portal Positions routes inaccessible after the module becomes unselected', function () {

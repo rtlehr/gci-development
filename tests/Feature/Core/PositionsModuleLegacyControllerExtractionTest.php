@@ -38,9 +38,9 @@ it('moves every existing legacy Positions controller action to the selected modu
             ->and($route->gatherMiddleware())->toContain($permission);
     }
 
-    // Recruitment/Candidates ownership is intentionally still outside this extraction.
+    // The activated Positions module now owns candidate-add actions as well.
     expect(Route::getRoutes()->getByName('positions.candidates.store')->getControllerClass())
-        ->toBe(\App\Http\Controllers\PositionCandidateController::class);
+        ->toBe(\Insite\Modules\Positions\Http\Controllers\PositionCandidateController::class);
 });
 
 it('keeps selected legacy Positions controller actions guarded if the module becomes disabled', function () {

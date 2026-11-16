@@ -9,7 +9,7 @@ if (! (bool) config('insite_modules.legacy_positions_enabled', true)) {
 }
 
 
-use App\Http\Controllers\PositionCandidateController;
+use Insite\Modules\Positions\Http\Controllers\PositionCandidateController;
 use Insite\Modules\Positions\Http\Controllers\PositionsController;
 use Insite\Modules\Positions\Http\Controllers\Portal\PositionController;
 use Insite\Modules\Positions\Http\Controllers\PositionCustomSkillTaskController;

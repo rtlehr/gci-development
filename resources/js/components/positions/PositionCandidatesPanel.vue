@@ -59,11 +59,31 @@ const form = useForm({
     workflow_id: primaryWorkflow?.id ?? null,
 })
 
-const selectedPerson = computed(() =>
-    props.candidateOptions.find((person) => Number(person.id) === Number(form.person_id)),
+// Do not offer a person who is already attached, even if the server-provided
+// options become stale during a partial Inertia update.
+const existingCandidatePersonIds = computed(() => new Set(
+    props.candidates.map((candidate) => candidate.person?.id).filter((id): id is number => id != null),
+))
+const availableCandidateOptions = computed(() =>
+    props.candidateOptions.filter((person) => !existingCandidatePersonIds.value.has(Number(person.id))),
 )
+const selectedPerson = computed(() =>
+    availableCandidateOptions.value.find((person) => Number(person.id) === Number(form.person_id)),
+)
+const isDuplicateSelection = computed(() =>
+    form.person_id !== '' && existingCandidatePersonIds.value.has(Number(form.person_id)),
+)
+const sameNameExistingCandidate = computed(() => {
+    if (!selectedPerson.value) return null
+    return props.candidates.find((candidate) =>
+        candidate.person &&
+        candidate.person.id !== Number(selectedPerson.value?.id) &&
+        candidate.person.full_name.trim().toLocaleLowerCase() === selectedPerson.value?.full_name.trim().toLocaleLowerCase(),
+    ) ?? null
+})
 
 function addCandidate(): void {
+    if (form.processing || !form.person_id || isDuplicateSelection.value) return
     form.post(`${basePath.value}/${props.positionId}/candidates`, {
         preserveScroll: true,
         onSuccess: () => form.reset('person_id'),
@@ -112,10 +132,17 @@ function statusLabel(value?: string | null): string {
                         class="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
                     >
                         <option value="">Select a person</option>
-                        <option v-for="person in candidateOptions" :key="person.id" :value="person.id">
-                            {{ person.full_name }}{{ person.person_code ? ` (${person.person_code})` : '' }}
+                        <option v-for="person in availableCandidateOptions" :key="person.id" :value="person.id">
+                            {{ person.full_name }} — {{ person.email || 'No email' }} (Person #{{ person.id }}){{ person.person_code ? ` · Code: ${person.person_code}` : '' }}
                         </option>
                     </select>
+                    <p v-if="isDuplicateSelection" class="mt-2 text-sm text-destructive" role="alert">
+                        This person is already a candidate for this position.
+                    </p>
+                    <p v-if="sameNameExistingCandidate?.person" class="mt-2 text-sm text-amber-700 dark:text-amber-300" role="status">
+                        A candidate named {{ sameNameExistingCandidate.person.full_name }} is already listed under Person #{{ sameNameExistingCandidate.person.id }}.
+                        The selected record is Person #{{ selectedPerson?.id }}. Verify the person record before adding.
+                    </p>
                 </FormField>
 
                 <FormField label="Workflow" for-id="candidate_workflow_id" :error="form.errors.workflow_id" required>
@@ -130,7 +157,7 @@ function statusLabel(value?: string | null): string {
                     </select>
                 </FormField>
 
-                <Button type="submit" :disabled="form.processing || !form.person_id || !form.workflow_id">
+                <Button type="submit" :disabled="form.processing || !form.person_id || !form.workflow_id || isDuplicateSelection">
                     {{ form.processing ? 'Adding…' : 'Add Candidate' }}
                 </Button>
             </form>
@@ -146,7 +173,7 @@ function statusLabel(value?: string | null): string {
                 </div>
             </div>
 
-            <p v-if="!candidateOptions.length" class="px-5 pb-5 text-sm text-muted-foreground">
+            <p v-if="!availableCandidateOptions.length" class="px-5 pb-5 text-sm text-muted-foreground">
                 Every available person is already connected to this position.
             </p>
         </section>
@@ -170,6 +197,7 @@ function statusLabel(value?: string | null): string {
                             {{ candidate.person.full_name }}
                         </Link>
                         <span v-else class="font-semibold">Unknown Person</span>
+                        <p v-if="candidate.person" class="mt-1 text-xs text-muted-foreground">Person #{{ candidate.person.id }}</p>
                         <p class="mt-1 text-xs text-muted-foreground">Added {{ formatDate(candidate.submitted_at) }}</p>
                     </div>
 
