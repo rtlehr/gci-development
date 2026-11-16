@@ -7,7 +7,6 @@ use App\Http\Controllers\Controller;
 use App\Models\JobTitle;
 use App\Models\Organization;
 use App\Models\Position;
-use App\Models\PositionActivity;
 use App\Models\Person;
 use App\Models\Workflow;
 use App\Models\User;
@@ -19,6 +18,7 @@ use App\Services\UserResolver;
 use Insite\Modules\Positions\Support\ListDefinitions\PositionsDefinition;
 use Insite\Modules\Positions\Services\PositionInputValidator;
 use Insite\Modules\Positions\Services\PositionListPreferences;
+use Insite\Modules\Positions\Services\PositionDeletionService;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Symfony\Component\HttpFoundation\StreamedResponse;
@@ -344,30 +344,15 @@ class PositionsController extends Controller
             ->with('success', 'Position updated successfully.');
     }
 
-    public function destroy(
-        UserResolver $userResolver,
-        $id
-    ) {
-        $position = Position::with('assignments')
-            ->findOrFail($id);
+    public function destroy(UserResolver $userResolver, PositionDeletionService $deletionService, $id)
+    {
+        $position = Position::with('assignments')->findOrFail($id);
 
-        if ($position->assignments()->exists()) {
+        if (! $deletionService->delete($position, $userResolver->resolveUserId())) {
             return redirect()
                 ->route('positions.index')
-                ->with(
-                    'error',
-                    'This position cannot be deleted because it has assignments.'
-                );
+                ->with('error', 'This position cannot be deleted because it has assignments.');
         }
-
-        PositionActivity::create([
-            'position_id' => $position->id,
-            'user_id' => $userResolver->resolveUserId(),
-            'action' => 'deleted',
-            'description' => 'Position deleted.',
-        ]);
-
-        $position->delete();
 
         return redirect()
             ->route('positions.index')

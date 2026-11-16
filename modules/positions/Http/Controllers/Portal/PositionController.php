@@ -6,7 +6,6 @@ use App\Http\Controllers\Controller;
 use App\Models\JobTitle;
 use App\Models\Organization;
 use App\Models\Position;
-use App\Models\PositionActivity;
 use App\Models\Person;
 use App\Models\Workflow;
 use App\Models\User;
@@ -21,6 +20,7 @@ use App\Services\UserEventLogger;
 use Insite\Modules\Positions\Support\ListDefinitions\PositionsDefinition;
 use Insite\Modules\Positions\Services\PositionInputValidator;
 use Insite\Modules\Positions\Services\PositionListPreferences;
+use Insite\Modules\Positions\Services\PositionDeletionService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
@@ -398,39 +398,15 @@ class PositionController extends Controller
             ->with('success', 'Position updated successfully.');
     }
 
-    public function destroy(
-        UserResolver $userResolver,
-        $id
-    ) {
-        $position = Position::with('assignments')
-            ->findOrFail($id);
+    public function destroy(UserResolver $userResolver, PositionDeletionService $deletionService, $id)
+    {
+        $position = Position::with('assignments')->findOrFail($id);
 
-        if ($position->assignments()->exists()) {
+        if (! $deletionService->delete($position, $userResolver->resolveUserId(), auditPortal: true)) {
             return redirect()
                 ->route('portal.positions.index')
-                ->with(
-                    'error',
-                    'This position cannot be deleted because it has assignments.'
-                );
+                ->with('error', 'This position cannot be deleted because it has assignments.');
         }
-
-        PositionActivity::create([
-            'position_id' => $position->id,
-            'user_id' => $userResolver->resolveUserId(),
-            'action' => 'deleted',
-            'description' => 'Position deleted.',
-        ]);
-
-        app(UserEventLogger::class)->recordModelEvent(
-            eventType: 'delete',
-            module: 'positions',
-            action: 'delete',
-            subject: $position,
-            description: 'Deleted position '.$position->position_code.'.',
-            metadata: ['deleted' => true],
-        );
-
-        $position->delete();
 
         return redirect()
             ->route('portal.positions.index')
