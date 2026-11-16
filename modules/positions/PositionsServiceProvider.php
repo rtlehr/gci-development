@@ -9,6 +9,8 @@ use App\Models\PositionAssignment;
 use Insite\Modules\Positions\Services\ModulePersonPositionRelationships;
 use Insite\Modules\Positions\Services\ModuleWorkforceDashboardService;
 use App\Contracts\Positions\PositionOperations;
+use App\Contracts\Positions\PositionImportLookup;
+use Insite\Modules\Positions\Services\ModulePositionImportLookup;
 use Insite\Modules\Positions\Services\ModulePositionService;
 use Illuminate\Support\ServiceProvider;
 
@@ -36,6 +38,7 @@ final class PositionsServiceProvider extends ServiceProvider
         // Controllers depend on the boundary, never the host concrete class.
         // Module activation replaces the host fallback implementation.
         $this->app->bind(PositionOperations::class, ModulePositionService::class);
+        $this->app->bind(PositionImportLookup::class, ModulePositionImportLookup::class);
         $this->app->bind(WorkforceDashboardProvider::class, ModuleWorkforceDashboardService::class);
     }
 }

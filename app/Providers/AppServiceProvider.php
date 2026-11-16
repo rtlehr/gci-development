@@ -4,6 +4,8 @@ namespace App\Providers;
 
 use App\Contracts\Dashboard\WorkforceDashboardProvider;
 use App\Contracts\Positions\PositionOperations;
+use App\Contracts\Positions\PositionImportLookup;
+use App\Services\Positions\LegacyPositionImportLookup;
 use App\Services\PositionService;
 use App\Services\Dashboard\EmptyWorkforceDashboardProvider;
 use App\Services\ProjectManagerDashboardService;
@@ -30,6 +32,13 @@ class AppServiceProvider extends ServiceProvider
         // module is selected. When selected, its provider owns the relationship binding.
         if (! in_array('positions', (array) config('insite_modules.enabled', []), true)) {
             LegacyPositionsBinding::register($this->app);
+        }
+
+        // Data Import uses this Core-owned contract; the activated module overrides it.
+        // Keep the host implementation available for installations without Positions selected.
+        if ((bool) config('insite_modules.legacy_positions_enabled', true)
+            && ! in_array('positions', (array) config('insite_modules.enabled', []), true)) {
+            $this->app->bind(PositionImportLookup::class, LegacyPositionImportLookup::class);
         }
 
         // Transitional fallback while Positions controllers remain in the host.
